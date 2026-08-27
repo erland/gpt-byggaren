@@ -1,0 +1,21 @@
+id: ref-laroboksskaparen
+title: Läroboksskaparen
+source_type: known_reference_project
+characteristics:
+  moderate_workflow: true
+  structured_knowledge: true
+  repeatable_outputs: true
+  scripts_required: false
+  project_zip_manipulation: false
+  research_heavy: false
+  evidence_required: false
+expected:
+  profile: standard
+  primary_runtime:
+  - chat_zip_or_custom_gpt
+  - custom_gpt_or_chat
+  custom_gpt_role:
+  - primary_or_equal
+  - equivalent_or_near_equivalent
+  notes:
+  - Should not require ZIP-first advanced by default.

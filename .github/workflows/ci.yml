@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+      - "work/**"
+      - "feature/**"
+      - "fix/**"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-project:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pyyaml jsonschema pytest
+
+      - name: Validate YAML and JSON
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import yaml
+
+          skip = {".git", "build", "dist", "__pycache__", ".pytest_cache"}
+          for p in list(Path(".").rglob("*.yaml")) + list(Path(".").rglob("*.yml")):
+              if not any(part in skip for part in p.parts):
+                  yaml.safe_load(p.read_text(encoding="utf-8"))
+          for p in Path(".").rglob("*.json"):
+              if not any(part in skip for part in p.parts):
+                  json.loads(p.read_text(encoding="utf-8"))
+          PY
+
+      - name: Run checkpoint project hygiene
+        run: python scripts/project_hygiene.py --project-root . --mode checkpoint --fix
+
+      - name: Run GPT linter
+        run: python scripts/lint_gpt_project.py --project-root .
+
+      - name: Run tests
+        run: python -m pytest -q -p no:cacheprovider
+
+      - name: Build distributions
+        run: |
+          python scripts/build_distributions.py             --project-root .             --version 0.0.0-ci             --targets project,chat,custom-gpt
+
+      - name: Validate distributions
+        run: python scripts/validate_distributions.py --project-root .
+
+      - name: Verify expected build outputs
+        run: |
+          test -f dist/gpt-byggaren-project.zip
+          test -f dist/gpt-byggaren-chat-0.0.0-ci.zip
+          test -f dist/gpt-byggaren-custom-gpt-0.0.0-ci.zip
+          test -f dist/SHA256SUMS.txt
+          test -f dist/DELIVERY-MANIFEST.json
+
+      - name: Verify project hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          BAD="$(find .             \( -path './.git' -o -path './build' -o -path './dist' \) -prune -o             \( -name '__pycache__' -o -name '.pytest_cache' -o -name '*.tmp' -o -name '*.temp' -o -name '.DS_Store' \)             -print)"
+          if [ -n "$BAD" ]; then
+            echo "Project hygiene check failed:"
+            echo "$BAD"
+            exit 1
+          fi
+
+      - name: Upload CI distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-distributions
+          if-no-files-found: error
+          path: |
+            dist/*.zip
+            dist/SHA256SUMS.txt
+            dist/DELIVERY-MANIFEST.json

@@ -1,0 +1,24 @@
+schema_version: 1
+id: blank-idea-001
+title: Från blank idé till distributionsbara artefakter
+idea: Jag vill skapa en GPT som hjälper en projektledare att analysera mötesanteckningar,
+  identifiera beslut, risker och aktiviteter samt skapa en strukturerad uppföljning.
+features:
+  moderate_workflow: true
+  structured_knowledge: false
+  repeatable_outputs: true
+  scripts_required: false
+  project_zip_manipulation: false
+  research_heavy: false
+  evidence_required: false
+expected:
+  profile: standard
+  project_id: motesuppfoljaren
+  primary_runtime: chat_zip
+  custom_gpt_enabled: true
+  artifacts:
+  - project_zip
+  - chat_zip
+  - custom_gpt_zip
+  - delivery_manifest
+  - checksums

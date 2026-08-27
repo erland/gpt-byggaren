@@ -1,0 +1,20 @@
+id: ref-archimate-modeller
+title: ArchiMate Modeller
+source_type: known_reference_project
+characteristics:
+  multi_stage_workflow: false
+  structured_knowledge: true
+  rich_structured_runtime: true
+  scripts_required: true
+  project_zip_manipulation: true
+  research_heavy: false
+  evidence_required: false
+expected:
+  profile: zip_first_advanced
+  primary_runtime:
+  - chat_zip
+  custom_gpt_role:
+  - secondary
+  - not_required
+  notes:
+  - Scripts, schemas and project ZIP handling require ZIP-first runtime.

@@ -1,0 +1,20 @@
+id: ref-tullverket-remiss
+title: Tullverket Remiss
+source_type: known_reference_project
+characteristics:
+  multi_stage_workflow: true
+  structured_knowledge: true
+  repeatable_outputs: true
+  scripts_required: false
+  project_zip_manipulation: false
+  research_heavy: true
+  evidence_required: true
+expected:
+  profile: workflow_research_heavy
+  primary_runtime:
+  - chat_zip
+  custom_gpt_role:
+  - secondary
+  - reduced_or_secondary
+  notes:
+  - Multi-step workflow and traceability justify workflow/research-heavy.

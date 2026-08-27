@@ -1,0 +1,22 @@
+id: simple
+title: Simple
+description: Liten GPT med begränsat Knowledge-behov och enkel interaktion.
+primary_runtime: custom_gpt_or_chat
+custom_gpt:
+  enabled: true
+  expected_parity: full_or_high
+knowledge:
+  level: none_or_small_static
+scripts: not_expected
+schemas: optional
+templates: optional
+tests:
+- contract
+- build
+- behavioral_core
+evals: small_core_set
+ci: recommended_if_github
+examples:
+- skrivstöd
+- enkel rådgivnings-GPT
+- begränsad FAQ-GPT

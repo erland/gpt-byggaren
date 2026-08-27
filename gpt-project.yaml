@@ -1,0 +1,647 @@
+schema_version: 1
+project:
+  id: gpt-byggaren
+  name: GPT Byggaren
+  language: sv
+  description: 'GPT Byggaren hjälper användare från idé till testad, paketerad och
+    versionshanterad GPT med stöd för stegvis projektutveckling, Chat/ZIP-runtime,
+    Custom GPT-distribution och valfri GitHub-release.
+
+    '
+development:
+  plan: docs/development-plan.md
+  status: project-status.yaml
+  human_readable_status: STATUS.md
+  status_schema: schemas/project-status.schema.json
+  project_documentation:
+  - PROJECT.md
+  - docs/product-vision.md
+  - docs/user-journeys.md
+  - docs/canonical-project-structure.md
+structure:
+  canonical_root: src
+  instructions:
+    path: src/instructions
+    required: true
+  conversation_starters:
+    path: src/conversation-starters
+    required: true
+  runtime_policy:
+    path: src/runtime-policy
+    required: false
+  knowledge:
+    path: knowledge
+    required: false
+  templates:
+    path: templates
+    required: false
+  schemas:
+    path: schemas
+    required: false
+  scripts:
+    path: scripts
+    required: false
+  tests:
+    path: tests
+    required: false
+  evals:
+    path: evals
+    required: false
+  research:
+    path: research
+    required: false
+  build:
+    path: build
+    generated: true
+    create_when_needed: true
+  dist:
+    path: dist
+    generated: true
+    create_when_needed: true
+runtime:
+  primary: chat_zip
+  chat_zip:
+    enabled: true
+    role: primary
+    allow_richer_runtime_than_custom_gpt: true
+    entrypoint: START-HERE.md
+    schema: schemas/chat-zip-runtime.schema.json
+    policy: src/runtime-policy/chat-zip-runtime-policy.md
+    model: docs/chat-zip-runtime.md
+    start_here_template: templates/START-HERE.chat.md.tpl
+    layout:
+      assistant: assistant
+      knowledge: knowledge
+      schemas: schemas
+      scripts: scripts
+      templates: templates
+      runtime: runtime
+    include:
+      instructions:
+      - src/instructions/system.md
+      policies:
+      - src/runtime-policy/*.md
+      conversation_starters:
+      - src/conversation-starters/**
+      knowledge:
+      - knowledge/**
+      schemas:
+      - schemas/**
+      scripts:
+      - scripts/**
+      templates:
+      - templates/**
+    exclude:
+    - docs/**
+    - tests/**
+    - evals/**
+    - research/**
+    - .github/**
+    - .git/**
+    - build/**
+    - dist/**
+    - project-status.yaml
+    - PROJECT.md
+    - STATUS.md
+    manifest:
+      required: true
+      checksums: true
+    deterministic_build: true
+    omit_empty_runtime_directories: true
+  custom_gpt:
+    enabled: true
+    role: secondary
+    compilation_mode: adaptive
+    allow_reduced_functionality: true
+    platform_limits:
+      instruction_max_characters: 8000
+      knowledge_max_files: 20
+    notes:
+    - Platform limits are configuration values and must be easy to update.
+    - Custom GPT may be transformed or reduced relative to Chat ZIP.
+    schema: schemas/custom-gpt-compilation.schema.json
+    policy: src/runtime-policy/custom-gpt-compilation-policy.md
+    model: docs/custom-gpt-compilation.md
+    instruction:
+      mode: compressed
+      max_characters: 8000
+    knowledge:
+      strategy: hybrid
+      max_files: 20
+    builder:
+      instructions: builder/instructions.md
+      conversation_starters: builder/conversation-starters.md
+      capabilities: builder/capabilities.md
+      knowledge_package: builder/knowledge-package
+    templates:
+      readme: templates/README.custom-gpt.md.tpl
+      compatibility: templates/COMPATIBILITY.md.tpl
+      capabilities: templates/capabilities.md.tpl
+    compatibility:
+      report_required: true
+      parity_symbols:
+        equivalent: ✓
+        reduced: '~'
+        missing: '-'
+    validation:
+      block_on_instruction_limit: true
+      block_on_knowledge_limit: true
+      block_on_misleading_core_functionality: true
+capabilities:
+  recommendation_mode: inferred_from_use_case
+  ask_user_only_when_business_choice_is_ambiguous: true
+  web:
+    state: to_be_recommended
+  data_analysis:
+    state: to_be_recommended
+  image_generation:
+    state: to_be_recommended
+  file_handling:
+    state: required
+  structured_knowledge:
+    state: likely_required
+analysis:
+  model: docs/analysis-model.md
+  recommendation_schema: schemas/analysis-recommendation.schema.json
+  policy: src/runtime-policy/analysis-policy.md
+  profiles:
+  - simple
+  - standard
+  - zip_first_advanced
+  - workflow_research_heavy
+  infer_technical_choices_from_use_case: true
+  ask_only_for_unresolved_business_choices: true
+project_hygiene:
+  enabled: true
+  history_source: git
+  remove_obsolete_work_files: true
+  remove_temporary_files: true
+  remove_caches: true
+  remove_local_test_outputs: true
+  avoid_duplicate_canonical_sources: true
+  run_before_release: true
+  model: docs/project-hygiene.md
+  schema: schemas/project-hygiene.schema.json
+  policy: src/runtime-policy/project-hygiene-policy.md
+  classify_files: true
+  safe_auto_remove_only: true
+  review_when_uncertain: true
+  validate_internal_references: true
+  validate_distribution_contents: true
+  final_hygiene_is_release_gate: true
+  final_model: docs/final-project-hygiene.md
+  final_policy: src/runtime-policy/final-hygiene-policy.md
+  report_schema: schemas/project-hygiene-report.schema.json
+  script: scripts/project_hygiene.py
+  modes:
+  - checkpoint
+  - final
+  final_is_release_gate: true
+  safe_auto_clean:
+  - build/**
+  - dist/**
+  - '**/__pycache__/**'
+  - '**/.pytest_cache/**'
+  - '**/.mypy_cache/**'
+  - '**/.ruff_cache/**'
+  - '**/*.tmp'
+  - '**/*.temp'
+  - '**/.DS_Store'
+build:
+  deterministic: true
+  create_manifest: true
+  create_checksums: true
+  build_project_zip: true
+  build_chat_zip: true
+  build_custom_gpt_zip: true
+  direct_downloads_without_github: true
+release:
+  github:
+    optional: true
+    version_source: github_release_tag
+    tag_pattern: v{semver}
+    build_on_published_release: true
+    workflow: .github/workflows/release.yml
+    trigger: release.published
+    permissions:
+    - contents:write
+    run_tests: true
+    run_distribution_validation: true
+    upload_artifacts_to_release: true
+    artifacts:
+    - project_zip
+    - chat_zip
+    - custom_gpt_zip_when_enabled
+    - checksums
+    - delivery_manifest
+    policy: src/runtime-policy/github-release-policy.md
+    model: docs/github-release-flow.md
+  local:
+    supported: true
+    version_strategy_before_github_release: development_version
+artifacts:
+  project_zip:
+    required: true
+  chat_zip:
+    required: true
+  custom_gpt_zip:
+    required_when_enabled: true
+  validation_report:
+    required_for_release: true
+  parity_report:
+    required_when_multiple_runtimes: true
+  checksums:
+    required_for_release: true
+workflow:
+  initial_analysis_in_chat: true
+  plan_as_downloadable_markdown: true
+  create_project_zip_on_first_execution_step: true
+  rebuild_complete_project_zip_after_each_step: true
+  recommend_next_step_from_actual_status: true
+  resume_from_project_zip: true
+planning:
+  mode: dynamic
+  model: docs/dynamic-planning.md
+  schema: schemas/development-plan.schema.json
+  policy: src/runtime-policy/planning-policy.md
+  derive_from_analysis: true
+  downloadable_markdown_before_project_creation: true
+  copy_into_project_on_first_execution_step: true
+  allow_inserted_corrective_steps: true
+  allow_step_merge: true
+  allow_step_skip: true
+  allow_step_split: true
+  plan_is_guiding_not_mechanical: true
+file_classification:
+  classes:
+  - CANONICAL
+  - RUNTIME
+  - DEVELOPMENT
+  - GENERATED
+  - TEMPORARY
+  - HISTORICAL
+  canonical_paths:
+  - src/
+  - knowledge/
+  - templates/
+  - schemas/
+  development_paths:
+  - docs/
+  - tests/
+  - evals/
+  - research/
+  - .github/
+  generated_paths:
+  - build/
+  - dist/
+instructions:
+  architecture: docs/instruction-architecture.md
+  schema: schemas/instruction-architecture.schema.json
+  canonical: src/instructions/system.md
+  policies:
+    include:
+    - src/runtime-policy/*.md
+  compilation:
+    chat:
+      mode: full
+    custom_gpt:
+      mode: compressed
+      max_characters_from: runtime.custom_gpt.platform_limits.instruction_max_characters
+  single_source_of_truth: true
+  distribution_specific_instructions_are_generated: true
+knowledge_architecture:
+  model: docs/knowledge-architecture.md
+  schema: schemas/knowledge-architecture.schema.json
+  policy: src/runtime-policy/knowledge-policy.md
+  canonical_root: knowledge
+  chat:
+    include:
+    - knowledge/**
+    full_canonical_allowed: true
+  custom_gpt:
+    strategy: hybrid
+    max_files: 20
+    allow_reduced_functionality: true
+    priority:
+    - knowledge/domain/**
+    - knowledge/reference/core/**
+  resource_metadata:
+    supported: true
+    fields:
+    - id
+    - title
+    - role
+    - source
+    - runtime
+    - priority
+    - format
+    - generated
+  behavior_rules_belong_in_instructions_or_policy: true
+platform_validation:
+  model: docs/platform-validation.md
+  schema: schemas/platform-validation.schema.json
+  policy: src/runtime-policy/platform-validation-policy.md
+  report_template: templates/custom-gpt-validation-report.md.tpl
+  validate_built_distribution: true
+  checks:
+    instruction_length: true
+    knowledge_file_count: true
+    knowledge_file_size: when_configured
+    knowledge_file_format: when_configured
+    conversation_starters: true
+    capabilities: true
+    builder_package: true
+    compatibility_report: true
+    distribution_hygiene: true
+  release_gate:
+    pass: true
+    warning: allowed_if_project_policy_accepts
+    blocked: false
+  same_rules_for_local_ci_and_release: true
+runtime_parity:
+  model: docs/runtime-parity.md
+  schema: schemas/runtime-parity.schema.json
+  policy: src/runtime-policy/runtime-parity-policy.md
+  report_template: templates/runtime-parity-report.md.tpl
+  reference_runtime: chat_zip
+  levels:
+  - full
+  - high
+  - moderate
+  - low
+  - not_viable
+  capability_states:
+  - equivalent
+  - reduced
+  - missing
+  - not_applicable
+  criticality:
+  - critical
+  - important
+  - optional
+  weights:
+    state:
+      equivalent: 1.0
+      reduced: 0.5
+      missing: 0.0
+    criticality:
+      critical: 3
+      important: 2
+      optional: 1
+  release_rules:
+    full: publish
+    high: publish
+    moderate: publish_with_warning
+    low: prefer_chat_zip
+    not_viable: do_not_publish
+  generate_separate_report_artifact: true
+build_system:
+  model: docs/build-system.md
+  build_script: scripts/build_distributions.py
+  validation_script: scripts/validate_distributions.py
+  targets:
+  - project
+  - chat
+  - custom-gpt
+  output_root: dist
+  working_root: build
+  deterministic_zip: true
+  manifest: true
+  checksums: sha256
+  project_zip_excludes:
+  - build/**
+  - dist/**
+  - .git/**
+  - '**/__pycache__/**'
+  - '**/.pytest_cache/**'
+direct_build:
+  model: docs/direct-build.md
+  policy: src/runtime-policy/direct-build-policy.md
+  script: scripts/build_direct.py
+  delivery_manifest_schema: schemas/delivery-manifest.schema.json
+  default_development_version: 0.0.0-dev
+  github_required: false
+  deliver:
+  - project_zip
+  - chat_zip
+  - custom_gpt_zip_when_enabled
+  - checksums
+  - delivery_manifest
+  validate_before_delivery: true
+ci:
+  workflow: .github/workflows/ci.yml
+  model: docs/ci-flow.md
+  policy: src/runtime-policy/ci-policy.md
+  triggers:
+  - push
+  - pull_request
+  - workflow_dispatch
+  development_version: 0.0.0-ci
+  checks:
+  - yaml_json_parse
+  - tests
+  - build_distributions
+  - validate_distributions
+  - expected_artifacts
+  - project_hygiene
+  upload_ci_artifacts: true
+  same_toolchain_as_release: true
+testing:
+  model: docs/test-model.md
+  policy: src/runtime-policy/test-policy.md
+  manifest: test-manifest.yaml
+  manifest_schema: schemas/test-manifest.schema.json
+  eval_case_schema: schemas/eval-case.schema.json
+  layers:
+  - deterministic
+  - contract
+  - build
+  - runtime_smoke
+  - behavioral
+  - regression
+  - reference
+  criticality:
+  - critical
+  - important
+  - optional
+  profiles:
+    simple:
+    - contract
+    - build
+    - behavioral_core
+    standard:
+    - deterministic
+    - contract
+    - build
+    - runtime_smoke
+    - behavioral
+    zip_first_advanced:
+    - deterministic
+    - contract
+    - build
+    - runtime_smoke
+    - behavioral
+    - regression
+    - reference
+    workflow_research_heavy:
+    - deterministic
+    - contract
+    - build
+    - runtime_smoke
+    - behavioral
+    - regression
+    - reference
+  release_gate:
+    critical_deterministic_tests_must_pass: true
+    blocking_schemas_must_pass: true
+    build_must_pass: true
+    distribution_validation_must_pass: true
+    critical_evals_must_meet_threshold: true
+linting:
+  model: docs/gpt-linter.md
+  policy: src/runtime-policy/lint-policy.md
+  script: scripts/lint_gpt_project.py
+  report_schema: schemas/lint-report.schema.json
+  severities:
+  - error
+  - warning
+  - info
+  errors_block_ci: true
+  warnings_block_ci: false
+  run_before_tests: true
+next_step_recommendation:
+  model: docs/next-step-recommendation.md
+  policy: src/runtime-policy/next-step-policy.md
+  schema: schemas/next-step-recommendation.schema.json
+  script: scripts/recommend_next_step.py
+  plan_is_guiding_not_mechanical: true
+  allow_types:
+  - planned
+  - corrective
+  - hygiene
+  - validation
+  - dependency
+  - release
+  - pause
+  priority_order:
+  - blockers
+  - project_integrity
+  - failed_validation
+  - hygiene
+  - corrective
+  - dependency
+  - planned
+  - release_readiness
+  allow_inserted_steps: true
+  allow_skip: true
+  allow_split: true
+  allow_merge: true
+  pause_only_for_unresolved_business_decision: true
+resume:
+  model: docs/resume-flow.md
+  policy: src/runtime-policy/resume-policy.md
+  schema: schemas/resume-result.schema.json
+  script: scripts/resume_project.py
+  supported: true
+  requires_previous_chat_history: false
+  read_order:
+  - gpt-project.yaml
+  - project-status.yaml
+  - docs/development-plan.md
+  - STATUS.md
+  - PROJECT.md
+  machine_status_is_authoritative: true
+  verify_before_continue:
+  - lint
+  - next_step_recommendation
+  legacy_mode: inventory_then_migrate
+release_readiness:
+  model: docs/release-readiness.md
+  policy: src/runtime-policy/release-readiness-policy.md
+  schema: schemas/release-readiness.schema.json
+  script: scripts/assess_release_readiness.py
+  report_template: templates/release-readiness.md.tpl
+  results:
+  - ready
+  - ready_with_warnings
+  - blocked
+  blocked_stops_release: true
+  same_assessment_for_local_and_github: true
+beginner_documentation:
+  getting_started: docs/getting-started.md
+  faq: docs/beginner-faq.md
+  policy: src/runtime-policy/beginner-experience-policy.md
+  target_audience: users_without_technical_gpt_build_knowledge
+  technical_choices_inferred_when_possible: true
+  project_zip_is_continuation_artifact: true
+reference_profiles:
+  model: docs/reference-profiles.md
+  schema: schemas/reference-profile.schema.json
+  policy: src/runtime-policy/profile-selection-policy.md
+  selector: scripts/select_reference_profile.py
+  root: profiles
+  profiles:
+  - simple
+  - standard
+  - zip_first_advanced
+  - workflow_research_heavy
+  selection_is_inferred: true
+  user_does_not_normally_choose_profile: true
+  allow_project_specific_adjustments: true
+reference_project_validation:
+  model: docs/reference-project-validation.md
+  case_schema: schemas/reference-project-case.schema.json
+  cases_root: evals/reference-projects
+  script: scripts/evaluate_reference_projects.py
+  reference_projects:
+  - Läroboksskaparen
+  - Tullverket Remiss
+  - ArchiMate Modeller
+  blocking: true
+  expected_case_count: 3
+end_to_end_testing:
+  model: docs/end-to-end-test.md
+  scenario_schema: schemas/e2e-scenario.schema.json
+  scenarios_root: evals/e2e
+  runner: scripts/run_e2e_blank_idea.py
+  blank_idea_scenario: evals/e2e/blank-idea-001.yaml
+  blocking: true
+  covers:
+  - analysis_profile
+  - development_plan
+  - project_contract
+  - project_status
+  - canonical_instruction
+  - project_zip
+  - chat_zip
+  - custom_gpt_zip
+  - checksums
+  - delivery_manifest
+architecture:
+  model: architecture.yaml
+  review: docs/architecture-simplification-review.md
+  shared_library: scripts/lib/project_model.py
+  canonical_decision_logic: true
+  thin_cli_wrappers: true
+release_candidate:
+  version: 1.0.0-rc.1
+  model: docs/release-candidate.md
+  policy: src/runtime-policy/release-candidate-policy.md
+  schema: schemas/release-candidate.schema.json
+  validator: scripts/validate_release_candidate.py
+  prerelease: true
+  stable: false
+  next_after_pass: 30
+stable_release:
+  version: 1.0.0
+  model: docs/stable-release.md
+  policy: src/runtime-policy/stable-release-policy.md
+  schema: schemas/stable-release.schema.json
+  validator: scripts/validate_stable_release.py
+  stable: true
+  maintenance_mode_after_release: true
+lifecycle:
+  state: stable
+  stable_version: 1.0.0
+  development_plan_completed: true
+  maintenance_mode: true

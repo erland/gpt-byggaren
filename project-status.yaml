@@ -1,0 +1,90 @@
+schema_version: 1
+project:
+  id: gpt-byggaren
+  name: GPT Byggaren
+plan:
+  path: docs/development-plan.md
+  total_steps: 30
+progress:
+  current_phase: grunddesign
+  current_step: 30
+  last_completed_step: 30
+  completed_steps:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+  - 10
+  - 11
+  - 12
+  - 13
+  - 14
+  - 15
+  - 16
+  - 17
+  - 18
+  - 19
+  - 20
+  - 21
+  - 22
+  - 23
+  - 24
+  - 25
+  - 26
+  - 27
+  - 28
+  - 29
+  - 30
+  skipped_steps: []
+  inserted_steps: []
+state:
+  overall: pass
+  blocking_issues: []
+  warnings: []
+validation:
+  last_result: pass
+  last_step: 30
+project_hygiene:
+  last_result: pass
+  obsolete_files_removed: []
+  temporary_files_removed:
+  - .pytest_cache/
+  - tests/__pycache__/
+  findings: []
+  notes:
+  - Stable release v1.0.0 validated and packaged.
+next_step:
+  recommended: maintenance
+  title: Maintenance mode
+  reason: Utvecklingsplan 1–30 är slutförd och v1.0.0 är stabil release.
+resume:
+  supported: true
+  required_files:
+  - gpt-project.yaml
+  - project-status.yaml
+  - docs/development-plan.md
+  human_readable_status: STATUS.md
+rules:
+  plan_is_guiding_not_mechanical: true
+  allow_inserted_corrective_steps: true
+  recommend_from_actual_project_state: true
+  update_after_every_completed_step: true
+  rebuild_project_zip_after_every_completed_step: true
+release:
+  state: stable
+  version: 1.0.0
+  stable: true
+  previous_release_candidate: 1.0.0-rc.1
+plan_complete: true
+maintenance:
+  latest_fix:
+    id: M1
+    title: CI test isolation and runtime cache exclusion
+    reason: GitHub Actions run 33034383995 failed because Python cache files entered
+      Chat runtime and legacy tests were hard-coded to step 21.
+    status: pass

@@ -1,0 +1,54 @@
+schema_version: 1
+suites:
+  unit_and_contract:
+    type: deterministic
+    path: tests/
+    blocking: true
+    profiles:
+    - simple
+    - standard
+    - zip_first_advanced
+    - workflow_research_heavy
+  build_and_distribution:
+    type: build
+    path: tests/
+    blocking: true
+    profiles:
+    - simple
+    - standard
+    - zip_first_advanced
+    - workflow_research_heavy
+  behavioral_evals:
+    type: behavioral
+    path: evals/
+    blocking: true
+    profiles:
+    - simple
+    - standard
+    - zip_first_advanced
+    - workflow_research_heavy
+  reference_cases:
+    type: reference
+    path: evals/reference/
+    blocking: true
+    profiles:
+    - standard
+    - zip_first_advanced
+    - workflow_research_heavy
+  reference_projects:
+    type: reference
+    path: evals/reference-projects/
+    blocking: true
+    profiles:
+    - standard
+    - zip_first_advanced
+    - workflow_research_heavy
+  end_to_end:
+    type: regression
+    path: evals/e2e/
+    blocking: true
+    profiles:
+    - simple
+    - standard
+    - zip_first_advanced
+    - workflow_research_heavy
