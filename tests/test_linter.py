@@ -6,11 +6,20 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 
-def test_linter_current_project_has_no_errors():
-    for p in [ROOT / ".pytest_cache", ROOT / "tests" / "__pycache__"]:
+def _clean_generated_state():
+    for name in ["build", "dist", ".pytest_cache"]:
+        p = ROOT / name
         if p.exists():
             shutil.rmtree(p)
+    for p in sorted(ROOT.rglob("__pycache__"), key=lambda x: len(x.parts), reverse=True):
+        if p.exists():
+            shutil.rmtree(p)
+    for p in ROOT.rglob("*.py[co]"):
+        if p.exists():
+            p.unlink()
 
+def test_linter_current_project_has_no_errors():
+    _clean_generated_state()
     r = subprocess.run(
         [sys.executable, str(ROOT / "scripts" / "lint_gpt_project.py"),
          "--project-root", str(ROOT), "--json"],

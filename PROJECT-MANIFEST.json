@@ -30,6 +30,7 @@
     "docs/gpt-project-contract.md",
     "docs/instruction-architecture.md",
     "docs/knowledge-architecture.md",
+    "docs/maintenance-fix-m1.md",
     "docs/next-step-recommendation.md",
     "docs/platform-validation.md",
     "docs/product-vision.md",
@@ -42,6 +43,7 @@
     "docs/release-readiness.md",
     "docs/resume-flow.md",
     "docs/runtime-parity.md",
+    "docs/stable-release-result.md",
     "docs/stable-release.md",
     "docs/test-model.md",
     "docs/user-journeys.md",
@@ -140,6 +142,7 @@
     "tests/test_release_readiness.py",
     "tests/test_release_workflow.py",
     "tests/test_resume_flow.py",
+    "tests/test_runtime_cache_exclusion.py",
     "tests/test_stable_release.py",
     "tests/test_test_model.py"
   ]

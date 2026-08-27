@@ -6,12 +6,24 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+import shutil
 
 
 def run(cmd: list[str]) -> None:
     result = subprocess.run(cmd, text=True)
     if result.returncode != 0:
         raise SystemExit(result.returncode)
+
+
+def clean_python_caches(root: Path) -> None:
+    """Remove safe interpreter artifacts so readiness inspects canonical source only."""
+    for path in sorted(root.rglob("__pycache__"), key=lambda p: len(p.parts), reverse=True):
+        if path.exists():
+            shutil.rmtree(path)
+    for pattern in ("*.pyc", "*.pyo"):
+        for path in root.rglob(pattern):
+            if path.exists():
+                path.unlink()
 
 
 def main() -> int:
@@ -24,6 +36,8 @@ def main() -> int:
 
     root = Path(args.project_root).resolve()
     python = sys.executable
+
+    clean_python_caches(root)
 
     run([
         python,
@@ -38,6 +52,9 @@ def main() -> int:
         str(root / "scripts" / "validate_distributions.py"),
         "--project-root", str(root),
     ])
+
+    # Earlier tests/imports may have created bytecode in source directories.
+    clean_python_caches(root)
 
     run([
         python,

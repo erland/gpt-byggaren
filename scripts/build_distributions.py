@@ -51,15 +51,20 @@ def copy_file(src: Path, dst: Path) -> None:
 
 
 def copy_tree_filtered(src: Path, dst: Path, ignore_names: set[str] | None = None) -> None:
-    ignore_names = ignore_names or set()
+    # Runtime distributions must never contain local Python/cache artifacts.
+    ignore_names = set(ignore_names or set()) | {
+        "__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache"
+    }
     if not src.exists():
         return
     for p in src.rglob("*"):
         if p.is_dir():
             continue
-        if any(part in ignore_names for part in p.parts):
-            continue
         rel = p.relative_to(src)
+        if any(part in ignore_names for part in rel.parts):
+            continue
+        if p.suffix in {".pyc", ".pyo"}:
+            continue
         copy_file(p, dst / rel)
 
 

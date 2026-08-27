@@ -22,6 +22,8 @@ concurrency:
 jobs:
   validate-project:
     runs-on: ubuntu-latest
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -56,7 +58,7 @@ jobs:
         run: python scripts/lint_gpt_project.py --project-root .
 
       - name: Run tests
-        run: python -m pytest -q
+        run: python -m pytest -q -p no:cacheprovider
 
       - name: Build distributions
         run: |

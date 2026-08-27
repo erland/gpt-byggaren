@@ -81,3 +81,10 @@ release:
   stable: true
   previous_release_candidate: 1.0.0-rc.1
 plan_complete: true
+maintenance:
+  latest_fix:
+    id: M1
+    title: CI test isolation and runtime cache exclusion
+    reason: GitHub Actions run 33034383995 failed because Python cache files entered
+      Chat runtime and legacy tests were hard-coded to step 21.
+    status: pass

@@ -21,3 +21,11 @@
 
 ## Nästa steg
 Projektet går nu över i **maintenance mode**.
+
+## Maintenance fix M1 – GitHub Actions
+- GitHub Actions run `33034383995` analyserad.
+- Runtime-cachefilter korrigerat.
+- Testisolering korrigerad.
+- Next-step/resume-tester gjort statusdrivna.
+- CI kör med `PYTHONDONTWRITEBYTECODE=1` och utan pytest cacheprovider.
+- Exakt CI-sekvens verifierad: PASS.
