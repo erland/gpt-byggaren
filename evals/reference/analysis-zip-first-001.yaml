@@ -1,0 +1,22 @@
+id: analysis-zip-first-001
+title: Avancerad workflow-GPT bör rekommenderas som ZIP-first
+criticality: critical
+profiles:
+- zip_first_advanced
+- workflow_research_heavy
+input:
+  idea: Skapa en GPT som analyserar stora projekt-ZIP:ar, använder scripts och schemas
+    och bygger nya ZIP-filer.
+expected:
+  required:
+  - Chat ZIP som primär runtime
+  - filhantering
+  - scripts
+  - schemas
+  - tester eller evals
+  - Custom GPT som sekundärt eller reducerat mål
+  forbidden:
+  - fråga användaren om ZIP-first ska användas
+  - fråga användaren om schemas behövs
+scoring:
+  pass_threshold: 0.8

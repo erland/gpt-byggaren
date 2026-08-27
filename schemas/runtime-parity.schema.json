@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Runtime Parity Report",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "primary_runtime",
+    "summary",
+    "capabilities"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "primary_runtime": {
+      "enum": [
+        "chat_zip",
+        "custom_gpt"
+      ]
+    },
+    "summary": {
+      "type": "object",
+      "required": [
+        "level"
+      ],
+      "properties": {
+        "level": {
+          "enum": [
+            "full",
+            "high",
+            "moderate",
+            "low",
+            "not_viable"
+          ]
+        },
+        "weighted_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "release_recommendation": {
+          "enum": [
+            "publish",
+            "publish_with_warning",
+            "prefer_chat_zip",
+            "do_not_publish"
+          ]
+        }
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "criticality",
+          "chat_zip",
+          "custom_gpt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "criticality": {
+            "enum": [
+              "critical",
+              "important",
+              "optional"
+            ]
+          },
+          "chat_zip": {
+            "enum": [
+              "equivalent",
+              "reduced",
+              "missing",
+              "not_applicable"
+            ]
+          },
+          "custom_gpt": {
+            "enum": [
+              "equivalent",
+              "reduced",
+              "missing",
+              "not_applicable"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,24 @@
+id: standard
+title: Standard
+description: Normal GPT med tydligt arbetsflöde, viss Knowledge och strukturerad kvalitetssäkring.
+primary_runtime: chat_zip_or_custom_gpt
+custom_gpt:
+  enabled: true
+  expected_parity: high
+knowledge:
+  level: small_or_structured
+scripts: optional
+schemas: recommended_when_structured_data_exists
+templates: recommended_when_outputs_are_repeatable
+tests:
+- deterministic
+- contract
+- build
+- runtime_smoke
+- behavioral
+evals: core_and_workflow
+ci: recommended
+examples:
+- analys-GPT
+- dokumentstöd
+- EA-stöd med begränsad modell

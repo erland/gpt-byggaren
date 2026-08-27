@@ -1,0 +1,70 @@
+name: Build release distributions
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pyyaml jsonschema pytest
+      - name: Derive version from release tag
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${{ github.event.release.tag_name }}"
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Unsupported release tag: $TAG"
+            exit 1
+          fi
+          VERSION="${TAG#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+      - name: Run focused tests
+        run: |
+          python -m pytest -q tests/test_build_system.py tests/test_direct_build.py tests/test_release_workflow.py
+      - name: Build distributions
+        run: |
+          python scripts/build_distributions.py --project-root . --version "${{ steps.version.outputs.version }}" --targets project,chat,custom-gpt
+      - name: Validate distributions
+        run: |
+          python scripts/validate_distributions.py --project-root .
+      - name: Assess release readiness
+        run: python scripts/assess_release_readiness.py --project-root . --include-build-state
+
+      - name: Verify release filenames
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.version.outputs.version }}"
+          test -f "dist/gpt-byggaren-project.zip"
+          test -f "dist/gpt-byggaren-chat-${VERSION}.zip"
+          test -f "dist/gpt-byggaren-custom-gpt-${VERSION}.zip"
+          test -f "dist/SHA256SUMS.txt"
+          test -f "dist/DELIVERY-MANIFEST.json"
+      - name: Upload release artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release upload "${{ github.event.release.tag_name }}" \
+            dist/gpt-byggaren-project.zip \
+            dist/gpt-byggaren-chat-${{ steps.version.outputs.version }}.zip \
+            dist/gpt-byggaren-custom-gpt-${{ steps.version.outputs.version }}.zip \
+            dist/SHA256SUMS.txt \
+            dist/DELIVERY-MANIFEST.json \
+            --clobber

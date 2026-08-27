@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "GPT Reference Profile",
+  "type": "object",
+  "required": [
+    "id",
+    "title",
+    "description",
+    "primary_runtime",
+    "custom_gpt",
+    "knowledge",
+    "scripts",
+    "schemas",
+    "templates",
+    "tests",
+    "evals",
+    "ci"
+  ],
+  "properties": {
+    "id": {
+      "enum": [
+        "simple",
+        "standard",
+        "zip_first_advanced",
+        "workflow_research_heavy"
+      ]
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "primary_runtime": {
+      "type": "string"
+    },
+    "custom_gpt": {
+      "type": "object"
+    },
+    "knowledge": {
+      "type": "object"
+    },
+    "scripts": {
+      "type": "string"
+    },
+    "schemas": {
+      "type": "string"
+    },
+    "templates": {
+      "type": "string"
+    },
+    "tests": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "evals": {
+      "type": "string"
+    },
+    "ci": {
+      "type": "string"
+    },
+    "examples": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

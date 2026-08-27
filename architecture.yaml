@@ -1,0 +1,22 @@
+schema_version: 1
+canonical_layers:
+  project_contract: gpt-project.yaml
+  project_status: project-status.yaml
+  shared_executable_model: scripts/lib/project_model.py
+  runtime_instruction: src/instructions/system.md
+  runtime_policies: src/runtime-policy/
+  schemas: schemas/
+  documentation: docs/
+  cli: scripts/
+  tests: tests/
+  evals: evals/
+simplifications:
+- centralized_reference_profile_selection
+- centralized_project_yaml_loading
+- centralized_project_status_loading
+- thin_cli_wrappers
+rules:
+- do_not_duplicate_decision_logic_across_cli_scripts
+- git_is_history
+- docs_are_explanatory_not_executable
+- runtime_policies_are_behavioral_not_reference_data

@@ -1,0 +1,28 @@
+id: zip_first_advanced
+title: ZIP-first advanced
+description: Avancerad GPT där Chat ZIP är full runtime och Custom GPT normalt är
+  sekundär eller reducerad.
+primary_runtime: chat_zip
+custom_gpt:
+  enabled: true
+  expected_parity: moderate_or_high
+  role: secondary
+knowledge:
+  level: rich_structured_runtime
+scripts: expected
+schemas: expected
+templates: expected_when_reusable_outputs_exist
+tests:
+- deterministic
+- contract
+- build
+- runtime_smoke
+- behavioral
+- regression
+- reference
+evals: extensive
+ci: strongly_recommended
+examples:
+- projekt-ZIP-hantering
+- ArchiMate-modellering
+- kod- eller repositoryorienterad GPT

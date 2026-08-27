@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "GPT Builder Analysis Recommendation",
+  "type": "object",
+  "required": [
+    "recommended_profile",
+    "runtime",
+    "capabilities",
+    "project_features"
+  ],
+  "properties": {
+    "recommended_profile": {
+      "enum": [
+        "simple",
+        "standard",
+        "zip_first_advanced",
+        "workflow_research_heavy"
+      ]
+    },
+    "runtime": {
+      "type": "object",
+      "required": [
+        "primary",
+        "custom_gpt"
+      ],
+      "properties": {
+        "primary": {
+          "enum": [
+            "chat_zip",
+            "custom_gpt"
+          ]
+        },
+        "custom_gpt": {
+          "enum": [
+            "equivalent",
+            "secondary",
+            "not_recommended"
+          ]
+        }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "properties": {
+        "web": {
+          "enum": [
+            "required",
+            "recommended",
+            "optional",
+            "not_recommended"
+          ]
+        },
+        "data_analysis": {
+          "enum": [
+            "required",
+            "recommended",
+            "optional",
+            "not_recommended"
+          ]
+        },
+        "image_generation": {
+          "enum": [
+            "required",
+            "recommended",
+            "optional",
+            "not_recommended"
+          ]
+        },
+        "file_handling": {
+          "enum": [
+            "required",
+            "recommended",
+            "optional",
+            "not_recommended"
+          ]
+        }
+      }
+    },
+    "project_features": {
+      "type": "object",
+      "properties": {
+        "structured_knowledge": {
+          "type": "boolean"
+        },
+        "scripts": {
+          "type": "boolean"
+        },
+        "schemas": {
+          "type": "boolean"
+        },
+        "templates": {
+          "type": "boolean"
+        },
+        "deterministic_tests": {
+          "type": "boolean"
+        },
+        "evals": {
+          "enum": [
+            "required",
+            "recommended",
+            "optional",
+            "not_recommended"
+          ]
+        }
+      }
+    }
+  }
+}
