@@ -40,7 +40,7 @@ Typiska val:
 - runtime smoke tests,
 - centrala beteendeevalueringar.
 
-### ZIP-first advanced
+### Advanced dual distribution (`zip_first_advanced` legacy id)
 
 Passar när:
 
@@ -51,11 +51,11 @@ Passar när:
 
 Typiska val:
 
-- Chat ZIP som primär runtime,
+- Chat ZIP och Custom GPT som två distributionsmål från samma canonical kontrakt,
 - scripts + schemas,
 - rik strukturerad Knowledge,
 - omfattande tester och regression,
-- Custom GPT som sekundär distribution.
+- Custom GPT som parallell distribution med dokumenterade plattformsbegränsningar vid behov.
 
 ### Workflow / research heavy
 
@@ -68,7 +68,7 @@ Passar när:
 
 Typiska val:
 
-- Chat ZIP som primär runtime,
+- Chat ZIP och Custom GPT som två distributionsmål från samma canonical kontrakt,
 - strukturerad Knowledge,
 - templates,
 - workflow-evals,
@@ -119,3 +119,14 @@ Referensprofilerna är klara när:
 - varje profil har runtime-, Knowledge-, script-, schema-, test- och CI-standarder,
 - profilerna används som rekommendationsbas,
 - individuella projekt får avvika med dokumenterad motivering.
+
+## Runtime robustness
+
+Alla referensprofiler anger nu samma modellneutrala baslinje för enklare modeller:
+
+- ett `core_contract` ska finnas,
+- kritiskt beteende ska ligga i canonical instruktionen,
+- Knowledge ska inte krävas för kärnworkflow,
+- normalt högst ett obligatoriskt filhopp i kärnflödet.
+
+Profilen får fortfarande använda många stödresurser för fördjupning. Begränsningen gäller bara sådant som måste läsas för att GPT:n över huvud taget ska följa sitt centrala arbetsflöde.

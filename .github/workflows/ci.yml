@@ -57,6 +57,9 @@ jobs:
       - name: Run GPT linter
         run: python scripts/lint_gpt_project.py --project-root .
 
+      - name: Validate instruction-adherence contract
+        run: python scripts/validate_instruction_adherence.py --project-root .
+
       - name: Run tests
         run: python -m pytest -q -p no:cacheprovider
 

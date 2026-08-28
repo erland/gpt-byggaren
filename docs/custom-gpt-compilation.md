@@ -6,7 +6,7 @@ Custom GPT är ett separat distributionsmål som kompileras från samma canonica
 
 Grundprincip:
 
-> Custom GPT ska bevara så mycket kärnfunktionalitet som möjligt utan att den primära ZIP-runtime begränsas av Custom GPT-plattformens gränser.
+> Custom GPT ska bevara canonical kärnfunktionalitet inom Custom GPT-plattformens gränser. Chat ZIP och Custom GPT är jämbördiga distributionsmål från samma canonical kontrakt.
 
 Custom GPT får därför vara:
 
@@ -55,6 +55,7 @@ builder/
 ├── instructions.md
 ├── conversation-starters.md
 ├── capabilities.md
+├── compilation-report.json
 └── knowledge-package/
 ```
 
@@ -82,6 +83,10 @@ Bildgenerering: Behövs inte
 
 Exakt de filer som ska laddas upp som Knowledge.
 
+### `compilation-report.json`
+
+Maskinläsbar rapport över instruktionsbudget och Knowledge-urval: canonical/compiled tecken, verifierade core-markörer, valda och bortvalda Knowledge-filer samt använda priority-globs.
+
 ## Instruktionskompilering
 
 Custom GPT-instruktionen ska skapas från canonical instruktion och relevanta runtime policies.
@@ -96,11 +101,11 @@ Lämpligt när den ryms naturligt och inga ZIP-specifika regler behöver tas bor
 
 ### `compressed`
 
-Korta och konsolidera formuleringar utan att ändra betydelsen.
+Korta och konsolidera deterministiskt utan att ändra betydelsen. Kompilatorn ska alltid verifiera att deklarerade `core_contract.required_markers` finns kvar efter kompilering.
 
 ### `compiled`
 
-Generera en distributionsspecifik instruktion där endast Custom GPT-relevanta regler tas med.
+Generera en distributionsspecifik instruktion där endast Custom GPT-relevanta regler tas med. Explicit urval kan införas per projekt, men kärnmarkörer får aldrig tas bort.
 
 För avancerade GPT:er är `compressed` eller `compiled` normalt lämpligast.
 

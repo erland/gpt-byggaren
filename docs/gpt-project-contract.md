@@ -81,3 +81,23 @@ När toolchainen senare byggs ska dessa värden vara lätta att uppdatera.
 ## Nästa utvecklingssteg
 
 Steg 4 ska definiera hur projektstatus och planprogression representeras maskinläsbart och hur `STATUS.md` relaterar till detta kontrakt.
+
+## Core behavior contract
+
+För nya projekt bör `gpt-project.yaml` innehålla `instructions.core_contract`. Kontraktet gör kritiska beteenden och obligatoriska filberoenden verifierbara utan att skapa en separat runtime för enklare modeller.
+
+Rekommenderad baslinje:
+
+```yaml
+instructions:
+  canonical: src/instructions/system.md
+  core_contract:
+    enabled: true
+    required_markers:
+      - "<kort kritisk invariant>"
+    required_runtime_dependencies: []
+    max_required_file_hops: 1
+    knowledge_may_not_be_required_for_core_behavior: true
+```
+
+Markörerna ska representera verkligt obligatoriska beteenden. De är ett regressionsskydd, inte en full kopia av systeminstruktionen.

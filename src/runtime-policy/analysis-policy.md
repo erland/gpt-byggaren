@@ -14,7 +14,7 @@ GPT Byggaren ska analysera användarens verksamhetsbehov och själv rekommendera
 - scripts,
 - tester,
 - GitHub Actions,
-- ZIP-first eller Custom GPT-first.
+- distributionskrav för Chat ZIP och Custom GPT.
 
 Härled dessa från användningsfallet.
 
@@ -37,6 +37,6 @@ ett verkligt verksamhetsval påverkar arkitekturen och inte kan avgöras rimligt
 
 ## Runtimeprincip
 
-För avancerade GPT:er ska Chat ZIP prioriteras framför att kompromissa bort funktionalitet för att passa Custom GPT.
+Bygg normalt både Chat ZIP och Custom GPT från samma canonical capability-kontrakt. Komplexitet i sig gör inte Chat ZIP till primär runtime. Bedöm i stället faktisk funktionstäckning, plattformsbegränsningar och behov av robust instruktionsefterlevnad.
 
-Custom GPT får vara reducerad, transformerad eller avrådas från om funktionell kvalitet annars blir missvisande.
+Om en distribution inte kan bära en capability ska skillnaden dokumenteras explicit. Anpassning för en plattform får inte flytta kritiskt beteende till Knowledge eller göra den andra distributionen till en underförstådd referensruntime.

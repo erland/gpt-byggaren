@@ -239,7 +239,7 @@ Definiera ett maskinläsbart kontrakt för GPT-projektet.
 - projektidentitet,
 - GPT-namn,
 - språk,
-- primär runtime,
+- distributionsmål och eventuella runtime-specifika begränsningar,
 - capabilities,
 - canonical instruction source,
 - Knowledge-källor,
@@ -264,7 +264,7 @@ project:
   name: Example GPT
 
 runtime:
-  primary: chat_zip
+  primary: none
 
 distributions:
   chat_zip:
@@ -314,8 +314,8 @@ Skapa regler för hur GPT Byggaren analyserar en GPT-idé.
 
 - GPT:ns komplexitet,
 - lämplig ambitionsnivå,
-- om ZIP-first rekommenderas,
-- om Custom GPT bör stödjas,
+- hur Chat ZIP och Custom GPT realiserar samma canonical kontrakt,
+- om någon distribution har verkliga plattformsbegränsningar,
 - behov av Knowledge,
 - behov av strukturerade data,
 - behov av scripts,

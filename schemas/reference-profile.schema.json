@@ -66,6 +66,28 @@
       "items": {
         "type": "string"
       }
+    },
+    "runtime_robustness": {
+      "type": "object",
+      "properties": {
+        "core_contract": {
+          "enum": [
+            "required",
+            "recommended",
+            "optional"
+          ]
+        },
+        "critical_behavior_in_canonical_instruction": {
+          "type": "boolean"
+        },
+        "knowledge_required_for_core_behavior": {
+          "type": "boolean"
+        },
+        "max_required_file_hops": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
     }
   }
 }

@@ -8,7 +8,7 @@ Paritet ska inte bedömas utifrån antal filer utan utifrån **faktisk funktiona
 
 Grundprincip:
 
-> Chat ZIP beskriver full målbild. Custom GPT jämförs mot denna capability för capability.
+> Det canonical capability-kontraktet beskriver full målbild. Chat ZIP och Custom GPT jämförs var för sig mot denna capability för capability.
 
 ## Paritetsnivåer
 
@@ -163,12 +163,12 @@ Minst en central critical capability saknas på ett sätt som gör distributione
 
 ## Rekommenderad runtime
 
-Paritetsrapporten ska alltid ange rekommenderad primär runtime.
+Paritetsrapporten ska ange rekommenderad runtime endast när en verklig skillnad i capability eller plattformsbegränsning motiverar det; annars ska distributionerna behandlas som jämbördiga.
 
 Exempel:
 
 ```text
-Recommended primary runtime: Chat ZIP
+Recommended runtime: no default primary; both distributions supported
 Custom GPT compatibility: Moderate
 ```
 
@@ -210,11 +210,11 @@ Kan publiceras om reducerad funktionalitet är tydligt dokumenterad.
 
 ### Low
 
-GPT Byggaren ska aktivt varna och normalt rekommendera Chat ZIP.
+GPT Byggaren ska aktivt varna för den distribution som har låg paritet och rekommendera en annan distribution endast när capability- eller plattformsdata faktiskt motiverar det.
 
 ### Not viable
 
-Custom GPT ska normalt inte byggas eller publiceras som användbar distribution.
+En distribution som saknar kritisk capability ska normalt inte beskrivas som fullt användbar. Den andra distributionen kan fortfarande publiceras om den uppfyller kontraktet.
 
 ## `COMPATIBILITY.md`
 
@@ -222,7 +222,7 @@ Paritetsresultatet ska användas för att generera `COMPATIBILITY.md`.
 
 Dokumentet ska minst innehålla:
 
-- rekommenderad primär runtime,
+- rekommenderad runtime endast när verkliga skillnader motiverar det,
 - capability-matris,
 - reducerade funktioner,
 - saknade funktioner,
@@ -248,6 +248,6 @@ Paritetsmodellen är definierad när:
 - kritikalitet finns,
 - equivalent/reduced/missing kan uttryckas,
 - sammanfattad nivå kan beräknas,
-- rekommenderad runtime anges,
+- eventuell runtime-rekommendation grundas på faktisk capability/paritet,
 - releasebeslut påverkas,
 - rapporten kan användas både mänskligt och maskinläsbart.

@@ -2,11 +2,11 @@ id: workflow_research_heavy
 title: Workflow / research heavy
 description: GPT med flerstegsprocess, källor/evidens, större underlag och hög kravbild
   på spårbarhet.
-primary_runtime: chat_zip
+primary_runtime: none
 custom_gpt:
   enabled: true
   expected_parity: moderate_or_high
-  role: secondary
+  role: peer_distribution
 knowledge:
   level: structured_and_reference_heavy
 scripts: recommended
@@ -27,3 +27,8 @@ examples:
 - omvärldsanalys
 - regeltolkning
 - forsknings- och evidensflöden
+runtime_robustness:
+  core_contract: required
+  critical_behavior_in_canonical_instruction: true
+  knowledge_required_for_core_behavior: false
+  max_required_file_hops: 1

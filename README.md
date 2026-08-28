@@ -1,5 +1,9 @@
 # GPT Byggaren
 
+## Distributionsprincip
+
+GPT Byggaren skapar normalt både **Chat ZIP** och **Custom GPT** från samma canonical beteende- och capability-kontrakt. Ingen av dem är automatiskt primär bara för att GPT:n är avancerad. Faktiska plattformsbegränsningar och capability-skillnader dokumenteras i runtime-paritetsrapporten.
+
 ## Projekt
 
 Detta repository innehåller källprojektet för **GPT Byggaren**.
@@ -61,3 +65,13 @@ Varje genomfört steg ska normalt ge en ny komplett projekt-ZIP.
 - `docs/release-candidate.md` – release candidate och RC-gates
 
 - `docs/stable-release.md` – stabil v1.0.0-release och maintenance transition
+
+
+## Custom GPT-budgetering
+
+Custom GPT-builden använder konservativ instruktionskompilering med verifiering av core-contract och semantisk Knowledge-prioritering före filordning. `builder/compilation-report.json` visar hur 8 000-teckens- och 20-filsbudgeterna användes.
+
+
+## Steg 4 – instruktionsefterlevnad
+
+Projektet har nu ett standardiserat evalpaket för bootstrap, multi-turn retention, terminal behavior och Knowledge-independence. Evalfallen beskriver avsett beteende och modellresultat ska dokumenteras separat från specifikationen.

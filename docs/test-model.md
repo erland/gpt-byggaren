@@ -120,10 +120,22 @@ Exempelprofiler:
 
 - enkel GPT,
 - standard-GPT,
-- ZIP-first avancerad GPT,
+- avancerad dual-distribution-GPT,
 - workflow/research-heavy GPT.
 
 Dessa används för att kontrollera att analys- och planeringsmodellen ger rimliga arkitekturval.
+
+
+### 8. Instruktionsefterlevnad
+
+Alla nya GPT-projekt ska ha minst ett litet evalpaket för instruktionsefterlevnad. Det ska särskilt täcka:
+
+- bootstrap: canonical core contract förblir styrande efter aktivering,
+- multi-turn retention: obligatoriska regler finns kvar i senare turer,
+- terminal behavior: obligatoriska avslut utförs när de ingår i kontraktet,
+- Knowledge independence: kärnflödet fungerar utan optional Knowledge-retrieval.
+
+Dessa är beteendeevalueringar, inte modellunika instruktioner. Samma kontrakt ska kunna testas mot enklare och starkare modeller. Modellskillnader dokumenteras som kompatibilitetsobservationer i stället för att automatiskt skapa olika runtimes.
 
 ## Skillnad mellan test och eval
 
@@ -148,10 +160,10 @@ Scenario:
 En användare vill skapa en GPT för remissanalys.
 
 Kriterier:
-- ZIP-first rekommenderas
+- båda distributionerna byggs från samma canonical kontrakt
 - webbresearch rekommenderas
 - strukturerad Knowledge rekommenderas
-- Custom GPT beskrivs som sekundär
+- verkliga skillnader mellan Chat ZIP och Custom GPT dokumenteras
 - användaren frågas inte om tekniska schemas
 ```
 
@@ -193,7 +205,7 @@ Normalt:
 - runtime smoke,
 - centrala beteendeevalueringar.
 
-### ZIP-first advanced
+### Advanced dual distribution (`zip_first_advanced` legacy id)
 
 Normalt:
 

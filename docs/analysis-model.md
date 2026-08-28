@@ -19,7 +19,7 @@ GPT Byggaren ska analysera idén i följande ordning:
 5. identifiera kunskaps- och aktualitetsbehov,
 6. identifiera behov av verktyg och strukturerad runtime,
 7. bedöma komplexitet,
-8. rekommendera primär runtime,
+8. rekommendera hur Chat ZIP och Custom GPT ska realiseras och dokumentera eventuella faktiska skillnader,
 9. rekommendera capabilities,
 10. rekommendera projektprofil,
 11. identifiera risker och begränsningar,
@@ -289,7 +289,7 @@ Profilerna är vägledning, inte låsta mallar.
 
 ## Runtimebeslut
 
-### Rekommendera Chat ZIP som primär runtime när
+### När Chat ZIP kan bära capabilities som Custom GPT inte kan
 
 - GPT:n behöver många runtimefiler,
 - scripts är viktiga,
@@ -303,7 +303,7 @@ Profilerna är vägledning, inte låsta mallar.
 - inga ZIP-specifika scripts behövs,
 - funktionaliteten kan representeras utan större kompromisser.
 
-### Rekommendera Custom GPT som sekundär runtime när
+### När Custom GPT kan behöva reducerad capability-täckning
 
 - kärnfunktionaliteten kan bevaras,
 - men delar av ZIP-runtime behöver reduceras.
@@ -342,11 +342,12 @@ Efter analysen ska GPT Byggaren kunna producera ett sammanfattat designbeslut.
 Exempel:
 
 ```yaml
-recommended_profile: zip_first_advanced
+recommended_profile: zip_first_advanced  # legacy id; semantics = advanced dual distribution
 
 runtime:
-  primary: chat_zip
-  custom_gpt: secondary
+  primary: none
+  chat_zip: peer_distribution
+  custom_gpt: peer_distribution
 
 capabilities:
   web: recommended

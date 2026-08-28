@@ -30,7 +30,7 @@ GPT Byggaren ska därefter:
 
 För större GPT:er är **Chat/ZIP-runtime den primära distributionen**.
 
-Custom GPT ska ses som ett separat distributionsmål som kan vara reducerat eller transformerat om plattformsgränserna gör full funktionell paritet opraktisk.
+Chat ZIP och Custom GPT ska ses som två separata, jämbördiga distributionsmål från samma canonical capability-kontrakt. En distribution kan behöva transformeras eller få dokumenterade begränsningar när plattformen inte kan bära full funktionell paritet.
 
 ## Vad GPT Byggaren ska avgöra själv
 
@@ -45,7 +45,7 @@ GPT Byggaren ska som normalfall själv rekommendera:
 - om scripts behövs,
 - om templates behövs,
 - om tester och evals behövs,
-- om ZIP-first bör användas,
+- hur Chat ZIP och Custom GPT ska realisera samma canonical capability-kontrakt,
 - om Custom GPT bör stödjas,
 - vilken ambitionsnivå projektet bör ha.
 

@@ -28,3 +28,7 @@ Flytta inte beteenderegler till Knowledge enbart för att kringgå instruktionsb
 ## Kvalitet
 
 Kontrollera duplicering, konflikter, döda resurser och onödigt små eller splittrade filer.
+
+## Small-model-safe kärna
+
+Obligatoriskt kärnworkflow ska kunna förstås från canonical instruktionen utan att modellen först måste hitta en specifik Knowledge-fil. Knowledge får fördjupa analys, fakta och referensmaterial men ska inte vara den enda platsen för kritiska beteenderegler.

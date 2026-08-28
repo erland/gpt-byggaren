@@ -50,7 +50,7 @@ def scaffold_project(root, scenario, profile):
 
     for d in [
         "docs", "src/instructions", "src/runtime-policy",
-        "knowledge", "schemas", "scripts", "tests", "evals",
+        "knowledge", "schemas", "scripts", "tests", "evals", "evals/instruction-adherence",
         "templates"
     ]:
         (root / d).mkdir(parents=True, exist_ok=True)
@@ -107,7 +107,16 @@ def scaffold_project(root, scenario, profile):
             "source": "blank-idea-001"
         },
         "instructions": {
-            "canonical": "src/instructions/system.md"
+            "canonical": "src/instructions/system.md",
+            "core_contract": {
+                "enabled": True,
+                "required_markers": [
+                    "identifiera beslut, risker och aktiviteter"
+                ],
+                "required_runtime_dependencies": [],
+                "max_required_file_hops": 1,
+                "knowledge_may_not_be_required_for_core_behavior": True
+            }
         },
         "runtime": {
             "primary": "chat_zip",
@@ -130,6 +139,58 @@ def scaffold_project(root, scenario, profile):
         yaml.safe_dump(cfg, allow_unicode=True, sort_keys=False),
         encoding="utf-8"
     )
+
+    adherence_cases = [
+        {
+            "id": "bootstrap-core-001",
+            "title": "Bootstrap preserves canonical core contract",
+            "criticality": "critical",
+            "input": {"scenario": "Activate the Chat ZIP before the first domain request."},
+            "expected": {
+                "required": ["canonical instruction remains authoritative"],
+                "forbidden": ["optional Knowledge becomes required for core behavior"]
+            },
+            "scoring": {"pass_threshold": 1.0}
+        },
+        {
+            "id": "multiturn-retention-001",
+            "title": "Core rules survive multiple turns",
+            "criticality": "critical",
+            "input": {"scenario": "Request a related follow-up after several turns."},
+            "expected": {
+                "required": ["same core workflow remains active"],
+                "forbidden": ["silent reversion to generic assistant behavior"]
+            },
+            "scoring": {"pass_threshold": 1.0}
+        },
+        {
+            "id": "terminal-contract-001",
+            "title": "Mandatory terminal behavior is preserved",
+            "criticality": "important",
+            "input": {"scenario": "Complete a task with a declared mandatory terminal behavior."},
+            "expected": {
+                "required": ["declared terminal behavior is preserved when configured"],
+                "forbidden": ["generic follow-up replaces mandatory terminal behavior"]
+            },
+            "scoring": {"pass_threshold": 1.0}
+        },
+        {
+            "id": "no-knowledge-core-001",
+            "title": "Core workflow works without optional Knowledge retrieval",
+            "criticality": "critical",
+            "input": {"scenario": "Run the core workflow without retrieving optional Knowledge."},
+            "expected": {
+                "required": ["core workflow completes from canonical instructions"],
+                "forbidden": ["failure solely because optional Knowledge was not retrieved"]
+            },
+            "scoring": {"pass_threshold": 1.0}
+        }
+    ]
+    for case in adherence_cases:
+        (root / "evals" / "instruction-adherence" / f"{case['id']}.yaml").write_text(
+            yaml.safe_dump(case, allow_unicode=True, sort_keys=False),
+            encoding="utf-8"
+        )
     return cfg, plan
 
 def build_artifacts(project_root, out_root, scenario, version="0.0.0-e2e"):
@@ -205,6 +266,7 @@ def run(root, scenario_path):
             "project_status": (generated_project / "project-status.yaml").exists(),
             "development_plan": (generated_project / "docs" / "development-plan.md").exists(),
             "canonical_instruction": (generated_project / "src" / "instructions" / "system.md").exists(),
+            "instruction_adherence_evals": len(list((generated_project / "evals" / "instruction-adherence").glob("*.yaml"))) >= 4,
             "project_zip": any("-project.zip" in p.name for p in artifacts),
             "chat_zip": any("-chat-" in p.name for p in artifacts),
             "custom_gpt_zip": any("-custom-gpt-" in p.name for p in artifacts),

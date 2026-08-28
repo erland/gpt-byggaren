@@ -10,11 +10,11 @@ Bevara kärnbeteende före full filparitet.
 
 ## Instruktion
 
-Använd `identical`, `compressed` eller `compiled` strategi beroende på behov.
+Använd `identical`, `compressed` eller `compiled` strategi beroende på behov. Kompilering ska vara konservativ och verifiera `core_contract` efter transformation.
 
 ## Knowledge
 
-Använd `identical`, `consolidate`, `prioritize` eller `hybrid`.
+Använd `identical`, `consolidate`, `prioritize` eller `hybrid`. Vid prioritering ska deklarerade semantic priority-globs användas före filordning.
 
 ## Gränser
 
