@@ -52,3 +52,12 @@ suites:
     - standard
     - zip_first_advanced
     - workflow_research_heavy
+  instruction_adherence:
+    type: behavioral
+    path: evals/instruction-adherence/
+    blocking: true
+    profiles:
+    - simple
+    - standard
+    - zip_first_advanced
+    - workflow_research_heavy

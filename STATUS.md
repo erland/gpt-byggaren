@@ -29,3 +29,10 @@ Projektet går nu över i **maintenance mode**.
 - Next-step/resume-tester gjort statusdrivna.
 - CI kör med `PYTHONDONTWRITEBYTECODE=1` och utan pytest cacheprovider.
 - Exakt CI-sekvens verifierad: PASS.
+
+- Custom GPT-kompilering: konservativ komprimering med core-marker-verifiering samt semantisk Knowledge-prioritering och kompileringsrapport.
+
+
+## Steg 4 – instruktionsefterlevnad
+
+Projektet har nu ett standardiserat evalpaket för bootstrap, multi-turn retention, terminal behavior och Knowledge-independence. Evalfallen beskriver avsett beteende och modellresultat ska dokumenteras separat från specifikationen.

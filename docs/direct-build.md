@@ -134,7 +134,7 @@ Den ska kunna:
 
 ## Chat ZIP
 
-Chat ZIP är den primära runtime-distributionen för större GPT:er.
+Chat ZIP och Custom GPT byggs normalt båda för större GPT:er; ingen är automatiskt primär.
 
 Den ska kunna bifogas direkt i en ChatGPT-konversation.
 

@@ -71,7 +71,7 @@ Typisk plan:
 10. Release
 11. Hygiene
 
-### ZIP-first avancerad GPT
+### advanced dual-distribution GPT
 
 Typisk plan:
 

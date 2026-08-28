@@ -238,3 +238,29 @@ När GPT Byggaren skapar en ny GPT ska den själv rekommendera hur mycket som sk
 - Knowledge.
 
 Användaren ska inte behöva designa denna uppdelning manuellt.
+
+## Core behavior contract och enklare modeller
+
+Nya GPT-projekt bör deklarera ett litet maskinläsbart `instructions.core_contract` i `gpt-project.yaml`.
+
+Syftet är inte att skapa modellspecifika instruktioner, utan att kontrollera två modellneutrala robusthetsregler:
+
+1. kritiskt workflow ska finnas direkt i canonical instruktionen och inte bara i Knowledge eller stödpolicies,
+2. kärnflödet ska kräva så få obligatoriska filhopp som möjligt, normalt högst ett.
+
+Exempel:
+
+```yaml
+instructions:
+  canonical: src/instructions/system.md
+  core_contract:
+    enabled: true
+    required_markers:
+      - "Choose exactly one recommendation"
+      - "Offer the available export formats"
+    required_runtime_dependencies: []
+    max_required_file_hops: 1
+    knowledge_may_not_be_required_for_core_behavior: true
+```
+
+`required_markers` ska vara korta invariants, inte en kopia av hela instruktionen. Supporting policies och Knowledge får ge fördjupning men får inte vara enda platsen där ett obligatoriskt kärnbeteende definieras.

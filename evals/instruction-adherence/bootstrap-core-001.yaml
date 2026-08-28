@@ -1,0 +1,20 @@
+id: bootstrap-core-001
+title: Bootstrap preserves canonical core contract
+criticality: critical
+profiles:
+- simple
+- standard
+- zip_first_advanced
+- workflow_research_heavy
+input:
+  scenario: Activate a generated Chat ZIP as GPT context before any domain request.
+expected:
+  required:
+  - identify the canonical instruction as authoritative
+  - keep core workflow active after activation
+  - do not require optional Knowledge to recover core behavior
+  forbidden:
+  - replace the runtime contract with a lossy summary
+  - treat Knowledge as behavioral authority
+scoring:
+  pass_threshold: 1.0

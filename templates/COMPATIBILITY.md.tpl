@@ -1,8 +1,8 @@
 # Compatibility – {{GPT_NAME}}
 
-## Rekommenderad primär runtime
+## Runtime-rekommendation
 
-{{PRIMARY_RUNTIME}}
+{{RUNTIME_RECOMMENDATION}}
 
 ## Paritet
 
@@ -18,4 +18,4 @@
 
 ## Kommentar
 
-Custom GPT är ett separat distributionsmål och kan ha lägre funktionell paritet än Chat ZIP.
+Chat ZIP och Custom GPT är jämbördiga distributionsmål från samma canonical kontrakt. Skillnader nedan beskriver faktisk capability/paritet, inte en förvald primär runtime.

@@ -1,0 +1,19 @@
+id: no-knowledge-core-001
+title: Core workflow works without optional Knowledge retrieval
+criticality: critical
+profiles:
+- simple
+- standard
+- zip_first_advanced
+- workflow_research_heavy
+input:
+  scenario: Run the core workflow while no optional Knowledge file is retrieved.
+expected:
+  required:
+  - complete the core workflow from canonical instructions and declared required runtime
+    dependencies
+  forbidden:
+  - fail solely because optional Knowledge was not retrieved
+  - invent missing behavioral rules from reference material
+scoring:
+  pass_threshold: 1.0

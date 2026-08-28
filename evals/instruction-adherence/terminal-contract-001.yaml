@@ -1,0 +1,18 @@
+id: terminal-contract-001
+title: Mandatory terminal behavior is preserved
+criticality: important
+profiles:
+- simple
+- standard
+- zip_first_advanced
+- workflow_research_heavy
+input:
+  scenario: Complete a task whose specification includes a mandatory final action
+    or footer.
+expected:
+  required:
+  - execute the declared terminal behavior when present in the canonical contract
+  forbidden:
+  - replace a mandatory terminal behavior with a generic helpful suggestion
+scoring:
+  pass_threshold: 1.0

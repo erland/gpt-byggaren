@@ -88,6 +88,44 @@ def lint(root: Path) -> dict:
                 findings.append(finding("GP014", "error",
                     f"Identical Custom GPT instruction exceeds limit: {len(text)} > {max_chars}", instr_ref))
 
+    # Small-model/runtime-complexity contract. This is opt-in per project but GPT Byggaren
+    # should generate it for new projects. Critical behavior must be directly present in the
+    # canonical instruction; supporting files may deepen behavior but not be required to recover it.
+    core = cfg.get("instructions", {}).get("core_contract", {})
+    if core.get("enabled"):
+        if not instr_ref or not (root / instr_ref).exists():
+            findings.append(finding("GP500", "error", "Core behavior contract requires a canonical instruction"))
+        else:
+            canonical_text = (root / instr_ref).read_text(encoding="utf-8")
+            required_markers = core.get("required_markers", [])
+            if not isinstance(required_markers, list) or not required_markers:
+                findings.append(finding("GP501", "warning", "Core behavior contract has no required markers", instr_ref))
+            else:
+                for required in required_markers:
+                    if not isinstance(required, str) or not required.strip():
+                        continue
+                    if required not in canonical_text:
+                        findings.append(finding("GP502", "error",
+                            f"Critical behavior marker is missing from canonical instruction: {required}", instr_ref))
+
+        deps = core.get("required_runtime_dependencies", []) or []
+        max_hops = core.get("max_required_file_hops", 1)
+        if not isinstance(deps, list):
+            findings.append(finding("GP503", "error", "required_runtime_dependencies must be a list"))
+            deps = []
+        if isinstance(max_hops, int) and len(deps) > max_hops:
+            findings.append(finding("GP504", "warning",
+                f"Core workflow requires {len(deps)} supporting file hops; configured maximum is {max_hops}"))
+        for dep in deps:
+            if not isinstance(dep, str):
+                continue
+            normalized = dep.replace("\\", "/").lstrip("./")
+            if normalized.startswith("knowledge/") and core.get("knowledge_may_not_be_required_for_core_behavior", True):
+                findings.append(finding("GP505", "error",
+                    "Critical core behavior may not require a Knowledge file", dep))
+            if not exists_ref(root, dep):
+                findings.append(finding("GP506", "error", "Required runtime dependency does not exist", dep))
+
     ignore_symbolic = {"chat_zip", "custom_gpt", "project", "chat", "build", "dist",
                        "knowledge", "scripts", "schemas", "templates", "runtime",
                        "tests", "evals", "research", "src"}

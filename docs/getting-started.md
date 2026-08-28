@@ -298,9 +298,9 @@ Något blockerande problem måste lösas först.
 
 För enklare GPT:er kan de vara nästan likvärdiga.
 
-För större GPT:er är Chat ZIP ofta den fulla versionen.
+För större GPT:er kan Chat ZIP bära rikare runtime-material, men både Chat ZIP och Custom GPT ska normalt byggas från samma canonical kontrakt.
 
-Exempel på sådant som kan göra Chat ZIP lämpligare som primär runtime:
+Exempel på sådant som kan ge Chat ZIP större capability-täckning än Custom GPT:
 
 - många filer,
 - scripts,

@@ -205,7 +205,7 @@ Flera små YAML-filer kan konsolideras till en större bundle om detta inte för
 
 ### 4. Prioriterat urval
 
-Om allt material inte behöver vara tillgängligt i Custom GPT kan kärnmaterial prioriteras.
+Om allt material inte behöver vara tillgängligt i Custom GPT ska kärnmaterial prioriteras semantiskt. `knowledge_architecture.custom_gpt.priority` behandlas i angiven ordning och matchande resurser väljs före övriga filer. Alfabetisk filordning får endast vara deterministisk tie-breaker, inte prioriteringsmodell.
 
 ## Knowledge-manifest
 

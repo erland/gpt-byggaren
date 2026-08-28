@@ -1,5 +1,5 @@
 id: analysis-zip-first-001
-title: Avancerad workflow-GPT bör rekommenderas som ZIP-first
+title: Avancerad workflow-GPT bör rekommendera dual distribution
 criticality: critical
 profiles:
 - zip_first_advanced
@@ -9,14 +9,15 @@ input:
     och bygger nya ZIP-filer.
 expected:
   required:
-  - Chat ZIP som primär runtime
+  - Chat ZIP och Custom GPT som jämbördiga distributionsmål
   - filhantering
   - scripts
   - schemas
   - tester eller evals
-  - Custom GPT som sekundärt eller reducerat mål
+  - dokumenterade plattforms- eller capabilityskillnader
   forbidden:
-  - fråga användaren om ZIP-first ska användas
+  - fråga användaren om vilken distribution som ska prioriteras när båda kan byggas
   - fråga användaren om schemas behövs
+  - göra Chat ZIP primär enbart för att GPT:n är avancerad
 scoring:
   pass_threshold: 0.8

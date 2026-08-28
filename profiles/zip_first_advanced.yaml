@@ -1,12 +1,12 @@
 id: zip_first_advanced
-title: ZIP-first advanced
-description: Avancerad GPT där Chat ZIP är full runtime och Custom GPT normalt är
-  sekundär eller reducerad.
-primary_runtime: chat_zip
+title: Advanced dual distribution
+description: Avancerad GPT där både Chat ZIP och Custom GPT byggs från samma canonical
+  capability-kontrakt. Skillnader dokumenteras per capability.
+primary_runtime: none
 custom_gpt:
   enabled: true
   expected_parity: moderate_or_high
-  role: secondary
+  role: peer_distribution
 knowledge:
   level: rich_structured_runtime
 scripts: expected
@@ -26,3 +26,8 @@ examples:
 - projekt-ZIP-hantering
 - ArchiMate-modellering
 - kod- eller repositoryorienterad GPT
+runtime_robustness:
+  core_contract: required
+  critical_behavior_in_canonical_instruction: true
+  knowledge_required_for_core_behavior: false
+  max_required_file_hops: 1

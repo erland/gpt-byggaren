@@ -7,7 +7,7 @@ Skapa en GPT som kan stödja hela livscykeln för utveckling av andra GPT:er.
 ## Primära mål
 
 - behovsdriven design,
-- ZIP-first för avancerade GPT:er,
+- både Chat ZIP och Custom GPT som normala distributionsmål,
 - Custom GPT som separat distributionsmål,
 - stegvis projektutveckling,
 - komplett projekt-ZIP efter varje steg,
@@ -46,8 +46,8 @@ Skapa en GPT som kan stödja hela livscykeln för utveckling av andra GPT:er.
 
 - `gpt-project.yaml` är projektets maskinläsbara kontrakt.
 - Toolchain-regler ska i möjligaste mån läsas från projektkontraktet.
-- Chat ZIP är deklarerad som primär runtime.
-- Custom GPT är deklarerad som sekundär och får reduceras eller transformeras.
+- Historiskt var Chat ZIP deklarerad som primär runtime; detta är ersatt av den nuvarande dual-distribution-principen.
+- Historiskt var Custom GPT deklarerad som sekundär; detta är ersatt av att båda distributionerna jämförs mot canonical capability-kontraktet.
 - GitHub är valfritt.
 - GitHub Release-taggen är versionskälla när GitHub används.
 - Direktbyggda distributionsartefakter utan GitHub är ett krav.
@@ -70,10 +70,10 @@ Skapa en GPT som kan stödja hela livscykeln för utveckling av andra GPT:er.
 
 - GPT Byggaren ska analysera verksamhetsbehov före tekniska lösningar.
 - Tekniska capabilities ska normalt härledas, inte frågas fram.
-- Fyra projektprofiler används som vägledning: enkel, standard, ZIP-first avancerad och workflow/research-heavy.
+- Fyra projektprofiler används som vägledning; den historiska profilen `zip_first_advanced` behålls som kompatibilitets-ID men representerar nu avancerad dual distribution.
 - Runtime ska rekommenderas från faktisk komplexitet och funktionella behov.
-- Chat ZIP ska prioriteras när Custom GPT-begränsningar annars skulle försämra lösningen.
-- Custom GPT får vara likvärdig, sekundär eller avrådas från.
+- Chat ZIP och Custom GPT ska normalt båda byggas; verkliga skillnader dokumenteras per capability.
+- En enskild distribution får begränsas eller avrådas från endast när faktiska plattformsbegränsningar motiverar det.
 - Frågor till användaren ska reserveras för verkliga verksamhetsval.
 - Rekommendationer ska motiveras.
 
@@ -129,7 +129,7 @@ Skapa en GPT som kan stödja hela livscykeln för utveckling av andra GPT:er.
 
 ## Beslut efter steg 10
 
-- Chat ZIP är full primär runtime för avancerade GPT:er.
+- Historiskt behandlades Chat ZIP som full primär runtime; nu är den ett jämbördigt distributionsmål från samma canonical kontrakt.
 - `START-HERE.md`, `VERSION` och `MANIFEST.json` är centrala runtimeartefakter.
 - Runtimeinnehåll ska väljas deklarativt från `gpt-project.yaml`.
 - Utvecklingsplan och projektstatus ska normalt inte följa med Chat ZIP.
@@ -149,7 +149,7 @@ Skapa en GPT som kan stödja hela livscykeln för utveckling av andra GPT:er.
 - `COMPATIBILITY.md` är obligatorisk när funktionaliteten reduceras.
 - Paritet ska bedömas per capability.
 - Build ska blockeras vid överskridna plattformsgränser eller missvisande kärnfunktion.
-- Chat ZIP förblir primär runtime när Custom GPT behöver reduceras.
+- Om Custom GPT behöver reduceras dokumenteras skillnaden; Chat ZIP blir inte automatiskt primär runtime.
 
 
 ## Beslut efter steg 12
@@ -166,7 +166,7 @@ Skapa en GPT som kan stödja hela livscykeln för utveckling av andra GPT:er.
 ## Beslut efter steg 13
 
 - Paritet ska mätas per funktionell capability, inte per fil.
-- Chat ZIP är referensruntime för ZIP-first projekt.
+- Canonical capability-kontraktet är referens; båda distributionerna jämförs mot det.
 - Capability-status är equivalent, reduced, missing eller not_applicable.
 - Capabilities klassificeras som critical, important eller optional.
 - Sammanfattad paritetsnivå är full, high, moderate, low eller not_viable.
@@ -280,7 +280,7 @@ Skapa en GPT som kan stödja hela livscykeln för utveckling av andra GPT:er.
 
 - Läroboksskaparen används som standardreferens.
 - Tullverket Remiss används som workflow/research-heavy referens.
-- ArchiMate Modeller används som ZIP-first advanced referens.
+- ArchiMate Modeller används som advanced dual distribution referens.
 - Referensfallen är blockerande regressionstest för profilval.
 
 ## Beslut efter steg 27
@@ -313,3 +313,20 @@ Skapa en GPT som kan stödja hela livscykeln för utveckling av andra GPT:er.
 - Projektet går över i maintenance mode.
 - GitHub Release-tag är fortsatt source of truth för versionsnummer i GitHub-releaseflödet.
 - RC-information behålls som dokumenterad releasehistorik, men aktuell lifecycle state är stable.
+
+
+## Normaliserat distributionsbeslut
+
+Detta beslut ersätter tidigare ZIP-first/primär-runtime-formuleringar där de står i konflikt:
+
+- GPT Byggaren bygger normalt både Chat ZIP och Custom GPT.
+- Båda härleds från samma canonical beteende- och capability-kontrakt.
+- Ingen distribution är automatiskt primär på grund av komplexitet.
+- Runtime parity mäts från canonical capability-kontrakt till respektive distribution.
+- Faktiska plattformsbegränsningar dokumenteras per distribution.
+- Modellkompatibilitet får dokumenteras och testas, men ska normalt inte skapa ytterligare distributionsvarianter.
+
+
+## Steg 4 – instruktionsefterlevnad
+
+Projektet har nu ett standardiserat evalpaket för bootstrap, multi-turn retention, terminal behavior och Knowledge-independence. Evalfallen beskriver avsett beteende och modellresultat ska dokumenteras separat från specifikationen.

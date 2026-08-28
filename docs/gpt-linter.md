@@ -31,3 +31,14 @@ Lint-errors blockerar CI. Warnings blockerar normalt inte.
 
 ## Auto-fix
 Steg 19 inför inte aggressiv auto-fix. Osäkra filer raderas aldrig bara utifrån namn.
+
+## Runtime complexity och core behavior
+
+Lintern kontrollerar även ett valfritt `instructions.core_contract`:
+
+- `GP500–GP502`: kritiska beteendemarkörer måste finnas i canonical instruktionen,
+- `GP503–GP504`: obligatoriska runtime-beroenden måste vara maskinläsbara och bör hålla sig inom konfigurerad filhoppsbudget,
+- `GP505`: Knowledge får inte vara ett obligatoriskt beroende för kärnbeteende,
+- `GP506`: deklarerade obligatoriska runtime-filer måste existera.
+
+Rekommenderad standard för nya GPT:er är `max_required_file_hops: 1`.

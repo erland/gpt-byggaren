@@ -1,12 +1,12 @@
 # Chat ZIP runtime policy
 
-## Primär runtime
+## Distributionsroll
 
-För avancerade GPT:er är Chat ZIP primär runtime.
+Chat ZIP är ett av två normala distributionsmål tillsammans med Custom GPT. Den ska inte automatiskt behandlas som primär runtime för avancerade GPT:er.
 
-## Full funktionalitet
+## Funktionalitet
 
-Chat ZIP får innehålla rikare instruktioner, Knowledge, schemas, scripts och templates än Custom GPT.
+Chat ZIP får innehålla rikare runtime-material, schemas, scripts och templates när plattformen kräver det, men ska fortfarande härledas från samma canonical capability-kontrakt som Custom GPT. Mer runtime-material innebär inte automatiskt högre instruktionsefterlevnad eller högre prioritet.
 
 ## Inkludera endast runtimebehov
 

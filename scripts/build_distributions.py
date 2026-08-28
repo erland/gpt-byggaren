@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import hashlib
 import json
 import os
@@ -155,6 +156,24 @@ def build_chat(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     return out
 
 
+def _knowledge_priority_patterns(cfg: dict) -> list[str]:
+    return list(cfg.get("knowledge_architecture", {}).get("custom_gpt", {}).get("priority", []) or [])
+
+
+def _rank_knowledge(files: list[Path], root: Path, cfg: dict) -> list[Path]:
+    patterns = _knowledge_priority_patterns(cfg)
+    ranked = []
+    for p in files:
+        rel_from_project = p.relative_to(root).as_posix()
+        rank = len(patterns) + 1
+        for idx, pattern in enumerate(patterns):
+            if fnmatch.fnmatch(rel_from_project, pattern):
+                rank = idx
+                break
+        ranked.append((rank, rel_from_project, p))
+    return [p for _, _, p in sorted(ranked)]
+
+
 def collect_custom_knowledge(root: Path, cfg: dict, target: Path) -> list[Path]:
     knowledge_root = root / cfg["knowledge_architecture"]["canonical_root"]
     files = [p for p in sorted(knowledge_root.rglob("*")) if p.is_file() and p.name != "KNOWLEDGE.md"] if knowledge_root.exists() else []
@@ -164,11 +183,11 @@ def collect_custom_knowledge(root: Path, cfg: dict, target: Path) -> list[Path]:
     if len(files) <= max_files:
         selected = files
     elif strategy in {"prioritize", "hybrid"}:
-        selected = files[:max_files]
+        selected = _rank_knowledge(files, root, cfg)[:max_files]
     else:
         raise SystemExit(
             f"Custom GPT Knowledge has {len(files)} files but max is {max_files}; "
-            f"strategy {strategy!r} is not implemented for overflow yet."
+            f"strategy {strategy!r} requires explicit consolidation support for overflow."
         )
 
     copied = []
@@ -177,6 +196,39 @@ def collect_custom_knowledge(root: Path, cfg: dict, target: Path) -> list[Path]:
         copy_file(p, dst)
         copied.append(dst)
     return copied
+
+
+def compile_custom_instruction(text: str, mode: str, max_chars: int, core_markers: list[str]) -> str:
+    if mode == "identical":
+        compiled = text
+    elif mode in {"compressed", "compiled"}:
+        # Conservative deterministic compression: preserve wording and headings,
+        # remove trailing whitespace and collapse repeated blank lines.
+        lines = [line.rstrip() for line in text.splitlines()]
+        out = []
+        blank = False
+        for line in lines:
+            if not line.strip():
+                if blank:
+                    continue
+                blank = True
+                out.append("")
+            else:
+                blank = False
+                out.append(line)
+        compiled = "\n".join(out).strip() + "\n"
+    else:
+        raise SystemExit(f"Unknown Custom GPT instruction mode: {mode!r}")
+
+    missing = [marker for marker in core_markers if marker not in compiled]
+    if missing:
+        raise SystemExit(f"Custom GPT instruction compilation removed core behavior markers: {missing}")
+    if len(compiled) > max_chars:
+        raise SystemExit(
+            f"Custom GPT instruction is {len(compiled)} characters after {mode!r} compilation; max is {max_chars}. "
+            "Reduce or explicitly mark distribution-specific source material; do not move core behavior to Knowledge."
+        )
+    return compiled
 
 
 def build_custom(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
@@ -189,12 +241,9 @@ def build_custom(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     instr = (root / cfg["instructions"]["canonical"]).read_text(encoding="utf-8")
     max_chars = int(cfg["runtime"]["custom_gpt"]["instruction"]["max_characters"])
     mode = cfg["runtime"]["custom_gpt"]["instruction"]["mode"]
-    if len(instr) > max_chars:
-        raise SystemExit(
-            f"Custom GPT instruction is {len(instr)} characters; max is {max_chars}. "
-            f"Mode {mode!r} requires a future compression compiler."
-        )
-    (builder / "instructions.md").write_text(instr, encoding="utf-8")
+    core_markers = list(cfg.get("instructions", {}).get("core_contract", {}).get("required_markers", []) or [])
+    compiled_instr = compile_custom_instruction(instr, mode, max_chars, core_markers)
+    (builder / "instructions.md").write_text(compiled_instr, encoding="utf-8")
 
     starters_root = root / cfg["structure"]["conversation_starters"]["path"]
     starters = [p for p in starters_root.rglob("*") if p.is_file() and p.name != "README.md"] if starters_root.exists() else []
@@ -214,6 +263,31 @@ def build_custom(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
 
     copied_knowledge = collect_custom_knowledge(root, cfg, kp)
 
+    knowledge_root = root / cfg["knowledge_architecture"]["canonical_root"]
+    canonical_knowledge = [p for p in sorted(knowledge_root.rglob("*")) if p.is_file() and p.name != "KNOWLEDGE.md"] if knowledge_root.exists() else []
+    selected_rel = [p.relative_to(kp).as_posix() for p in copied_knowledge]
+    selected_set = set(selected_rel)
+    excluded_rel = [p.relative_to(knowledge_root).as_posix() for p in canonical_knowledge if p.relative_to(knowledge_root).as_posix() not in selected_set]
+    compilation_report = {
+        "instruction": {
+            "mode": mode,
+            "canonical_characters": len(instr),
+            "compiled_characters": len(compiled_instr),
+            "max_characters": max_chars,
+            "core_markers_verified": len(core_markers),
+        },
+        "knowledge": {
+            "strategy": cfg["runtime"]["custom_gpt"]["knowledge"]["strategy"],
+            "canonical_files": len(canonical_knowledge),
+            "selected_files": len(copied_knowledge),
+            "max_files": int(cfg["runtime"]["custom_gpt"]["knowledge"]["max_files"]),
+            "priority_patterns": _knowledge_priority_patterns(cfg),
+            "selected": selected_rel,
+            "excluded": excluded_rel,
+        },
+    }
+    (builder / "compilation-report.json").write_text(json.dumps(compilation_report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
     readme_tpl = (root / cfg["runtime"]["custom_gpt"]["templates"]["readme"]).read_text(encoding="utf-8")
     (out / "README.md").write_text(
         render_template(readme_tpl, {"GPT_NAME": cfg["project"]["name"], "VERSION": version}),
@@ -223,7 +297,7 @@ def build_custom(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     compat_tpl = (root / cfg["runtime"]["custom_gpt"]["templates"]["compatibility"]).read_text(encoding="utf-8")
     compat = render_template(compat_tpl, {
         "GPT_NAME": cfg["project"]["name"],
-        "PRIMARY_RUNTIME": cfg["runtime"]["primary"],
+        "RUNTIME_RECOMMENDATION": "Ingen förvald primär runtime; välj endast utifrån faktisk capability/paritet.",
         "PARITY_TABLE": "Paritetsrapport genereras mer fullständigt i senare buildsteg.",
         "REDUCED_FEATURES": "Ej automatiskt analyserat ännu.",
         "MISSING_FEATURES": "Ej automatiskt analyserat ännu.",
@@ -286,7 +360,7 @@ def write_delivery_manifest(dist: Path, cfg: dict, version: str) -> None:
         "project": cfg["project"]["id"],
         "project_name": cfg["project"]["name"],
         "version": version,
-        "primary_runtime": cfg["runtime"]["primary"],
+        "runtime_strategy": "peer_distributions",
         "custom_gpt_enabled": bool(cfg["runtime"]["custom_gpt"]["enabled"]),
         "artifacts": artifacts,
     }

@@ -59,10 +59,10 @@ structure:
     generated: true
     create_when_needed: true
 runtime:
-  primary: chat_zip
+  primary: none
   chat_zip:
     enabled: true
-    role: primary
+    role: peer_distribution
     allow_richer_runtime_than_custom_gpt: true
     entrypoint: START-HERE.md
     schema: schemas/chat-zip-runtime.schema.json
@@ -110,7 +110,7 @@ runtime:
     omit_empty_runtime_directories: true
   custom_gpt:
     enabled: true
-    role: secondary
+    role: peer_distribution
     compilation_mode: adaptive
     allow_reduced_functionality: true
     platform_limits:
@@ -118,7 +118,8 @@ runtime:
       knowledge_max_files: 20
     notes:
     - Platform limits are configuration values and must be easy to update.
-    - Custom GPT may be transformed or reduced relative to Chat ZIP.
+    - Custom GPT and Chat ZIP are peer distribution targets derived from the same
+      canonical contract.
     schema: schemas/custom-gpt-compilation.schema.json
     policy: src/runtime-policy/custom-gpt-compilation-policy.md
     model: docs/custom-gpt-compilation.md
@@ -309,6 +310,17 @@ instructions:
       max_characters_from: runtime.custom_gpt.platform_limits.instruction_max_characters
   single_source_of_truth: true
   distribution_specific_instructions_are_generated: true
+  core_contract:
+    enabled: true
+    required_markers:
+    - Analysera verksamhetsbehov före teknikval.
+    - Bygg normalt både Chat ZIP och Custom GPT från samma canonical kontrakt.
+    - Knowledge beskriver referensmaterial och domäninformation.
+    - Testa och validera efter varje relevant steg.
+    - Rekommendera nästa steg från faktisk projektstatus.
+    required_runtime_dependencies: []
+    max_required_file_hops: 1
+    knowledge_may_not_be_required_for_core_behavior: true
 knowledge_architecture:
   model: docs/knowledge-architecture.md
   schema: schemas/knowledge-architecture.schema.json
@@ -363,7 +375,7 @@ runtime_parity:
   schema: schemas/runtime-parity.schema.json
   policy: src/runtime-policy/runtime-parity-policy.md
   report_template: templates/runtime-parity-report.md.tpl
-  reference_runtime: chat_zip
+  reference_runtime: canonical_contract
   levels:
   - full
   - high
@@ -392,7 +404,7 @@ runtime_parity:
     full: publish
     high: publish
     moderate: publish_with_warning
-    low: prefer_chat_zip
+    low: publish_with_warning
     not_viable: do_not_publish
   generate_separate_report_artifact: true
 build_system:

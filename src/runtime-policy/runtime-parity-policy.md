@@ -4,9 +4,9 @@
 
 Jämför Chat ZIP och Custom GPT per funktionell capability.
 
-## Primär referens
+## Referens
 
-Chat ZIP representerar full avsedd funktionalitet för ZIP-first projekt.
+Det canonical capability-kontraktet representerar full avsedd funktionalitet. Både Chat ZIP och Custom GPT jämförs mot detta kontrakt; ingen distribution är automatiskt referensruntime.
 
 ## Nivåer
 
@@ -23,7 +23,7 @@ Chat ZIP representerar full avsedd funktionalitet för ZIP-first projekt.
 
 ## Release
 
-Saknad critical capability kan göra Custom GPT `not_viable`.
+Saknad critical capability kan göra en enskild distribution `not_viable`.
 
 ## Rapport
 

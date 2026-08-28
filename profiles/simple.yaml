@@ -20,3 +20,8 @@ examples:
 - skrivstöd
 - enkel rådgivnings-GPT
 - begränsad FAQ-GPT
+runtime_robustness:
+  core_contract: required
+  critical_behavior_in_canonical_instruction: true
+  knowledge_required_for_core_behavior: false
+  max_required_file_hops: 1
