@@ -40,8 +40,10 @@ Tester + validering + project hygiene
 ├─ Custom GPT-distribution
 └─ Komplett projekt-ZIP
     ↓
-Valfritt:
+Standard (kan väljas bort för uttryckligen lokala/GitHub-fria projekt):
 Packa upp projekt-ZIP i Git-repo
+    ↓
+GitHub-stöd ingår som standard
     ↓
 GitHub Release
     ↓
@@ -1043,3 +1045,8 @@ GPT Byggaren v1.0 är klar när den kan:
 - skapa ett GitHub-redo projekt,
 - bygga releaseartefakter från GitHub Release-taggen,
 - återuppta ett projekt från en tidigare ZIP i en ny konversation.
+
+
+## GitHub-standard
+
+Nya GPT-projekt ska normalt innehålla `README.md`, `.github/workflows/ci.yml` och `.github/workflows/release.yml`. GitHub-stöd är standard men kan väljas bort för uttryckligen lokala eller GitHub-fria projekt. Releaseversion ska härledas från GitHub Release-taggen.

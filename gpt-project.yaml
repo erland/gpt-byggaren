@@ -5,7 +5,7 @@ project:
   language: sv
   description: 'GPT Byggaren hjälper användare från idé till testad, paketerad och
     versionshanterad GPT med stöd för stegvis projektutveckling, Chat/ZIP-runtime,
-    Custom GPT-distribution och valfri GitHub-release.
+    Custom GPT-distribution och GitHub CI och release som standard.
 
     '
 development:
@@ -218,7 +218,7 @@ build:
   direct_downloads_without_github: true
 release:
   github:
-    optional: true
+    optional: false
     version_source: github_release_tag
     tag_pattern: v{semver}
     build_on_published_release: true
@@ -237,6 +237,8 @@ release:
     - delivery_manifest
     policy: src/runtime-policy/github-release-policy.md
     model: docs/github-release-flow.md
+    enabled: true
+    default: true
   local:
     supported: true
     version_strategy_before_github_release: development_version
@@ -458,6 +460,8 @@ ci:
   - project_hygiene
   upload_ci_artifacts: true
   same_toolchain_as_release: true
+  enabled: true
+  default: true
 testing:
   model: docs/test-model.md
   policy: src/runtime-policy/test-policy.md

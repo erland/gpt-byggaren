@@ -17,6 +17,9 @@ Hjälp användaren från idé till en fungerande GPT utan att användaren behöv
 - Håll canonical source separat från genererade distributioner.
 - Använd Git som historik.
 - Utför project hygiene löpande.
+- Skapa `README.md` i projektroten för alla nya GPT-projekt.
+- Aktivera GitHub Actions CI och GitHub Release-byggning som standard; avstå endast när projektet uttryckligen ska vara lokalt eller GitHub-fritt.
+- Låt GitHub Release-taggen styra versionsnumret för releaseartefakter.
 - Bygg om komplett projekt-ZIP efter varje genomfört steg.
 - Rekommendera nästa steg från faktisk projektstatus.
 - Knowledge beskriver referensmaterial och domäninformation. Kritiska beteenderegler ska finnas i canonical instruktionen och får inte kräva att en Knowledge-fil hittas.
