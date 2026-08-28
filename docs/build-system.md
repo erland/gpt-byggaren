@@ -81,13 +81,6 @@ Buildsystemet skapar:
 
 Detta är första buildimplementationen.
 
-Följande kommer i senare steg:
-
-- riktig instruktionskomprimering när canonical instruktion överskrider gränsen,
-- avancerad Knowledge-konsolidering,
-- full automatisk capability-paritetsanalys,
-- GitHub Actions,
-- release-tagghantering,
-- mer fullständig CI.
+Buildsystemet stöder även GitHub Actions som standard för nya projekt: CI vid push/PR och releasebygge vid publicerad GitHub Release. Releaseversion härleds från release-taggen. Avancerad capability-paritetsanalys kan fortfarande förfinas vidare.
 
 Toolchainen är avsiktligt byggd så att dessa delar kan läggas ovanpå samma kärna.

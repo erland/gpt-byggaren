@@ -34,7 +34,7 @@ def _write_minimal_project(tmp_path, canonical_text, core_contract):
     (tmp_path / "src" / "instructions").mkdir(parents=True)
     (tmp_path / "knowledge").mkdir(exist_ok=True)
     (tmp_path / "src" / "instructions" / "system.md").write_text(canonical_text, encoding="utf-8")
-    for rel in ["PROJECT.md", "STATUS.md", "project-status.yaml"]:
+    for rel in ["README.md", "PROJECT.md", "STATUS.md", "project-status.yaml"]:
         (tmp_path / rel).write_text("ok\n", encoding="utf-8")
     cfg = {
         "schema_version": 1,
@@ -97,3 +97,38 @@ def test_linter_warns_when_required_file_hops_exceed_budget(tmp_path):
     r, report = _run_linter(tmp_path)
     assert r.returncode == 0
     assert any(f["code"] == "GP504" and f["severity"] == "warning" for f in report["findings"])
+
+def test_linter_rejects_missing_readme(tmp_path):
+    _write_minimal_project(tmp_path, "# GPT\nMANDATORY CORE RULE\n", {
+        "enabled": True,
+        "required_markers": ["MANDATORY CORE RULE"],
+        "required_runtime_dependencies": [],
+        "max_required_file_hops": 1,
+        "knowledge_may_not_be_required_for_core_behavior": True,
+    })
+    (tmp_path / "README.md").unlink()
+    r, report = _run_linter(tmp_path)
+    assert r.returncode == 1
+    assert any(f["code"] == "GP110" and f.get("path") == "README.md" for f in report["findings"])
+
+
+def test_linter_requires_github_workflows_when_enabled(tmp_path):
+    import yaml
+    _write_minimal_project(tmp_path, "# GPT\nMANDATORY CORE RULE\n", {
+        "enabled": True,
+        "required_markers": ["MANDATORY CORE RULE"],
+        "required_runtime_dependencies": [],
+        "max_required_file_hops": 1,
+        "knowledge_may_not_be_required_for_core_behavior": True,
+    })
+    cfg = yaml.safe_load((tmp_path / "gpt-project.yaml").read_text(encoding="utf-8"))
+    cfg["ci"] = {"enabled": True, "workflow": ".github/workflows/ci.yml"}
+    cfg["release"] = {"github": {"enabled": True, "workflow": ".github/workflows/release.yml"}}
+    (tmp_path / "gpt-project.yaml").write_text(
+        yaml.safe_dump(cfg, allow_unicode=True, sort_keys=False), encoding="utf-8"
+    )
+    r, report = _run_linter(tmp_path)
+    assert r.returncode == 1
+    codes = {f["code"] for f in report["findings"]}
+    assert "GP400" in codes
+    assert "GP410" in codes

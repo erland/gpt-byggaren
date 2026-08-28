@@ -135,7 +135,7 @@ def lint(root: Path) -> dict:
         if not exists_ref(root, value):
             findings.append(finding("GP100", "error", f"Configured path does not exist ({key})", value))
 
-    for rel in ["PROJECT.md", "STATUS.md", "project-status.yaml"]:
+    for rel in ["README.md", "PROJECT.md", "STATUS.md", "project-status.yaml"]:
         if not (root / rel).exists():
             findings.append(finding("GP110", "error", f"Required project file missing: {rel}", rel))
 
@@ -186,8 +186,11 @@ def lint(root: Path) -> dict:
             findings.append(finding("GP300", "error", f"Testing {key} missing", ref))
 
     ci = cfg.get("ci", {})
+    ci_enabled = ci.get("enabled", ci.get("default", False))
     wf = ci.get("workflow")
-    if wf:
+    if ci_enabled and not wf:
+        findings.append(finding("GP400", "error", "CI is enabled but no workflow is configured"))
+    elif wf:
         p = root / wf
         if not p.exists():
             findings.append(finding("GP400", "error", "CI workflow missing", wf))
@@ -199,8 +202,11 @@ def lint(root: Path) -> dict:
                 findings.append(finding("GP402", "error", "CI does not invoke validate_distributions.py", wf))
 
     release = cfg.get("release", {}).get("github", {})
+    release_enabled = release.get("enabled", release.get("default", False))
     wf = release.get("workflow")
-    if wf:
+    if release_enabled and not wf:
+        findings.append(finding("GP410", "error", "GitHub release support is enabled but no workflow is configured"))
+    elif wf:
         p = root / wf
         if not p.exists():
             findings.append(finding("GP410", "error", "Release workflow missing", wf))
@@ -208,6 +214,8 @@ def lint(root: Path) -> dict:
             text = p.read_text(encoding="utf-8")
             if "github.event.release.tag_name" not in text:
                 findings.append(finding("GP411", "error", "Release workflow does not derive version from release tag", wf))
+            if "gh release upload" not in text:
+                findings.append(finding("GP412", "error", "Release workflow does not upload built artifacts", wf))
 
     errors = sum(f["severity"] == "error" for f in findings)
     warnings = sum(f["severity"] == "warning" for f in findings)

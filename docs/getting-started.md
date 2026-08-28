@@ -375,3 +375,8 @@ Du beskriver **vad** du vill bygga.
 GPT Byggaren tar ansvar för att föreslå **hur** det bör byggas, struktureras, testas, paketeras och valideras.
 
 Du kan sedan utveckla projektet steg för steg genom att återkommande be om **nästa steg** och få en ny komplett projekt-ZIP.
+
+
+## GitHub-standard
+
+Nya GPT-projekt ska normalt innehålla `README.md`, `.github/workflows/ci.yml` och `.github/workflows/release.yml`. GitHub-stöd är standard men kan väljas bort för uttryckligen lokala eller GitHub-fria projekt. Releaseversion ska härledas från GitHub Release-taggen.

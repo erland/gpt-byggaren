@@ -323,3 +323,8 @@ Från och med steg 3 är `gpt-project.yaml` obligatorisk.
 Den deklarerar projektstruktur, runtime, distributionsmål, buildregler,
 project hygiene och releaseprinciper och ska fungera som single source of
 truth för kommande automation.
+
+
+## GitHub-standard
+
+Nya GPT-projekt ska normalt innehålla `README.md`, `.github/workflows/ci.yml` och `.github/workflows/release.yml`. GitHub-stöd är standard men kan väljas bort för uttryckligen lokala eller GitHub-fria projekt. Releaseversion ska härledas från GitHub Release-taggen.

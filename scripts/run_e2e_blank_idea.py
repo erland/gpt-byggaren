@@ -51,7 +51,7 @@ def scaffold_project(root, scenario, profile):
     for d in [
         "docs", "src/instructions", "src/runtime-policy",
         "knowledge", "schemas", "scripts", "tests", "evals", "evals/instruction-adherence",
-        "templates"
+        "templates", ".github/workflows"
     ]:
         (root / d).mkdir(parents=True, exist_ok=True)
 
@@ -68,6 +68,32 @@ def scaffold_project(root, scenario, profile):
     )
     (root / "PROJECT.md").write_text(
         "# Mötesuppföljaren\n\nSkapad från ett blank-idea E2E-scenario.\n",
+        encoding="utf-8"
+    )
+    (root / "README.md").write_text(
+        "# Mötesuppföljaren\n\nGPT-projekt med Chat ZIP och Custom GPT-distribution.\n\n"
+        "## GitHub Actions\n\nCI validerar projektet vid push/PR. Publicerad GitHub Release bygger "
+        "distributionerna med version från release-taggen.\n",
+        encoding="utf-8"
+    )
+    (root / ".github" / "workflows" / "ci.yml").write_text(
+        "name: CI\n\non: [push, pull_request, workflow_dispatch]\n\njobs:\n"
+        "  validate:\n    runs-on: ubuntu-latest\n    steps:\n"
+        "      - uses: actions/checkout@v4\n"
+        "      - run: python scripts/lint_gpt_project.py --project-root .\n"
+        "      - run: python -m pytest -q -p no:cacheprovider\n"
+        "      - run: python scripts/build_distributions.py --project-root . --version 0.0.0-ci --targets project,chat,custom-gpt\n"
+        "      - run: python scripts/validate_distributions.py --project-root .\n",
+        encoding="utf-8"
+    )
+    (root / ".github" / "workflows" / "release.yml").write_text(
+        "name: Release\n\non:\n  release:\n    types: [published]\n\npermissions:\n  contents: write\n\njobs:\n"
+        "  build:\n    runs-on: ubuntu-latest\n    steps:\n"
+        "      - uses: actions/checkout@v4\n"
+        "      - id: version\n        shell: bash\n        run: |\n          TAG=\"${{ github.event.release.tag_name }}\"\n          echo \"version=${TAG#v}\" >> \"$GITHUB_OUTPUT\"\n"
+        "      - run: python scripts/build_distributions.py --project-root . --version \"${{ steps.version.outputs.version }}\" --targets project,chat,custom-gpt\n"
+        "      - run: python scripts/validate_distributions.py --project-root .\n"
+        "      - env:\n          GH_TOKEN: ${{ github.token }}\n        run: gh release upload \"${{ github.event.release.tag_name }}\" dist/*.zip dist/SHA256SUMS.txt dist/DELIVERY-MANIFEST.json --clobber\n",
         encoding="utf-8"
     )
     (root / "STATUS.md").write_text(
@@ -119,7 +145,7 @@ def scaffold_project(root, scenario, profile):
             }
         },
         "runtime": {
-            "primary": "chat_zip",
+            "primary": "none",
             "chat_zip": {
                 "enabled": True,
                 "entrypoint": "START-HERE.md"
@@ -133,6 +159,20 @@ def scaffold_project(root, scenario, profile):
         "development": {
             "plan": "docs/development-plan.md",
             "status": "project-status.yaml"
+        },
+        "ci": {
+            "enabled": True,
+            "default": True,
+            "workflow": ".github/workflows/ci.yml"
+        },
+        "release": {
+            "github": {
+                "enabled": True,
+                "default": True,
+                "optional": False,
+                "version_source": "github_release_tag",
+                "workflow": ".github/workflows/release.yml"
+            }
         }
     }
     (root / "gpt-project.yaml").write_text(
@@ -266,6 +306,10 @@ def run(root, scenario_path):
             "project_status": (generated_project / "project-status.yaml").exists(),
             "development_plan": (generated_project / "docs" / "development-plan.md").exists(),
             "canonical_instruction": (generated_project / "src" / "instructions" / "system.md").exists(),
+            "readme": (generated_project / "README.md").exists(),
+            "github_ci": (generated_project / ".github" / "workflows" / "ci.yml").exists(),
+            "github_release": (generated_project / ".github" / "workflows" / "release.yml").exists(),
+            "release_uses_tag_version": "github.event.release.tag_name" in (generated_project / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8"),
             "instruction_adherence_evals": len(list((generated_project / "evals" / "instruction-adherence").glob("*.yaml"))) >= 4,
             "project_zip": any("-project.zip" in p.name for p in artifacts),
             "chat_zip": any("-chat-" in p.name for p in artifacts),
