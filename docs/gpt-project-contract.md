@@ -4,7 +4,7 @@
 
 `gpt-project.yaml` är det maskinläsbara kontraktet för ett GPT-projekt.
 
-Filen ska på sikt användas av:
+Filen används av:
 
 - GPT Byggaren själv,
 - buildscript,
@@ -17,6 +17,8 @@ Filen ska på sikt användas av:
 ## Designprincip
 
 Regler som behöver användas av flera delar av toolchainen ska deklareras här i stället för att dupliceras i Python-script, GitHub Actions och dokumentation.
+
+När löptext och maskinläsbart kontrakt skiljer sig ska `gpt-project.yaml` behandlas som auktoritativ för projektets tekniska konfiguration.
 
 ## Huvudsektioner
 
@@ -34,7 +36,9 @@ Deklarerar canonical och villkorade kataloger.
 
 ### `runtime`
 
-Beskriver primär runtime och distributionsmål.
+Beskriver distributionsmålen och deras roller, plattformsbegränsningar och runtimekonfiguration.
+
+GPT Byggaren har normalt ingen förvald primär runtime. Chat ZIP och Custom GPT kan deklareras som jämbördiga distributionsmål från samma canonical kontrakt.
 
 ### `capabilities`
 
@@ -50,7 +54,7 @@ Deklarerar krav på deterministiskt bygge, manifest, checksummor och direktbyggd
 
 ### `release`
 
-Anger att GitHub är valfritt och att GitHub Release-taggen är versionskälla när GitHub används.
+Beskriver GitHub-baserad releaseautomation och lokal/direct build. För GPT Byggaren är GitHub-stöd standard, medan samma distributionsartefakter också ska kunna byggas utan GitHub. När GitHub Release används är release-taggen versionskälla.
 
 ### `artifacts`
 
@@ -74,13 +78,15 @@ platform_limits:
   knowledge_max_files: 20
 ```
 
-De ska inte dupliceras på flera ställen i projektet.
+De ska inte dupliceras som styrande värden på flera ställen i projektet.
 
-När toolchainen senare byggs ska dessa värden vara lätta att uppdatera.
+Om plattformsgränser ändras ska konfiguration och validering kunna uppdateras utan att canonical beteende behöver skrivas om.
 
-## Nästa utvecklingssteg
+## Projektstatus och progression
 
-Steg 4 ska definiera hur projektstatus och planprogression representeras maskinläsbart och hur `STATUS.md` relaterar till detta kontrakt.
+Projektstatus representeras maskinläsbart i `project-status.yaml` och kompletteras av den mänskligt läsbara `STATUS.md`.
+
+Vid återupptagning ska maskinläsbar status vara auktoritativ. Utvecklingsplanen är vägledande och nästa steg ska rekommenderas utifrån faktisk projektstatus, blockerare och valideringsresultat.
 
 ## Core behavior contract
 

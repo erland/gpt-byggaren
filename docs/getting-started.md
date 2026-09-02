@@ -215,15 +215,13 @@ Använd den för:
 
 ### Chat ZIP
 
-Detta är den primära runtime-distributionen för större GPT:er.
-
-Du kan bifoga den i en ChatGPT-konversation och använda den som GPT-kontext.
+Detta är en runtime-distribution som du kan bifoga i en ChatGPT-konversation och använda som GPT-kontext. För projekt som behöver många filer, scripts, schemas eller annan rik runtime-struktur kan Chat ZIP bära mer material än vad Custom GPT-plattformens budgetar medger.
 
 ### Custom GPT ZIP
 
 Detta innehåller materialet för att skapa eller uppdatera en Custom GPT.
 
-Custom GPT kan ibland ha färre funktioner än Chat ZIP eftersom plattformen har andra begränsningar.
+Custom GPT kan ibland behöva en reducerad eller transformerad realisering av samma canonical kontrakt eftersom plattformen har andra begränsningar. Skillnader ska dokumenteras i paritets- och kompatibilitetsrapporter.
 
 ---
 
@@ -296,9 +294,7 @@ Något blockerande problem måste lösas först.
 
 ## 13. Chat ZIP eller Custom GPT?
 
-För enklare GPT:er kan de vara nästan likvärdiga.
-
-För större GPT:er kan Chat ZIP bära rikare runtime-material, men både Chat ZIP och Custom GPT ska normalt byggas från samma canonical kontrakt.
+Chat ZIP och Custom GPT är jämbördiga distributionsmål från samma canonical kontrakt. För enklare GPT:er kan de vara nästan likvärdiga. För större GPT:er kan Chat ZIP bära rikare runtime-material när Custom GPT-plattformens begränsningar kräver det.
 
 Exempel på sådant som kan ge Chat ZIP större capability-täckning än Custom GPT:
 
