@@ -1,82 +1,218 @@
 # GPT Byggaren
 
-## Distributionsprincip
+GPT Byggaren hjälper dig att gå från en idé om en GPT till ett **strukturerat, testat, paketerat och versionshanterat GPT-projekt**.
 
-GPT Byggaren skapar normalt både **Chat ZIP** och **Custom GPT** från samma canonical beteende- och capability-kontrakt. Ingen av dem är automatiskt primär bara för att GPT:n är avancerad. Faktiska plattformsbegränsningar och capability-skillnader dokumenteras i runtime-paritetsrapporten.
+Du beskriver främst **vad GPT:n ska hjälpa till med**. GPT Byggaren tar ansvar för att föreslå hur projektet bör struktureras, vilka capabilities som behövs, hur det ska testas och hur det ska distribueras.
 
-## Projekt
+Projektet är byggt för stegvis utveckling där projektets status lagras i filer och kan återupptas i en ny konversation utan att tidigare chatthistorik krävs.
 
-Detta repository innehåller källprojektet för **GPT Byggaren**.
+## Vad GPT Byggaren gör
 
-GPT Byggaren ska hjälpa användare att skapa andra GPT:er genom en stegvis, självbärande utvecklingsprocess.
+Ett normalt arbetsflöde är:
 
-## Aktuell fas
+1. Du beskriver GPT-idén och verksamhetsbehovet.
+2. GPT Byggaren analyserar målgrupp, arbetsflöden, underlag och önskat resultat.
+3. Den rekommenderar lämplig arkitektur, capabilities och ambitionsnivå.
+4. Den skapar en projektspecifik utvecklingsplan.
+5. När utvecklingen startar skapas en komplett projekt-ZIP.
+6. Projektet vidareutvecklas stegvis utifrån faktisk projektstatus.
+7. Efter relevanta steg körs lint, tester, validering och project hygiene.
+8. När projektet är redo byggs distributionsartefakter för Chat ZIP och Custom GPT.
+9. Projektet kan byggas lokalt eller via GitHub Actions och GitHub Releases.
 
-Steg 30 – Stabil release v1.0.0 – är genomfört.
+Utvecklingsplanen är vägledande, inte mekanisk. GPT Byggaren kan lägga in korrigeringssteg, hoppa över onödiga steg eller omplanera när projektets faktiska tillstånd motiverar det.
 
-## Centrala projektartefakter
+## Distributionsmodell
 
-- `docs/development-plan.md` – full utvecklingsplan
-- `docs/product-vision.md` – produktvision och målbild
-- `docs/user-journeys.md` – centrala användarresor
-- `docs/canonical-project-structure.md` – beslutad generell projektstruktur
-- `docs/gpt-project-contract.md` – dokumentation av projektkontraktet
-- `docs/project-status-model.md` – status-, progression- och återupptagningsmodell
-- `docs/analysis-model.md` – behovsdriven analys- och rekommendationsmodell
-- `docs/dynamic-planning.md` – dynamisk, projektspecifik utvecklingsplanering
-- `docs/project-hygiene.md` – filklassificering och automatisk projektstädning
-- `docs/instruction-architecture.md` – canonical instruktioner och runtime-kompilering
-- `docs/knowledge-architecture.md` – canonical Knowledge och runtime-kompilering
-- `docs/chat-zip-runtime.md` – full primär Chat/ZIP-runtime
-- `docs/custom-gpt-compilation.md` – kompilerad Custom GPT-distribution
-- `docs/platform-validation.md` – plattformsgränser, Builder-kontroller och release gate
-- `docs/runtime-parity.md` – funktionell jämförelse mellan Chat ZIP och Custom GPT
-- `docs/build-system.md` – körbar toolchain för projekt-, Chat- och Custom GPT-artefakter
-- `docs/direct-build.md` – direktbyggnad och leverans utan GitHub
-- `project-status.yaml` – maskinläsbar projektstatus och progression
-- `STATUS.md` – mänskligt läsbar projektstatus
-- `PROJECT.md` – projektets syfte och styrande principer
+GPT Byggaren bygger normalt två jämbördiga distributionsmål från samma canonical beteende- och capability-kontrakt:
 
-## Nästa rekommenderade steg
+- **Chat ZIP** – en portabel runtime som kan bifogas i en ChatGPT-konversation och användas som GPT-kontext. Den kan bära rikare runtime-material när det behövs.
+- **Custom GPT** – ett paket för att skapa eller uppdatera en Custom GPT inom plattformens instruktion- och Knowledge-begränsningar.
 
-Utvecklingsplan 1–30 är slutförd. Projektet går över i maintenance mode.
+Ingen av distributionerna är automatiskt primär. Om plattformsbegränsningar gör att de inte kan vara funktionellt identiska dokumenteras skillnaderna i runtime-paritets- och kompatibilitetsrapporter.
 
-## Arbetsmodell
+Utöver runtime-distributionerna finns **projekt-ZIP:en**, som innehåller hela utvecklingsprojektet och används för fortsatt utveckling, Git och återupptagning i nya konversationer.
 
-Projektet ska vidareutvecklas genom att den aktuella projekt-ZIP:en används som input till nästa steg.
+## Kom igång som användare
 
-Varje genomfört steg ska normalt ge en ny komplett projekt-ZIP.
+Det enklaste sättet är att använda en byggd release av GPT Byggaren.
 
-- `docs/github-release-flow.md` – automatiserad GitHub Release-paketering
-- `docs/ci-flow.md` – CI för commits och pull requests
-- `docs/test-model.md` – deterministiska tester, evals och regressionsstrategi
-- `docs/gpt-linter.md` – statisk projektlint före test och build
-- `docs/next-step-recommendation.md` – statusdrivet val av faktiskt nästa steg
-- `docs/resume-flow.md` – återupptagning från tidigare projekt-ZIP
-- `docs/final-project-hygiene.md` – checkpoint- och slutlig project hygiene
-- `docs/release-readiness.md` – sammanvägd releasebedömning
-- `docs/getting-started.md` – nybörjarguide från idé till release
-- `docs/beginner-faq.md` – vanliga frågor för nya användare
-- `docs/reference-profiles.md` – återanvändbara projektprofiler
-- `docs/reference-project-validation.md` – kalibrering mot kända GPT-projekt
-- `docs/end-to-end-test.md` – hela kedjan från blank idé till distribution
-- `docs/architecture-simplification-review.md` – slutlig arkitektur- och konsolideringsrevision
+### Alternativ 1 – Chat ZIP
 
-- `docs/release-candidate.md` – release candidate och RC-gates
+1. Hämta den senaste Chat ZIP-distributionen från GitHub Releases.
+2. Bifoga ZIP-filen i en ny ChatGPT-konversation.
+3. Be ChatGPT använda ZIP-filen som GPT Byggaren-kontext.
+4. Beskriv GPT:n du vill skapa, till exempel:
 
-- `docs/stable-release.md` – stabil v1.0.0-release och maintenance transition
+```text
+Jag vill bygga en GPT som hjälper mig analysera remisser och bedöma hur de påverkar min organisation.
+```
 
+Därefter kan du normalt fortsätta med enkla instruktioner som:
 
-## Custom GPT-budgetering
+```text
+Gör nästa steg och ge mig en uppdaterad zip.
+```
 
-Custom GPT-builden använder konservativ instruktionskompilering med verifiering av core-contract och semantisk Knowledge-prioritering före filordning. `builder/compilation-report.json` visar hur 8 000-teckens- och 20-filsbudgeterna användes.
+### Alternativ 2 – Custom GPT
 
+Custom GPT-distributionen innehåller det material som behövs för att konfigurera GPT Byggaren i ChatGPT Builder, inklusive kompilerade instruktioner, conversation starters, capabilities och Knowledge-paket.
 
-## Steg 4 – instruktionsefterlevnad
+Se paketets README och kompatibilitetsrapport för exakt innehåll och eventuella plattformsbegränsningar.
 
-Projektet har nu ett standardiserat evalpaket för bootstrap, multi-turn retention, terminal behavior och Knowledge-independence. Evalfallen beskriver avsett beteende och modellresultat ska dokumenteras separat från specifikationen.
+Mer detaljerad användarguide finns i [`docs/getting-started.md`](docs/getting-started.md).
 
+## Återuppta ett tidigare GPT-projekt
 
-## GitHub-standard
+GPT-projekt som skapats av GPT Byggaren är självbärande. Bifoga den senaste projekt-ZIP:en i en ny konversation och be GPT Byggaren fortsätta projektet.
 
-Nya GPT-projekt ska normalt innehålla `README.md`, `.github/workflows/ci.yml` och `.github/workflows/release.yml`. GitHub-stöd är standard men kan väljas bort för uttryckligen lokala eller GitHub-fria projekt. Releaseversion ska härledas från GitHub Release-taggen.
+Den läser normalt projektet i följande ordning:
+
+1. `gpt-project.yaml`
+2. `project-status.yaml`
+3. `docs/development-plan.md`
+4. `STATUS.md`
+5. `PROJECT.md`
+
+Maskinläsbar status är auktoritativ när den skiljer sig från äldre löptext eller historiska dokument.
+
+## Bygga projektet lokalt
+
+Projektet kräver Python 3 samt de beroenden som används av CI, främst `pyyaml`, `jsonschema` och `pytest`.
+
+Kör tester:
+
+```bash
+python -m pytest -q -p no:cacheprovider
+```
+
+Kör linter:
+
+```bash
+python scripts/lint_gpt_project.py --project-root .
+```
+
+Bygg och validera alla direktleveransartefakter utan GitHub:
+
+```bash
+python scripts/build_direct.py --project-root . --version 0.0.0-dev
+```
+
+Eller bygg distributionsmålen separat:
+
+```bash
+python scripts/build_distributions.py \
+  --project-root . \
+  --version 0.0.0-dev \
+  --targets project,chat,custom-gpt
+
+python scripts/validate_distributions.py --project-root .
+```
+
+Genererade filer hamnar i `build/` och `dist/` och ska inte checkas in.
+
+## GitHub Actions och release
+
+CI körs vid push, pull request och manuell körning. Den validerar bland annat:
+
+- YAML och JSON,
+- project hygiene,
+- GPT-lint,
+- instruction-adherence-kontrakt,
+- tester,
+- distributionsbygge,
+- distributionsvalidering,
+- förväntade releaseartefakter.
+
+När en GitHub Release publiceras härleds distributionsversionen från release-taggen, exempelvis:
+
+```text
+v1.2.0 → 1.2.0
+```
+
+Releaseflödet bygger och publicerar normalt:
+
+- projekt-ZIP,
+- versionsmärkt Chat ZIP,
+- versionsmärkt Custom GPT ZIP,
+- `SHA256SUMS.txt`,
+- `DELIVERY-MANIFEST.json`.
+
+## Projektstruktur
+
+De viktigaste delarna är:
+
+```text
+src/instructions/        canonical GPT-instruktion
+src/runtime-policy/      återanvändbara runtimepolicies
+knowledge/               canonical Knowledge
+profiles/                referensprofiler för olika projekttyper
+schemas/                 maskinläsbara kontrakt
+scripts/                 build-, lint-, status- och valideringsverktyg
+tests/                   deterministiska tester
+evals/                   beteende- och regressionsscenarier
+templates/               genererade runtime- och rapportmallar
+docs/                    design- och användardokumentation
+.github/workflows/        CI och releaseautomation
+```
+
+Centrala kontrakt och statusfiler:
+
+- `gpt-project.yaml` – maskinläsbart projekt- och runtimekontrakt.
+- `project-status.yaml` – auktoritativ projektstatus och progression.
+- `PROJECT.md` – projektets syfte och styrande principer.
+- `STATUS.md` – mänskligt läsbar nulägesbild.
+- `architecture.yaml` – översikt över den interna arkitekturen.
+
+## Dokumentation
+
+För att hålla README:n användbar ligger detaljerna i separata dokument.
+
+### Börja här
+
+- [`docs/getting-started.md`](docs/getting-started.md) – från idé till färdig GPT.
+- [`docs/beginner-faq.md`](docs/beginner-faq.md) – vanliga frågor.
+- [`PROJECT.md`](PROJECT.md) – produktens syfte och styrande principer.
+- [`STATUS.md`](STATUS.md) – aktuell projektstatus.
+
+### Arkitektur och projektmodell
+
+- [`docs/product-vision.md`](docs/product-vision.md)
+- [`docs/canonical-project-structure.md`](docs/canonical-project-structure.md)
+- [`docs/gpt-project-contract.md`](docs/gpt-project-contract.md)
+- [`docs/project-status-model.md`](docs/project-status-model.md)
+- [`docs/analysis-model.md`](docs/analysis-model.md)
+- [`docs/dynamic-planning.md`](docs/dynamic-planning.md)
+- [`docs/instruction-architecture.md`](docs/instruction-architecture.md)
+- [`docs/knowledge-architecture.md`](docs/knowledge-architecture.md)
+- [`docs/reference-profiles.md`](docs/reference-profiles.md)
+
+### Runtime, build och release
+
+- [`docs/chat-zip-runtime.md`](docs/chat-zip-runtime.md)
+- [`docs/custom-gpt-compilation.md`](docs/custom-gpt-compilation.md)
+- [`docs/runtime-parity.md`](docs/runtime-parity.md)
+- [`docs/platform-validation.md`](docs/platform-validation.md)
+- [`docs/build-system.md`](docs/build-system.md)
+- [`docs/direct-build.md`](docs/direct-build.md)
+- [`docs/ci-flow.md`](docs/ci-flow.md)
+- [`docs/github-release-flow.md`](docs/github-release-flow.md)
+- [`docs/release-readiness.md`](docs/release-readiness.md)
+
+### Kvalitet och underhåll
+
+- [`docs/test-model.md`](docs/test-model.md)
+- [`docs/instruction-adherence-testing.md`](docs/instruction-adherence-testing.md)
+- [`docs/gpt-linter.md`](docs/gpt-linter.md)
+- [`docs/project-hygiene.md`](docs/project-hygiene.md)
+- [`docs/final-project-hygiene.md`](docs/final-project-hygiene.md)
+- [`docs/next-step-recommendation.md`](docs/next-step-recommendation.md)
+- [`docs/resume-flow.md`](docs/resume-flow.md)
+
+Dokument som `development-plan.md`, release-candidate-dokumenten, arkitekturrevisionen och maintenance-fixar beskriver projektets utvecklings- och releasehistorik. De är kvar för spårbarhet men ska inte tolkas som aktuell runtimepolicy om de skiljer sig från `gpt-project.yaml`, `project-status.yaml` eller canonical instruktioner.
+
+## Aktuell status
+
+Utvecklingsplanens steg 1–30 är genomförda och version **v1.0.0** är den första stabila releasen. Projektet är i **maintenance mode**.
+
+Aktuell maskinläsbar status finns i [`project-status.yaml`](project-status.yaml).
