@@ -26,11 +26,13 @@ GPT Byggaren ska därefter:
 10. bygga färdiga distributionsartefakter direkt åt användaren,
 11. skapa ett GitHub-redo projekt med automatiserad releasepaketering.
 
-## Primär princip
+## Distributionsprincip
 
-För större GPT:er är **Chat/ZIP-runtime den primära distributionen**.
+Chat ZIP och Custom GPT är **jämbördiga distributionsmål** som byggs från samma canonical beteende- och capability-kontrakt.
 
-Chat ZIP och Custom GPT ska ses som två separata, jämbördiga distributionsmål från samma canonical capability-kontrakt. En distribution kan behöva transformeras eller få dokumenterade begränsningar när plattformen inte kan bära full funktionell paritet.
+Ingen runtime är automatiskt primär. GPT Byggaren ska i stället avgöra hur respektive distributionsmål bäst realiserar det canonical kontraktet och dokumentera skillnader när plattformsbegränsningar förhindrar full funktionell paritet.
+
+Chat ZIP får bära rikare runtime-material än Custom GPT när det behövs, exempelvis fler filer, scripts eller schemas. Det innebär inte att Chat ZIP generellt är den primära distributionen.
 
 ## Vad GPT Byggaren ska avgöra själv
 
@@ -69,7 +71,7 @@ Sker direkt i chatten.
 Resultat:
 - analys av idén,
 - rekommenderad målbild,
-- rekommenderad runtime,
+- rekommenderad runtime-strategi,
 - rekommenderade capabilities,
 - preliminär komplexitetsnivå.
 
@@ -97,12 +99,13 @@ Varje efterföljande steg:
 GPT Byggaren ska kunna leverera:
 
 - komplett projekt-ZIP,
-- Chat/ZIP-distribution,
+- Chat ZIP-distribution,
 - Custom GPT-distribution när aktiverad,
 - valideringsrapport,
+- paritets-/kompatibilitetsrapport när flera runtimes finns,
 - checksummor.
 
-GitHub är valfritt. Samma projekt ska kunna packas upp i ett Git-repo och använda GitHub Actions för motsvarande releasebyggen.
+GitHub är standard för nya GPT-projekt men samma buildlogik ska också kunna köras direkt utan GitHub. När GitHub används ska releaseversionen härledas från GitHub Release-taggen.
 
 ## Framgångskriterium
 
