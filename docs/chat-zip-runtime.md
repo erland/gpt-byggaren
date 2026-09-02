@@ -2,13 +2,13 @@
 
 ## Syfte
 
-Chat/ZIP-runtime är den primära runtime-distributionen för större och mer avancerade GPT:er.
+Chat ZIP är ett av GPT Byggarens två normala runtime-distributionsmål och byggs från samma canonical beteende- och capability-kontrakt som Custom GPT.
 
-Den ska kunna bära mer stöd än Custom GPT utan att begränsas av Custom GPT:s instruktions- eller Knowledge-budget.
+Chat ZIP kan bära rikare runtime-material än Custom GPT när projektet behöver fler filer, scripts, schemas eller annan struktur än vad Custom GPT-plattformens budgetar medger. Det gör inte Chat ZIP generellt primär; respektive distribution ska bedömas mot det canonical kontraktet och eventuella skillnader dokumenteras i paritets- och kompatibilitetsrapporter.
 
 Grundprincip:
 
-> ZIP-runtime ska representera den fulla avsedda funktionaliteten. Custom GPT är ett separat distributionsmål.
+> Chat ZIP ska realisera det canonical capability-kontraktet så fullständigt som möjligt utan att göra sig till separat sanningskälla. Custom GPT är ett jämbördigt distributionsmål med egna plattformsbegränsningar.
 
 ## Runtime-layout
 
@@ -247,9 +247,9 @@ Före paketering ska builden kontrollera:
 
 ## Funktionell fullständighet
 
-Chat ZIP ska valideras mot projektets deklarerade fulla capability-set.
+Chat ZIP ska valideras mot projektets canonical capability-set och deklarerade runtimekrav.
 
-Om något canonical runtime-stöd saknas ska builden faila eller ge blockerande fel.
+Om nödvändigt runtime-stöd saknas ska builden faila eller ge blockerande fel. Skillnader mot Custom GPT ska redovisas separat och får inte döljas genom att någon av distributionerna behandlas som implicit sanningskälla.
 
 ## Direktleverans
 
@@ -294,4 +294,5 @@ ZIP-runtime är definierad när:
 - canonical → runtime-kompilering är definierad,
 - manifestkrav är definierade,
 - hygiene är definierad,
-- lokal och GitHub-baserad build använder samma principer.
+- lokal och GitHub-baserad build använder samma principer,
+- relationen till Custom GPT och canonical capability-kontrakt är tydlig.
