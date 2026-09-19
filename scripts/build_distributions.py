@@ -519,6 +519,83 @@ def build_claude(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     return out
 
 
+def opencode_runtime_contract(cfg: dict) -> dict:
+    """Compile canonical assistant contracts into an OpenCode workspace snapshot."""
+    return {
+        "schema_version": 1,
+        "runtime_id": "opencode",
+        "capabilities": normalize_capability_contract(cfg),
+        "artifacts": normalize_artifact_contract(cfg),
+        "workspace_state": normalize_workspace_state_contract(cfg),
+        "tools": normalize_tool_contract(cfg),
+        "adapter": {
+            "mode": "opencode_workspace",
+            "instructions": "AGENTS.md",
+            "skills_included": False,
+            "tool_integration": "deferred",
+            "workspace_first": True,
+        },
+    }
+
+
+def build_opencode(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
+    out = build_root / "opencode"
+    ensure_clean_dir(out)
+
+    runtime_cfg = cfg["runtime"]["opencode"]
+
+    canonical_instruction = (root / cfg["instructions"]["canonical"]).read_text(encoding="utf-8")
+    agents_path = out / runtime_cfg["layout"]["instructions"]
+    agents_path.write_text(
+        canonical_instruction.rstrip()
+        + "\n\n## OpenCode adapter\n\n"
+        + "- Treat this AGENTS.md as a generated projection of the canonical assistant instructions.\n"
+        + "- Work inside this repository/workspace.\n"
+        + "- Skills are not included in the base adapter yet.\n"
+        + "- Tool integration is added in a later adapter step; do not infer undeclared tools.\n",
+        encoding="utf-8",
+    )
+
+    knowledge_root = root / cfg["knowledge_architecture"]["canonical_root"]
+    knowledge_target = out / runtime_cfg["layout"]["knowledge"]
+    if knowledge_root.exists():
+        for p in sorted(knowledge_root.rglob("*")):
+            if p.is_file() and p.name != "KNOWLEDGE.md":
+                copy_file(p, knowledge_target / p.relative_to(knowledge_root))
+
+    contract_ref = runtime_cfg["layout"]["runtime_contract"]
+    contract_path = out / contract_ref
+    contract_path.parent.mkdir(parents=True, exist_ok=True)
+    contract_path.write_text(
+        json.dumps(opencode_runtime_contract(cfg), ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+    readme_tpl = (root / runtime_cfg["templates"]["readme"]).read_text(encoding="utf-8")
+    (out / "README.md").write_text(
+        render_template(readme_tpl, {
+            "GPT_NAME": cfg["project"]["name"],
+            "VERSION": version,
+        }),
+        encoding="utf-8",
+    )
+    (out / "VERSION").write_text(version + "\n", encoding="utf-8")
+
+    write_manifest(out, cfg["project"]["id"] + "-opencode", version, "AGENTS.md")
+    manifest_path = out / "MANIFEST.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["adapter_id"] = "opencode"
+    manifest["contract_snapshot"] = contract_ref
+    manifest["instructions"] = runtime_cfg["layout"]["instructions"]
+    manifest["skills_included"] = False
+    manifest["tool_integration"] = "deferred"
+    manifest_path.write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    return out
+
+
 def project_files(root: Path) -> list[Path]:
     excluded_top = {"build", "dist", ".git"}
     result = []
@@ -555,6 +632,8 @@ def write_delivery_manifest(dist: Path, cfg: dict, version: str) -> None:
                 artifact_type = "custom_gpt_zip"
             elif "-claude-" in p.name:
                 artifact_type = "claude_zip"
+            elif "-opencode-" in p.name:
+                artifact_type = "opencode_zip"
             else:
                 artifact_type = "zip"
         elif p.name == "SHA256SUMS.txt":
@@ -590,7 +669,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--project-root", default=".")
     parser.add_argument("--version", default="0.0.0-dev")
-    parser.add_argument("--targets", default="project,chat,custom-gpt,claude")
+    parser.add_argument("--targets", default="project,chat,custom-gpt,claude,opencode")
     args = parser.parse_args()
 
     root = Path(args.project_root).resolve()
@@ -618,6 +697,11 @@ def main() -> int:
         claude_root = build_claude(root, cfg, build_root, version)
         claude_zip = dist / f"{project_id}-claude-{version}.zip"
         stable_write_zip(claude_zip, claude_root, [p for p in claude_root.rglob("*") if p.is_file()])
+
+    if "opencode" in targets and cfg.get("runtime", {}).get("opencode", {}).get("enabled"):
+        opencode_root = build_opencode(root, cfg, build_root, version)
+        opencode_zip = dist / f"{project_id}-opencode-{version}.zip"
+        stable_write_zip(opencode_zip, opencode_root, [p for p in opencode_root.rglob("*") if p.is_file()])
 
     if "project" in targets:
         project_zip = dist / f"{project_id}-project.zip"
