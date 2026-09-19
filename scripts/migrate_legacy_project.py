@@ -319,9 +319,6 @@ def build_report(root: Path, cfg: dict[str, Any] | None) -> dict[str, Any]:
 
 def apply_changes(root: Path, cfg: dict[str, Any], report: dict[str, Any], enable_opencode: bool = False) -> bool:
     changes = report.get("changes") or {}
-    if not changes:
-        return False
-
     updated = copy.deepcopy(cfg)
     changed = False
     for key in NEW_CONTRACT_KEYS:
@@ -389,7 +386,7 @@ def main() -> int:
                 }
             else:
                 applied = apply_changes(root, cfg, report, enable_opencode=args.enable_opencode)
-            report["apply"] = {"result": "changed" if applied else "no_changes"}
+                report["apply"] = {"result": "changed" if applied else "no_changes"}
 
     if args.report_file:
         path = Path(args.report_file)
