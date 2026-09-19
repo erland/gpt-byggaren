@@ -1,0 +1,118 @@
+from pathlib import Path
+import importlib.util
+import json
+
+import jsonschema
+
+ROOT = Path(__file__).resolve().parents[1]
+
+spec = importlib.util.spec_from_file_location("project_model", ROOT / "scripts" / "lib" / "project_model.py")
+project_model = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(project_model)
+
+
+def _schema():
+    return json.loads((ROOT / "schemas" / "runtime-parity.schema.json").read_text(encoding="utf-8"))
+
+
+def test_generic_parity_schema_accepts_arbitrary_runtime_ids():
+    report = {
+        "schema_version": 2,
+        "reference": {"type": "canonical_contract"},
+        "runtimes": {
+            "chatgpt_chat": {
+                "level": "high",
+                "weighted_score": 90,
+                "release_recommendation": "publish",
+            },
+            "future_runtime": {
+                "level": "moderate",
+                "weighted_score": 70,
+                "release_recommendation": "publish_with_warning",
+            },
+        },
+        "requirements": [
+            {
+                "category": "tool",
+                "id": "validate-model",
+                "title": "Validate model",
+                "criticality": "critical",
+                "runtime_states": {
+                    "chatgpt_chat": {"state": "reduced", "reason": "Limited local execution"},
+                    "future_runtime": {"state": "equivalent"},
+                },
+            },
+            {
+                "category": "artifact",
+                "id": "final-report",
+                "title": "Final report",
+                "criticality": "important",
+                "runtime_states": {
+                    "chatgpt_chat": {"state": "equivalent"},
+                    "future_runtime": {"state": "equivalent"},
+                },
+            },
+        ],
+    }
+
+    jsonschema.Draft202012Validator(_schema()).validate(report)
+
+
+def test_legacy_two_runtime_report_normalizes_to_generic_model():
+    legacy = {
+        "schema_version": 1,
+        "primary_runtime": "chat_zip",
+        "summary": {
+            "level": "moderate",
+            "weighted_score": 75,
+            "release_recommendation": "publish_with_warning",
+        },
+        "capabilities": [
+            {
+                "id": "core_workflow",
+                "title": "Core workflow",
+                "criticality": "critical",
+                "chat_zip": "equivalent",
+                "custom_gpt": "reduced",
+                "reason": "Custom runtime is reduced",
+            }
+        ],
+    }
+
+    normalized = project_model.normalize_runtime_parity_report(legacy)
+
+    assert normalized["schema_version"] == 2
+    assert normalized["reference"]["type"] == "canonical_contract"
+    assert project_model.runtime_ids_from_parity(normalized) == ["chat_zip", "custom_gpt"]
+    requirement = normalized["requirements"][0]
+    assert requirement["category"] == "capability"
+    assert requirement["runtime_states"]["chat_zip"]["state"] == "equivalent"
+    assert requirement["runtime_states"]["custom_gpt"]["state"] == "reduced"
+
+    jsonschema.Draft202012Validator(_schema()).validate(normalized)
+
+
+def test_generic_report_is_not_modified_by_normalizer():
+    report = {
+        "schema_version": 2,
+        "reference": {"type": "canonical_contract"},
+        "runtimes": {
+            "opencode": {
+                "level": "full",
+                "release_recommendation": "publish",
+            }
+        },
+        "requirements": [
+            {
+                "category": "workspace_state",
+                "id": "persistent-workspace",
+                "title": "Persistent workspace",
+                "criticality": "critical",
+                "runtime_states": {
+                    "opencode": {"state": "equivalent"}
+                },
+            }
+        ],
+    }
+
+    assert project_model.normalize_runtime_parity_report(report) is report
