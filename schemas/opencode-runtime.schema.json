@@ -28,7 +28,10 @@
       "required": [
         "instructions",
         "runtime_contract",
-        "knowledge"
+        "knowledge",
+        "config",
+        "tools",
+        "runtime_scripts"
       ],
       "properties": {
         "instructions": {
@@ -39,6 +42,17 @@
           "minLength": 1
         },
         "knowledge": {
+          "type": "string",
+          "minLength": 1
+        },
+        "config": {
+          "const": "opencode.json"
+        },
+        "tools": {
+          "type": "string",
+          "minLength": 1
+        },
+        "runtime_scripts": {
           "type": "string",
           "minLength": 1
         }
