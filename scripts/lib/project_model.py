@@ -120,3 +120,70 @@ def capability_level(contract: dict[str, Any], capability: str, default: str = "
     if isinstance(value, dict):
         return str(value.get("level", default))
     return default
+
+
+LEGACY_ARTIFACT_MAP = {
+    "project_zip": "project_package",
+    "chat_zip": "runtime_package",
+    "custom_gpt_zip": "runtime_package",
+    "validation_report": "validation_report",
+    "parity_report": "parity_report",
+    "checksums": "checksums",
+}
+
+
+def normalize_artifact_contract(cfg: dict[str, Any]) -> dict[str, Any]:
+    """Return the platform-neutral artifact/output contract.
+
+    New projects use artifacts.outputs. Legacy projects with project_zip/chat_zip/
+    custom_gpt_zip style entries are mapped without mutating source data.
+    """
+    artifacts = cfg.get("artifacts") or {}
+    outputs = artifacts.get("outputs")
+    if isinstance(outputs, dict):
+        return {
+            "contract_version": artifacts.get("contract_version", 1),
+            "outputs": outputs,
+            "legacy_mapping": artifacts.get("legacy_mapping", {}),
+        }
+
+    normalized: dict[str, Any] = {}
+    for legacy_id, value in artifacts.items():
+        canonical_id = LEGACY_ARTIFACT_MAP.get(legacy_id)
+        if not canonical_id or canonical_id in normalized:
+            continue
+        value = value if isinstance(value, dict) else {}
+        requirement = "required"
+        condition = None
+        if value.get("required_when_enabled") or value.get("required_when_multiple_runtimes"):
+            requirement = "conditional"
+            condition = "runtime_condition"
+        elif value.get("required") is False:
+            requirement = "optional"
+        normalized[canonical_id] = {
+            "kind": "distribution" if canonical_id == "runtime_package" else (
+                "package" if canonical_id == "project_package" else (
+                    "report" if canonical_id.endswith("_report") else "metadata"
+                )
+            ),
+            "format": "zip" if canonical_id in {"runtime_package", "project_package"} else (
+                "sha256" if canonical_id == "checksums" else "structured"
+            ),
+            "requirement": requirement,
+            "persistence": "persistent",
+            "multiplicity": "many" if canonical_id == "runtime_package" else "one",
+        }
+        if condition:
+            normalized[canonical_id]["condition"] = condition
+
+    return {
+        "contract_version": 1,
+        "outputs": normalized,
+        "legacy_mapping": dict(LEGACY_ARTIFACT_MAP),
+    }
+
+
+def artifact_contract_id_for_delivery_type(cfg: dict[str, Any], delivery_type: str) -> str | None:
+    contract = normalize_artifact_contract(cfg)
+    mapping = contract.get("legacy_mapping") or LEGACY_ARTIFACT_MAP
+    return mapping.get(delivery_type)
