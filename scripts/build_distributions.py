@@ -291,6 +291,38 @@ def compile_custom_instruction(text: str, mode: str, max_chars: int, core_marker
     return compiled
 
 
+def custom_runtime_contract(cfg: dict) -> dict:
+    """Compile canonical assistant contracts into a Custom GPT adapter snapshot."""
+    tool_contract = normalize_tool_contract(cfg)
+    tool_states = []
+    for tool in tool_contract.get("tools", []):
+        fallback = tool.get("runtime_fallback", "not_applicable")
+        state = "missing" if tool.get("requirement") == "required" and fallback == "block" else (
+            "reduced" if tool.get("type") in {"script", "local_command"} else "not_applicable"
+        )
+        tool_states.append({
+            "id": tool.get("id"),
+            "type": tool.get("type"),
+            "requirement": tool.get("requirement"),
+            "state": state,
+            "runtime_fallback": fallback,
+        })
+
+    return {
+        "schema_version": 1,
+        "runtime_id": "chatgpt_custom",
+        "capabilities": normalize_capability_contract(cfg),
+        "artifacts": normalize_artifact_contract(cfg),
+        "workspace_state": normalize_workspace_state_contract(cfg),
+        "tools": tool_contract,
+        "adapter": {
+            "tool_execution": "not_embedded",
+            "tool_states": tool_states,
+            "builder_package": True,
+        },
+    }
+
+
 def build_custom(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     out = build_root / "custom-gpt"
     ensure_clean_dir(out)
@@ -326,6 +358,12 @@ def build_custom(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     })
     (builder / "capabilities.md").write_text(cap_text, encoding="utf-8")
 
+    contract_snapshot = custom_runtime_contract(cfg)
+    (builder / "runtime-contract.json").write_text(
+        json.dumps(contract_snapshot, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
     copied_knowledge = collect_custom_knowledge(root, cfg, kp)
 
     knowledge_root = root / cfg["knowledge_architecture"]["canonical_root"]
@@ -334,6 +372,8 @@ def build_custom(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     selected_set = set(selected_rel)
     excluded_rel = [p.relative_to(knowledge_root).as_posix() for p in canonical_knowledge if p.relative_to(knowledge_root).as_posix() not in selected_set]
     compilation_report = {
+        "runtime_id": "chatgpt_custom",
+        "contract_snapshot": "builder/runtime-contract.json",
         "instruction": {
             "mode": mode,
             "canonical_characters": len(instr),
@@ -371,6 +411,11 @@ def build_custom(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     (out / "VERSION").write_text(version + "\n", encoding="utf-8")
 
     write_manifest(out, cfg["project"]["id"] + "-custom-gpt", version)
+    manifest_path = out / "MANIFEST.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["adapter_id"] = "chatgpt_custom"
+    manifest["contract_snapshot"] = "builder/runtime-contract.json"
+    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return out
 
 
