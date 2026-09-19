@@ -184,6 +184,10 @@ def scaffold_project(root, scenario, profile):
                 }
             }
         },
+        "tools": {
+            "contract_version": 1,
+            "tools": []
+        },
         "workspace_state": {
             "contract_version": 1,
             "workspace": {
@@ -359,6 +363,7 @@ def run(root, scenario_path):
             "capability_contract": "requirements" in cfg.get("capabilities", {}),
             "artifact_contract": "outputs" in cfg.get("artifacts", {}),
             "workspace_state_contract": cfg.get("workspace_state", {}).get("state", {}).get("authority") == "workspace_file",
+            "tool_contract": isinstance(cfg.get("tools", {}).get("tools"), list),
             "readme": (generated_project / "README.md").exists(),
             "github_ci": (generated_project / ".github" / "workflows" / "ci.yml").exists(),
             "github_release": (generated_project / ".github" / "workflows" / "release.yml").exists(),
