@@ -149,18 +149,36 @@ runtime:
       block_on_knowledge_limit: true
       block_on_misleading_core_functionality: true
 capabilities:
+  contract_version: 1
+  schema: schemas/capability-contract.schema.json
   recommendation_mode: inferred_from_use_case
   ask_user_only_when_business_choice_is_ambiguous: true
-  web:
-    state: to_be_recommended
-  data_analysis:
-    state: to_be_recommended
-  image_generation:
-    state: to_be_recommended
-  file_handling:
-    state: required
-  structured_knowledge:
-    state: likely_required
+  requirements:
+    web:
+      level: to_be_recommended
+    filesystem:
+      read: required
+      write: required
+    shell:
+      level: optional
+    code_execution:
+      level: recommended
+    structured_data:
+      level: required
+    persistent_state:
+      level: recommended
+    external_tools:
+      level: optional
+      preferred_protocols:
+      - mcp
+    image_generation:
+      level: to_be_recommended
+  legacy_mapping:
+    web: web
+    data_analysis: code_execution
+    file_handling: filesystem
+    image_generation: image_generation
+    structured_knowledge: structured_data
 analysis:
   model: docs/analysis-model.md
   recommendation_schema: schemas/analysis-recommendation.schema.json
