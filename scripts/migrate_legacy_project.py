@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import copy
 import json
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +19,13 @@ from lib.project_model import (
 
 
 NEW_CONTRACT_KEYS = ("capabilities", "artifacts", "workspace_state", "tools")
+BUILDER_ROOT = Path(__file__).resolve().parents[1]
+OPENCODE_ASSETS = (
+    "schemas/opencode-runtime.schema.json",
+    "src/runtime-policy/opencode-runtime-policy.md",
+    "docs/opencode-runtime.md",
+    "templates/README.opencode.md.tpl",
+)
 
 
 def load_cfg(root: Path) -> dict[str, Any] | None:
@@ -317,6 +325,21 @@ def build_report(root: Path, cfg: dict[str, Any] | None) -> dict[str, Any]:
     }
 
 
+def install_opencode_assets(root: Path) -> list[str]:
+    copied: list[str] = []
+    for rel in OPENCODE_ASSETS:
+        src = BUILDER_ROOT / rel
+        if not src.exists():
+            raise FileNotFoundError(f"GPT Byggaren OpenCode adapter asset is missing: {rel}")
+        dst = root / rel
+        if dst.exists():
+            continue
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dst)
+        copied.append(rel)
+    return copied
+
+
 def apply_changes(root: Path, cfg: dict[str, Any], report: dict[str, Any], enable_opencode: bool = False) -> bool:
     changes = report.get("changes") or {}
     updated = copy.deepcopy(cfg)
@@ -349,6 +372,8 @@ def apply_changes(root: Path, cfg: dict[str, Any], report: dict[str, Any], enabl
         runtime = updated.setdefault("runtime", {})
         if "opencode" not in runtime:
             runtime["opencode"] = opencode_runtime_config()
+            changed = True
+        if install_opencode_assets(root):
             changed = True
 
     if not changed:
