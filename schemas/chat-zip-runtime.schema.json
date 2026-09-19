@@ -17,7 +17,8 @@
     "role": {
       "enum": [
         "primary",
-        "secondary"
+        "secondary",
+        "peer_distribution"
       ]
     },
     "entrypoint": {
