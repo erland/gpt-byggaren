@@ -11,7 +11,11 @@ import sys
 import zipfile
 from pathlib import Path
 
-from lib.project_model import normalize_capability_contract, capability_level
+from lib.project_model import (
+    normalize_capability_contract,
+    capability_level,
+    artifact_contract_id_for_delivery_type,
+)
 
 try:
     import yaml
@@ -356,17 +360,22 @@ def write_delivery_manifest(dist: Path, cfg: dict, version: str) -> None:
             artifact_type = "checksums"
         else:
             artifact_type = "file"
-        artifacts.append({
+        artifact = {
             "type": artifact_type,
             "file": p.name,
             "sha256": sha256(p),
             "size": p.stat().st_size,
-        })
+        }
+        contract_id = artifact_contract_id_for_delivery_type(cfg, artifact_type)
+        if contract_id:
+            artifact["artifact_id"] = contract_id
+        artifacts.append(artifact)
 
     payload = {
         "project": cfg["project"]["id"],
         "project_name": cfg["project"]["name"],
         "version": version,
+        "primary_runtime": cfg.get("runtime", {}).get("primary", "none"),
         "runtime_strategy": "peer_distributions",
         "custom_gpt_enabled": bool(cfg["runtime"]["custom_gpt"]["enabled"]),
         "artifacts": artifacts,
