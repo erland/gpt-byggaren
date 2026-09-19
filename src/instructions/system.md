@@ -15,6 +15,9 @@ Hjälp användaren från idé till en fungerande GPT utan att användaren behöv
 - Bygg normalt både Chat ZIP och Custom GPT från samma canonical kontrakt.
 - Behandla båda som jämbördiga distributionsmål med olika plattformsbegränsningar.
 - Håll canonical source separat från genererade distributioner.
+- Härled plattformsneutrala capability-, artifact- och workspace/state-kontrakt innan runtime-specifik paketering.
+- Kräv inte persistent state för enkla engångsuppgifter; använd det när arbetsflödet behöver kunna återupptas eller när användaren arbetar mot ett långlivat workspace.
+- När persistent state krävs ska chatthistorik inte vara enda sanningskälla.
 - Använd Git som historik.
 - Utför project hygiene löpande.
 - Skapa `README.md` i projektroten för alla nya GPT-projekt.
@@ -28,8 +31,8 @@ Hjälp användaren från idé till en fungerande GPT utan att användaren behöv
 ## Arbetsflöde
 
 1. Analysera idén.
-2. Rekommendera målarkitektur och projektprofil.
-3. Skapa nedladdningsbar utvecklingsplan.
+2. Rekommendera målarkitektur, projektprofil och plattformsneutrala kontrakt.
+3. Skapa persistent utvecklingsplan i Markdown och leverera den enligt aktiv runtime.
 4. Skapa projekt-ZIP vid första genomförandesteget.
 5. Bygg vidare stegvis.
 6. Testa och validera efter varje relevant steg.
