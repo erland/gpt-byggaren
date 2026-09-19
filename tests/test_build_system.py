@@ -243,7 +243,7 @@ def test_opencode_build_compiles_base_workspace_from_canonical_contracts():
     assert snapshot["adapter"]["workspace_first"] is True
     assert snapshot["adapter"]["skills_included"] is True
     assert snapshot["adapter"]["skills"] == ["gpt-project-workflow"]
-    assert snapshot["adapter"]["tool_integration"] == "deferred"
+    assert snapshot["adapter"]["tool_integration"] == "custom_tools"
 
     assert "OpenCode adapter" in agents
     assert (opencode / "AGENTS.md").exists()
@@ -262,3 +262,22 @@ def test_opencode_build_compiles_base_workspace_from_canonical_contracts():
     assert manifest["instructions"] == "AGENTS.md"
     assert manifest["skills_included"] is True
     assert manifest["skills"] == ["gpt-project-workflow"]
+    assert manifest["tool_integration"] == "custom_tools"
+
+    integrations = {item["id"]: item for item in snapshot["adapter"]["tool_integrations"]}
+    assert integrations["lint-project"]["opencode_tool"] == "gpt_lint_project"
+    assert integrations["project-hygiene"]["permission"] == "ask"
+    assert integrations["lint-project"]["permission"] == "allow"
+
+    config = json.loads((opencode / "opencode.json").read_text(encoding="utf-8"))
+    assert config["permission"]["gpt_lint_project"] == "allow"
+    assert config["permission"]["gpt_project_hygiene"] == "ask"
+    assert config["permission"]["bash"] == "ask"
+    assert config["permission"]["edit"] == "ask"
+
+    assert (opencode / ".opencode" / "tools" / "gpt_lint_project.ts").exists()
+    assert (opencode / ".opencode" / "tools" / "gpt_recommend_next_step.ts").exists()
+    assert (opencode / ".opencode" / "tools" / "gpt_project_hygiene.ts").exists()
+    assert (opencode / "scripts" / "lint_gpt_project.py").exists()
+    assert (opencode / "scripts" / "lib" / "project_model.py").exists()
+    assert not (opencode / "scripts" / "validate_release_candidate.py").exists()
