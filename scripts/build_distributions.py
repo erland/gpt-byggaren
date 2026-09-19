@@ -568,9 +568,101 @@ def build_opencode_skills(root: Path, cfg: dict, out: Path) -> list[str]:
     return built
 
 
-def opencode_runtime_contract(cfg: dict, built_skills: list[str] | None = None) -> dict:
+def _opencode_tool_name(tool_id: str) -> str:
+    return "gpt_" + tool_id.replace("-", "_")
+
+
+def _opencode_tool_wrapper(tool: dict, script_ref: str) -> str:
+    tool_id = tool["id"]
+    description = tool.get("purpose", tool_id).replace('"', '\\"')
+    arg_schema = 'projectRoot: tool.schema.string().optional().describe("Project root relative to the worktree")'
+    if tool_id == "project-hygiene":
+        arg_schema += ',\\n    mode: tool.schema.enum(["checkpoint", "final"]).optional(),\\n    fix: tool.schema.boolean().optional()'
+        command_lines = '''
+    const mode = args.mode ?? "checkpoint"
+    const fix = args.fix ? ["--fix"] : []
+    const cmd = ["python3", script, "--project-root", projectRoot, "--mode", mode, ...fix, "--json"]'''
+    elif tool_id == "build-distributions":
+        arg_schema += ',\\n    version: tool.schema.string().optional(),\\n    targets: tool.schema.string().optional()'
+        command_lines = '''
+    const version = args.version ?? "0.0.0-dev"
+    const targets = args.targets ?? "project,chat,custom-gpt,claude,opencode"
+    const cmd = ["python3", script, "--project-root", projectRoot, "--version", version, "--targets", targets]'''
+    elif tool_id == "recommend-next-step":
+        command_lines = '''
+    const cmd = ["python3", script, "--project-root", projectRoot, "--json"]'''
+    else:
+        command_lines = '''
+    const cmd = ["python3", script, "--project-root", projectRoot]'''
+
+    return f'''import {{ tool }} from "@opencode-ai/plugin"
+import path from "path"
+
+export default tool({{
+  description: "{description}",
+  args: {{
+    {arg_schema}
+  }},
+  async execute(args, context) {{
+    const projectRoot = path.resolve(context.worktree, args.projectRoot ?? ".")
+    const script = path.join(context.worktree, "{script_ref}"){command_lines}
+    const proc = Bun.spawn(cmd, {{ cwd: context.worktree, stdout: "pipe", stderr: "pipe" }})
+    const stdout = await new Response(proc.stdout).text()
+    const stderr = await new Response(proc.stderr).text()
+    const code = await proc.exited
+    if (code !== 0) throw new Error((stderr || stdout || ("Tool failed with exit code " + code)).trim())
+    return (stdout || stderr).trim()
+  }}
+}})
+'''
+
+
+def build_opencode_tools(root: Path, cfg: dict, out: Path) -> list[dict]:
+    runtime_cfg = cfg["runtime"]["opencode"]
+    scripts_target = out / runtime_cfg["layout"]["runtime_scripts"]
+    copied = copy_declared_tool_scripts(root, cfg, scripts_target)
+    copied_set = set(copied)
+    tools_target = out / runtime_cfg["layout"]["tools"]
+    tools_target.mkdir(parents=True, exist_ok=True)
+
+    integrations = []
+    permissions = {{
+        "skill": {{"*": "allow"}},
+        "bash": "ask",
+        "edit": "ask",
+    }}
+    for tool_cfg in normalize_tool_contract(cfg).get("tools", []):
+        if tool_cfg.get("type") != "script":
+            continue
+        script_ref = tool_cfg.get("script")
+        if not script_ref or script_ref not in copied_set:
+            continue
+        packaged_script = str(Path(runtime_cfg["layout"]["runtime_scripts"]) / Path(script_ref).name)
+        tool_name = _opencode_tool_name(tool_cfg["id"])
+        (tools_target / f"{{tool_name}}.ts").write_text(
+            _opencode_tool_wrapper(tool_cfg, packaged_script),
+            encoding="utf-8",
+        )
+        permissions[tool_name] = "ask" if tool_cfg.get("mutates_workspace") else "allow"
+        integrations.append({{
+            "id": tool_cfg["id"],
+            "opencode_tool": tool_name,
+            "script": packaged_script,
+            "permission": permissions[tool_name],
+        }})
+
+    config_path = out / runtime_cfg["layout"]["config"]
+    config_path.write_text(json.dumps({{
+        "$schema": "https://opencode.ai/config.json",
+        "permission": permissions,
+    }}, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+    return integrations
+
+
+def opencode_runtime_contract(cfg: dict, built_skills: list[str] | None = None, tool_integrations: list[dict] | None = None) -> dict:
     """Compile canonical assistant contracts into an OpenCode workspace snapshot."""
     built_skills = list(built_skills or [])
+    tool_integrations = list(tool_integrations or [])
     return {
         "schema_version": 1,
         "runtime_id": "opencode",
@@ -583,7 +675,8 @@ def opencode_runtime_contract(cfg: dict, built_skills: list[str] | None = None) 
             "instructions": "AGENTS.md",
             "skills_included": bool(built_skills),
             "skills": built_skills,
-            "tool_integration": "deferred",
+            "tool_integration": "custom_tools",
+            "tool_integrations": tool_integrations,
             "workspace_first": True,
         },
     }
@@ -616,12 +709,13 @@ def build_opencode(root: Path, cfg: dict, build_root: Path, version: str) -> Pat
                 copy_file(p, knowledge_target / p.relative_to(knowledge_root))
 
     built_skills = build_opencode_skills(root, cfg, out)
+    tool_integrations = build_opencode_tools(root, cfg, out)
 
     contract_ref = runtime_cfg["layout"]["runtime_contract"]
     contract_path = out / contract_ref
     contract_path.parent.mkdir(parents=True, exist_ok=True)
     contract_path.write_text(
-        json.dumps(opencode_runtime_contract(cfg, built_skills), ensure_ascii=False, indent=2) + "\n",
+        json.dumps(opencode_runtime_contract(cfg, built_skills, tool_integrations), ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
 
@@ -643,7 +737,8 @@ def build_opencode(root: Path, cfg: dict, build_root: Path, version: str) -> Pat
     manifest["instructions"] = runtime_cfg["layout"]["instructions"]
     manifest["skills_included"] = bool(built_skills)
     manifest["skills"] = built_skills
-    manifest["tool_integration"] = "deferred"
+    manifest["tool_integration"] = "custom_tools"
+    manifest["tools"] = [item["opencode_tool"] for item in tool_integrations]
     manifest_path.write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
