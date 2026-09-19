@@ -132,11 +132,6 @@ def build_report(root: Path, cfg: dict[str, Any] | None) -> dict[str, Any]:
     if isinstance(caps, dict) and isinstance(caps.get("requirements"), dict):
         decisions.append(decision("capabilities", "preserve", "not_applicable"))
     else:
-        changes["capabilities"] = normalize_capability_contract(cfg)
-        confidence = "auto_with_warning" if isinstance(caps, dict) and "file_handling" in caps else "safe_auto"
-        decisions.append(decision("capabilities", "normalize", confidence))
-        if confidence == "auto_with_warning":
-            warnings.append("Legacy file_handling was mapped to both filesystem.read and filesystem.write.")
         unknown = _legacy_unknown_capabilities(cfg)
         if unknown:
             decisions.append(decision(
@@ -146,21 +141,28 @@ def build_report(root: Path, cfg: dict[str, Any] | None) -> dict[str, Any]:
                 evidence=unknown,
             ))
             warnings.append("Unknown legacy capabilities were not migrated automatically: " + ", ".join(unknown))
+        else:
+            changes["capabilities"] = normalize_capability_contract(cfg)
+            confidence = "auto_with_warning" if isinstance(caps, dict) and "file_handling" in caps else "safe_auto"
+            decisions.append(decision("capabilities", "normalize", confidence))
+            if confidence == "auto_with_warning":
+                warnings.append("Legacy file_handling was mapped to both filesystem.read and filesystem.write.")
 
     artifacts = cfg.get("artifacts")
     if isinstance(artifacts, dict) and isinstance(artifacts.get("outputs"), dict):
         decisions.append(decision("artifacts", "preserve", "not_applicable"))
     else:
-        normalized_artifacts = normalize_artifact_contract(cfg)
-        if normalized_artifacts.get("outputs"):
-            changes["artifacts"] = normalized_artifacts
-            decisions.append(decision("artifacts", "normalize", "safe_auto"))
-        else:
-            decisions.append(decision("artifacts", "no_legacy_artifacts", "not_applicable"))
         domain = _domain_artifact_candidates(cfg)
         if domain:
             decisions.append(decision("artifacts", "review_domain_outputs", "manual_review", evidence=domain))
             warnings.append("Domain-specific legacy artifacts require manual review: " + ", ".join(domain))
+        else:
+            normalized_artifacts = normalize_artifact_contract(cfg)
+            if normalized_artifacts.get("outputs"):
+                changes["artifacts"] = normalized_artifacts
+                decisions.append(decision("artifacts", "normalize", "safe_auto"))
+            else:
+                decisions.append(decision("artifacts", "no_legacy_artifacts", "not_applicable"))
 
     if isinstance(cfg.get("workspace_state"), dict):
         decisions.append(decision("workspace_state", "preserve", "not_applicable"))
@@ -177,20 +179,19 @@ def build_report(root: Path, cfg: dict[str, Any] | None) -> dict[str, Any]:
     if isinstance(cfg.get("tools"), dict):
         decisions.append(decision("tools", "preserve", "not_applicable"))
     else:
-        tool_contract = normalize_tool_contract(cfg)
         legacy_tooling = isinstance(cfg.get("tooling"), dict) and isinstance(cfg["tooling"].get("tools"), list)
-        changes["tools"] = tool_contract
-        decisions.append(decision(
-            "tools",
-            "normalize_explicit_tools" if legacy_tooling else "create_empty_contract",
-            "safe_auto",
-        ))
         scripts = _script_candidates(root, cfg)
-        if scripts:
+        if legacy_tooling:
+            changes["tools"] = normalize_tool_contract(cfg)
+            decisions.append(decision("tools", "normalize_explicit_tools", "safe_auto"))
+        elif scripts:
             decisions.append(decision("tools", "inventory_scripts", "manual_review", evidence=scripts))
             warnings.append(
                 f"{len(scripts)} script candidate(s) were found but were not promoted to runtime tools automatically."
             )
+        else:
+            changes["tools"] = normalize_tool_contract(cfg)
+            decisions.append(decision("tools", "create_empty_contract", "safe_auto"))
 
     status = "no_changes"
     if source_class == "L3" and not changes:
