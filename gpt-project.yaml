@@ -139,7 +139,7 @@ runtime:
       readme: templates/README.opencode.md.tpl
     skills:
       enabled: true
-      root: .opencode/skills
+      directory: .opencode/skills
       definitions:
       - id: gpt-project-workflow
         name: gpt-project-workflow
