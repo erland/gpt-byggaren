@@ -14,6 +14,9 @@ from pathlib import Path
 from lib.project_model import (
     normalize_capability_contract,
     capability_level,
+    normalize_artifact_contract,
+    normalize_workspace_state_contract,
+    normalize_tool_contract,
     artifact_contract_id_for_delivery_type,
 )
 
@@ -114,6 +117,43 @@ def write_manifest(root: Path, runtime_id: str, version: str, entrypoint: str | 
     )
 
 
+def chat_runtime_contract(cfg: dict) -> dict:
+    """Compile canonical assistant contracts into a Chat-runtime snapshot."""
+    return {
+        "schema_version": 1,
+        "runtime_id": "chatgpt_chat",
+        "capabilities": normalize_capability_contract(cfg),
+        "artifacts": normalize_artifact_contract(cfg),
+        "workspace_state": normalize_workspace_state_contract(cfg),
+        "tools": normalize_tool_contract(cfg),
+    }
+
+
+def copy_declared_tool_scripts(root: Path, cfg: dict, target: Path) -> list[str]:
+    """Copy only explicitly declared script tools plus their shared library."""
+    copied = []
+    contract = normalize_tool_contract(cfg)
+    for tool in contract.get("tools", []):
+        if tool.get("type") != "script":
+            continue
+        script_ref = tool.get("script")
+        if not script_ref:
+            continue
+        src = root / script_ref
+        if not src.exists():
+            raise SystemExit(f"Declared runtime tool script missing: {script_ref}")
+        rel = Path(script_ref)
+        if rel.parts and rel.parts[0] == "scripts":
+            rel = Path(*rel.parts[1:])
+        copy_file(src, target / rel)
+        copied.append(script_ref)
+
+    shared_lib = root / "scripts" / "lib"
+    if copied and shared_lib.exists():
+        copy_tree_filtered(shared_lib, target / "lib")
+    return copied
+
+
 def build_chat(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     out = build_root / "chat"
     ensure_clean_dir(out)
@@ -143,12 +183,21 @@ def build_chat(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
             if p.is_file() and p.name != "KNOWLEDGE.md":
                 copy_file(p, out / "knowledge" / p.relative_to(knowledge_root))
 
-    # Runtime-relevant schemas/scripts/templates are included for now.
-    # Later steps may refine this with explicit per-file role metadata.
-    for key in ["schemas", "scripts", "templates"]:
+    # Schemas/templates still follow the existing declarative Chat ZIP include model.
+    # Runtime scripts are now selected from the canonical tool contract.
+    for key in ["schemas", "templates"]:
         path = root / cfg["structure"][key]["path"]
         if path.exists():
             copy_tree_filtered(path, out / key, ignore_names={"README.md"})
+
+    declared_tool_scripts = copy_declared_tool_scripts(root, cfg, out / "scripts")
+
+    contract_snapshot = chat_runtime_contract(cfg)
+    contract_snapshot["declared_tool_scripts"] = declared_tool_scripts
+    (assistant / "runtime-contract.json").write_text(
+        json.dumps(contract_snapshot, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
 
     template_path = root / cfg["runtime"]["chat_zip"]["start_here_template"]
     template = template_path.read_text(encoding="utf-8")
@@ -159,6 +208,11 @@ def build_chat(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     (out / "START-HERE.md").write_text(start_here, encoding="utf-8")
     (out / "VERSION").write_text(version + "\n", encoding="utf-8")
     write_manifest(out, cfg["project"]["id"] + "-chat", version, "START-HERE.md")
+    manifest_path = out / "MANIFEST.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["adapter_id"] = "chatgpt_chat"
+    manifest["contract_snapshot"] = "assistant/runtime-contract.json"
+    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return out
 
 
