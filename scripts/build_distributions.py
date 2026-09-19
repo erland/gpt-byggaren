@@ -814,24 +814,29 @@ def write_checksums(dist: Path) -> None:
     (dist / "SHA256SUMS.txt").write_text("\n".join(lines) + ("\n" if lines else ""), encoding="utf-8")
 
 
+def artifact_type_for_distribution(cfg: dict, filename: str, version: str) -> str:
+    project_id = cfg["project"]["id"]
+    if filename == f"{project_id}-project.zip":
+        return "project_zip"
+
+    for target_cfg in (cfg.get("build_system", {}).get("runtime_targets") or {}).values():
+        pattern = target_cfg.get("filename_pattern")
+        artifact_type = target_cfg.get("artifact_type")
+        if not pattern or not artifact_type:
+            continue
+        expected = pattern.replace("<project-id>", project_id).replace("<version>", version)
+        if filename == expected:
+            return artifact_type
+    return "zip"
+
+
 def write_delivery_manifest(dist: Path, cfg: dict, version: str) -> None:
     artifacts = []
     for p in sorted(dist.iterdir()):
         if not p.is_file() or p.name in {"DELIVERY-MANIFEST.json"}:
             continue
         if p.suffix == ".zip":
-            if "-project" in p.name:
-                artifact_type = "project_zip"
-            elif "-chat-" in p.name:
-                artifact_type = "chat_zip"
-            elif "-custom-gpt-" in p.name:
-                artifact_type = "custom_gpt_zip"
-            elif "-claude-" in p.name:
-                artifact_type = "claude_zip"
-            elif "-opencode-" in p.name:
-                artifact_type = "opencode_zip"
-            else:
-                artifact_type = "zip"
+            artifact_type = artifact_type_for_distribution(cfg, p.name, version)
         elif p.name == "SHA256SUMS.txt":
             artifact_type = "checksums"
         else:
