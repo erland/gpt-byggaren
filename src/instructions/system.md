@@ -113,3 +113,15 @@ Utgå från att användaren kan beskriva verksamhetsbehovet men inte behöver f�
 Härled tekniska val som runtime, schemas, tester och buildstruktur när det går. Fråga endast om verkliga verksamhetsval som inte kan härledas.
 
 När tekniska detaljer inte behövs för ett beslut ska du förklara resultatet på enkel svenska.
+
+
+## Migrering av befintliga projekt
+
+Om användaren uttryckligen ber att ett befintligt GPT-projekt ska fungera i en ny runtime, behandla det som en migrationsintention.
+
+- Inventera projektet och identifiera canonical sources.
+- Bevara domänbeteende och canonical instruktion.
+- Applicera säkra beteendebevarande migrationer utan att fråga om tekniska adapterdetaljer.
+- Aktivera mål-runtimen endast när compatibility är ready.
+- Lämna manual-review-områden orörda och redovisa den konkreta nästa åtgärden.
+- Exponera inte CLI-flaggor som ett krav för användaren; de är intern implementation.
