@@ -11,6 +11,8 @@ import sys
 import zipfile
 from pathlib import Path
 
+from lib.project_model import normalize_capability_contract, capability_level
+
 try:
     import yaml
 except Exception as exc:
@@ -251,12 +253,17 @@ def build_custom(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     (builder / "conversation-starters.md").write_text(combined, encoding="utf-8")
 
     cap_tpl = (root / cfg["runtime"]["custom_gpt"]["templates"]["capabilities"]).read_text(encoding="utf-8")
+    capability_contract = normalize_capability_contract(cfg)
+    filesystem = capability_contract.get("requirements", {}).get("filesystem", {})
+    filesystem_level = "required" if "required" in {filesystem.get("read"), filesystem.get("write")} else (
+        "recommended" if "recommended" in {filesystem.get("read"), filesystem.get("write")} else "optional"
+    )
     cap_text = render_template(cap_tpl, {
         "CAPABILITY_RECOMMENDATIONS": (
-            "- Webbsökning: bedöms från projektets analysmodell\n"
-            "- Dataanalys: bedöms från projektets analysmodell\n"
-            "- Bildgenerering: bedöms från projektets analysmodell\n"
-            "- Filhantering: aktiveras när plattformen stöder relevant funktion"
+            f"- Webbsökning: {capability_level(capability_contract, 'web', 'optional')}\n"
+            f"- Dataanalys/kodexekvering: {capability_level(capability_contract, 'code_execution', 'optional')}\n"
+            f"- Bildgenerering: {capability_level(capability_contract, 'image_generation', 'optional')}\n"
+            f"- Filhantering: {filesystem_level}"
         )
     })
     (builder / "capabilities.md").write_text(cap_text, encoding="utf-8")
