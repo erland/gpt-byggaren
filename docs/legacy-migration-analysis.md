@@ -420,3 +420,67 @@ Exempel:
 ### Idempotens
 
 En andra `--apply` på ett redan migrerat projekt ska ge `no_changes` och inte skriva om explicita kontrakt.
+
+
+## OpenCode-stöd för migrerade projekt – steg 15
+
+Migreringsrapporten innehåller nu en separat OpenCode-bedömning:
+
+```yaml
+opencode:
+  status: ready
+  can_enable_automatically: true
+  reasons: []
+  required_actions: []
+```
+
+Möjliga statusar:
+
+- `ready` – canonical instruktion är löst, workspace/state är tillräckligt tydligt och tools kräver ingen manuell inventering,
+- `reduced` – projektet kan i princip representeras i OpenCode men tool/state-frågor måste lösas innan automatisk aktivering,
+- `blocked` – en OpenCode-kritisk förutsättning saknas, exempelvis canonical instruktion eller projektkontrakt.
+
+### Automatisk aktivering
+
+När rapporten är `ready` kan OpenCode aktiveras tillsammans med migrationen:
+
+```bash
+python scripts/migrate_legacy_project.py \
+  --project-root /path/to/project \
+  --apply \
+  --enable-opencode
+```
+
+Detta:
+
+- lägger till `runtime.opencode`,
+- kopierar OpenCode-runtime-schema,
+- kopierar OpenCode-runtimepolicy,
+- kopierar OpenCode-runtimedokumentation,
+- kopierar README-mallen.
+
+Adapterresurser kopieras endast om de saknas och skrivs inte över om projektet redan har egna explicita versioner.
+
+### Reduced
+
+Vanligaste reduced-fallet är att projektet innehåller scripts men saknar explicit tool-kontrakt.
+
+Då:
+
+- scripts inventeras,
+- inga scripts masspromoteras,
+- OpenCode markeras `reduced`,
+- `--enable-opencode` blockeras,
+- användaren behöver klassificera vilka scripts som verkligen är runtime-tools.
+
+### Blocked
+
+OpenCode blockeras när exempelvis:
+
+- `gpt-project.yaml` saknas,
+- canonical instruktion inte kan identifieras,
+- ett OpenCode-kritiskt workspace/state-område kräver manuell granskning.
+
+### Viktig avgränsning
+
+Steg 15 installerar OpenCode-adapterkontrakt och statiska adapterresurser i migrerade projekt. Generalisering av hela distributionsbyggsystemet och buildtarget-hanteringen sker i senare plansteg.
