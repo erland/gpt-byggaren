@@ -526,7 +526,7 @@ def build_opencode_skills(root: Path, cfg: dict, out: Path) -> list[str]:
     if not skills_cfg.get("enabled"):
         return []
 
-    skill_root = out / skills_cfg.get("root", ".opencode/skills")
+    skill_root = out / skills_cfg.get("directory", ".opencode/skills")
     built: list[str] = []
     for skill in skills_cfg.get("definitions", []):
         skill_id = skill["id"]
