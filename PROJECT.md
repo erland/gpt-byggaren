@@ -322,7 +322,7 @@ Detta beslut ersätter tidigare ZIP-first/primär-runtime-formuleringar där de 
 - GPT Byggaren bygger normalt både Chat ZIP och Custom GPT.
 - Båda härleds från samma canonical beteende- och capability-kontrakt.
 - Ingen distribution är automatiskt primär på grund av komplexitet.
-- Runtime parity mäts från canonical capability-kontrakt till respektive distribution.
+- Runtime compatibility mäts från canonical behavior-, capability-, artifact-, workspace/state- och tool-kontrakt till respektive registrerad runtime.
 - Faktiska plattformsbegränsningar dokumenteras per distribution.
 - Modellkompatibilitet får dokumenteras och testas, men ska normalt inte skapa ytterligare distributionsvarianter.
 
