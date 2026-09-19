@@ -805,6 +805,12 @@ release_readiness:
   - blocked
   blocked_stops_release: true
   same_assessment_for_local_and_github: true
+new_project_experience:
+  model: docs/new-project-experience.md
+  runtime_strategy: peer_candidates
+  infer_runtime_targets: true
+  ask_user_only_for_business_constraints: true
+  allow_multiple_default_targets: true
 beginner_documentation:
   getting_started: docs/getting-started.md
   faq: docs/beginner-faq.md
