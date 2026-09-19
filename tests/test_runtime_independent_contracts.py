@@ -97,3 +97,31 @@ def test_core_behavior_contract_is_runtime_neutral():
     runtime_section = instruction.split("## Runtime", 1)[1].split("## ", 1)[0]
     assert "aktiverat" in runtime_section or "aktiverade" in runtime_section
     assert "Alla runtimes ska härledas från samma canonical" in runtime_section
+
+
+def test_configured_targets_are_used_when_cli_targets_are_omitted():
+    cfg = load_cfg()
+    assert build_distributions.configured_targets(cfg) == cfg["build_system"]["targets"]
+
+
+def test_runtime_artifact_types_are_derived_from_registry():
+    cfg = load_cfg()
+    version = "1.2.3"
+    project_id = cfg["project"]["id"]
+
+    for target_cfg in cfg["build_system"]["runtime_targets"].values():
+        filename = (
+            target_cfg["filename_pattern"]
+            .replace("<project-id>", project_id)
+            .replace("<version>", version)
+        )
+        assert build_distributions.artifact_type_for_distribution(cfg, filename, version) == target_cfg["artifact_type"]
+
+
+def test_runtime_builders_are_referenced_declaratively():
+    cfg = load_cfg()
+    declared = {
+        target_cfg["builder"]
+        for target_cfg in cfg["build_system"]["runtime_targets"].values()
+    }
+    assert declared <= set(build_distributions.RUNTIME_BUILDERS)
