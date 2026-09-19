@@ -818,6 +818,16 @@ beginner_documentation:
   target_audience: users_without_technical_gpt_build_knowledge
   technical_choices_inferred_when_possible: true
   project_zip_is_continuation_artifact: true
+existing_project_migration:
+  model: docs/existing-project-migration-experience.md
+  policy: src/runtime-policy/existing-project-migration-policy.md
+  script: scripts/migrate_project_for_runtime.py
+  result_schema: schemas/existing-project-migration-result.schema.json
+  natural_language_intent: true
+  apply_safe_changes_when_explicitly_requested: true
+  ask_only_for_unresolved_business_or_semantic_choices: true
+  supported_targets:
+  - opencode
 legacy_migration:
   model: docs/legacy-migration-analysis.md
   script: scripts/migrate_legacy_project.py
