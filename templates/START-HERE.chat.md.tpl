@@ -9,10 +9,11 @@ Bifoga ZIP-filen i en ChatGPT-konversation och ange att den ska användas som GP
 ## Viktiga delar
 
 - `assistant/instructions.md` – runtimeinstruktion
+- `assistant/runtime-contract.json` – kompilerad snapshot av canonical capability-, artifact-, workspace/state- och tool-kontrakt
 - `assistant/policies/` – runtimepolicies
 - `knowledge/` – referensmaterial
 - `schemas/` – runtime-scheman när de finns
-- `scripts/` – runtime-script när de finns
+- `scripts/` – endast explicit deklarerade runtimeverktyg och nödvändigt delat stöd
 - `templates/` – runtime-mallar när de finns
 
 ## Version
