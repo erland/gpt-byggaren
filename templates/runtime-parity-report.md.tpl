@@ -1,23 +1,20 @@
-# Runtime parity – {{GPT_NAME}}
+# Runtime compatibility – {{GPT_NAME}}
 
-## Summary
+## Runtimes
 
-- Primary runtime: {{PRIMARY_RUNTIME}}
-- Parity level: {{PARITY_LEVEL}}
-- Weighted score: {{WEIGHTED_SCORE}}
-- Release recommendation: {{RELEASE_RECOMMENDATION}}
+{{RUNTIME_SUMMARY}}
 
-## Capability matrix
+## Requirement matrix
 
-{{CAPABILITY_MATRIX}}
+{{REQUIREMENT_MATRIX}}
 
-## Reduced capabilities
+## Reduced requirements
 
-{{REDUCED_CAPABILITIES}}
+{{REDUCED_REQUIREMENTS}}
 
-## Missing capabilities
+## Missing requirements
 
-{{MISSING_CAPABILITIES}}
+{{MISSING_REQUIREMENTS}}
 
 ## Notes
 
