@@ -17,7 +17,8 @@
     "role": {
       "enum": [
         "primary",
-        "secondary"
+        "secondary",
+        "peer_distribution"
       ]
     },
     "instruction": {
@@ -66,7 +67,8 @@
         "instructions",
         "conversation_starters",
         "capabilities",
-        "knowledge_package"
+        "knowledge_package",
+        "runtime_contract"
       ],
       "properties": {
         "instructions": {
@@ -80,6 +82,10 @@
         },
         "knowledge_package": {
           "type": "string"
+        },
+        "runtime_contract": {
+          "type": "string",
+          "minLength": 1
         }
       }
     },

@@ -291,3 +291,36 @@ Testmodellen är klar när:
 - release gate finns,
 - CI-rollen är definierad,
 - maskinläsbart testmanifest finns.
+
+
+## Runtime-oberoende kontraktstester
+
+Canonical beteende och plattformsneutrala kontrakt ska testas oberoende av enskild runtime.
+
+Det innebär att centrala assertions för:
+
+- capability-kontrakt,
+- artifact-kontrakt,
+- workspace/state-kontrakt,
+- tool-kontrakt,
+- canonical core behavior,
+- registrerade runtime-ID:n kontra faktiska adapters,
+
+ska ligga i en gemensam kontraktssvit.
+
+Adaptertester ska endast verifiera verkliga plattformsskillnader, exempelvis:
+
+- Custom GPT instruction/Knowledge-begränsningar,
+- Claude Projects layout och avsaknad av Claude Code-konventioner,
+- OpenCode AGENTS.md, Skills, custom tools och permissions,
+- Chat ZIP-specifik paketlayout.
+
+En ny runtime ska därför kunna läggas till genom att:
+
+1. registrera runtime-id,
+2. implementera adapter,
+3. lägga till adapter-specifika smoke/regressionstester,
+
+utan att duplicera canonical kontraktsassertions.
+
+Den blockerande sviten finns i `tests/test_runtime_independent_contracts.py`.

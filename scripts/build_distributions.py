@@ -11,6 +11,15 @@ import sys
 import zipfile
 from pathlib import Path
 
+from lib.project_model import (
+    normalize_capability_contract,
+    capability_level,
+    normalize_artifact_contract,
+    normalize_workspace_state_contract,
+    normalize_tool_contract,
+    artifact_contract_id_for_delivery_type,
+)
+
 try:
     import yaml
 except Exception as exc:
@@ -108,6 +117,43 @@ def write_manifest(root: Path, runtime_id: str, version: str, entrypoint: str | 
     )
 
 
+def chat_runtime_contract(cfg: dict) -> dict:
+    """Compile canonical assistant contracts into a Chat-runtime snapshot."""
+    return {
+        "schema_version": 1,
+        "runtime_id": "chatgpt_chat",
+        "capabilities": normalize_capability_contract(cfg),
+        "artifacts": normalize_artifact_contract(cfg),
+        "workspace_state": normalize_workspace_state_contract(cfg),
+        "tools": normalize_tool_contract(cfg),
+    }
+
+
+def copy_declared_tool_scripts(root: Path, cfg: dict, target: Path) -> list[str]:
+    """Copy only explicitly declared script tools plus their shared library."""
+    copied = []
+    contract = normalize_tool_contract(cfg)
+    for tool in contract.get("tools", []):
+        if tool.get("type") != "script":
+            continue
+        script_ref = tool.get("script")
+        if not script_ref:
+            continue
+        src = root / script_ref
+        if not src.exists():
+            raise SystemExit(f"Declared runtime tool script missing: {script_ref}")
+        rel = Path(script_ref)
+        if rel.parts and rel.parts[0] == "scripts":
+            rel = Path(*rel.parts[1:])
+        copy_file(src, target / rel)
+        copied.append(script_ref)
+
+    shared_lib = root / "scripts" / "lib"
+    if copied and shared_lib.exists():
+        copy_tree_filtered(shared_lib, target / "lib")
+    return copied
+
+
 def build_chat(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     out = build_root / "chat"
     ensure_clean_dir(out)
@@ -137,12 +183,21 @@ def build_chat(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
             if p.is_file() and p.name != "KNOWLEDGE.md":
                 copy_file(p, out / "knowledge" / p.relative_to(knowledge_root))
 
-    # Runtime-relevant schemas/scripts/templates are included for now.
-    # Later steps may refine this with explicit per-file role metadata.
-    for key in ["schemas", "scripts", "templates"]:
+    # Schemas/templates still follow the existing declarative Chat ZIP include model.
+    # Runtime scripts are now selected from the canonical tool contract.
+    for key in ["schemas", "templates"]:
         path = root / cfg["structure"][key]["path"]
         if path.exists():
             copy_tree_filtered(path, out / key, ignore_names={"README.md"})
+
+    declared_tool_scripts = copy_declared_tool_scripts(root, cfg, out / "scripts")
+
+    contract_snapshot = chat_runtime_contract(cfg)
+    contract_snapshot["declared_tool_scripts"] = declared_tool_scripts
+    (assistant / "runtime-contract.json").write_text(
+        json.dumps(contract_snapshot, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
 
     template_path = root / cfg["runtime"]["chat_zip"]["start_here_template"]
     template = template_path.read_text(encoding="utf-8")
@@ -153,6 +208,11 @@ def build_chat(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     (out / "START-HERE.md").write_text(start_here, encoding="utf-8")
     (out / "VERSION").write_text(version + "\n", encoding="utf-8")
     write_manifest(out, cfg["project"]["id"] + "-chat", version, "START-HERE.md")
+    manifest_path = out / "MANIFEST.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["adapter_id"] = "chatgpt_chat"
+    manifest["contract_snapshot"] = "assistant/runtime-contract.json"
+    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return out
 
 
@@ -231,6 +291,38 @@ def compile_custom_instruction(text: str, mode: str, max_chars: int, core_marker
     return compiled
 
 
+def custom_runtime_contract(cfg: dict) -> dict:
+    """Compile canonical assistant contracts into a Custom GPT adapter snapshot."""
+    tool_contract = normalize_tool_contract(cfg)
+    tool_states = []
+    for tool in tool_contract.get("tools", []):
+        fallback = tool.get("runtime_fallback", "not_applicable")
+        state = "missing" if tool.get("requirement") == "required" and fallback == "block" else (
+            "reduced" if tool.get("type") in {"script", "local_command"} else "not_applicable"
+        )
+        tool_states.append({
+            "id": tool.get("id"),
+            "type": tool.get("type"),
+            "requirement": tool.get("requirement"),
+            "state": state,
+            "runtime_fallback": fallback,
+        })
+
+    return {
+        "schema_version": 1,
+        "runtime_id": "chatgpt_custom",
+        "capabilities": normalize_capability_contract(cfg),
+        "artifacts": normalize_artifact_contract(cfg),
+        "workspace_state": normalize_workspace_state_contract(cfg),
+        "tools": tool_contract,
+        "adapter": {
+            "tool_execution": "not_embedded",
+            "tool_states": tool_states,
+            "builder_package": True,
+        },
+    }
+
+
 def build_custom(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     out = build_root / "custom-gpt"
     ensure_clean_dir(out)
@@ -251,15 +343,31 @@ def build_custom(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     (builder / "conversation-starters.md").write_text(combined, encoding="utf-8")
 
     cap_tpl = (root / cfg["runtime"]["custom_gpt"]["templates"]["capabilities"]).read_text(encoding="utf-8")
+    capability_contract = normalize_capability_contract(cfg)
+    filesystem = capability_contract.get("requirements", {}).get("filesystem", {})
+    filesystem_level = "required" if "required" in {filesystem.get("read"), filesystem.get("write")} else (
+        "recommended" if "recommended" in {filesystem.get("read"), filesystem.get("write")} else "optional"
+    )
     cap_text = render_template(cap_tpl, {
         "CAPABILITY_RECOMMENDATIONS": (
-            "- Webbsökning: bedöms från projektets analysmodell\n"
-            "- Dataanalys: bedöms från projektets analysmodell\n"
-            "- Bildgenerering: bedöms från projektets analysmodell\n"
-            "- Filhantering: aktiveras när plattformen stöder relevant funktion"
+            f"- Webbsökning: {capability_level(capability_contract, 'web', 'optional')}\n"
+            f"- Dataanalys/kodexekvering: {capability_level(capability_contract, 'code_execution', 'optional')}\n"
+            f"- Bildgenerering: {capability_level(capability_contract, 'image_generation', 'optional')}\n"
+            f"- Filhantering: {filesystem_level}"
         )
     })
     (builder / "capabilities.md").write_text(cap_text, encoding="utf-8")
+
+    contract_snapshot = custom_runtime_contract(cfg)
+    contract_ref = cfg["runtime"]["custom_gpt"]["builder"].get(
+        "runtime_contract", "builder/runtime-contract.json"
+    )
+    contract_path = out / contract_ref
+    contract_path.parent.mkdir(parents=True, exist_ok=True)
+    contract_path.write_text(
+        json.dumps(contract_snapshot, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
 
     copied_knowledge = collect_custom_knowledge(root, cfg, kp)
 
@@ -269,6 +377,8 @@ def build_custom(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     selected_set = set(selected_rel)
     excluded_rel = [p.relative_to(knowledge_root).as_posix() for p in canonical_knowledge if p.relative_to(knowledge_root).as_posix() not in selected_set]
     compilation_report = {
+        "runtime_id": "chatgpt_custom",
+        "contract_snapshot": contract_ref,
         "instruction": {
             "mode": mode,
             "canonical_characters": len(instr),
@@ -306,7 +416,380 @@ def build_custom(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     (out / "VERSION").write_text(version + "\n", encoding="utf-8")
 
     write_manifest(out, cfg["project"]["id"] + "-custom-gpt", version)
+    manifest_path = out / "MANIFEST.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["adapter_id"] = "chatgpt_custom"
+    manifest["contract_snapshot"] = contract_ref
+    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return out
+
+
+def claude_runtime_contract(cfg: dict) -> dict:
+    """Compile canonical assistant contracts into a Claude Projects snapshot."""
+    tool_contract = normalize_tool_contract(cfg)
+    tool_states = []
+    for tool in tool_contract.get("tools", []):
+        state = "not_applicable"
+        reason = None
+        if tool.get("type") in {"script", "local_command"}:
+            state = "reduced" if tool.get("runtime_fallback") == "manual" else "missing"
+            reason = "Claude Projects package does not embed local command execution."
+        elif tool.get("type") in {"mcp", "api_action"}:
+            state = "reduced"
+            reason = "Availability depends on the Claude account/project integration."
+
+        item = {
+            "id": tool.get("id"),
+            "type": tool.get("type"),
+            "requirement": tool.get("requirement"),
+            "state": state,
+        }
+        if reason:
+            item["reason"] = reason
+        tool_states.append(item)
+
+    return {
+        "schema_version": 1,
+        "runtime_id": "claude_project",
+        "capabilities": normalize_capability_contract(cfg),
+        "artifacts": normalize_artifact_contract(cfg),
+        "workspace_state": normalize_workspace_state_contract(cfg),
+        "tools": tool_contract,
+        "adapter": {
+            "mode": "claude_project",
+            "project_instructions": True,
+            "project_knowledge": True,
+            "claude_code_conventions": False,
+            "embedded_local_tools": False,
+            "tool_states": tool_states,
+        },
+    }
+
+
+def build_claude(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
+    out = build_root / "claude"
+    ensure_clean_dir(out)
+
+    runtime_cfg = cfg["runtime"]["claude"]
+    project_dir = out / "project"
+    project_dir.mkdir(parents=True)
+
+    instr_src = root / cfg["instructions"]["canonical"]
+    instructions_ref = runtime_cfg["project"]["instructions"]
+    instructions_path = out / instructions_ref
+    copy_file(instr_src, instructions_path)
+
+    knowledge_root = root / cfg["knowledge_architecture"]["canonical_root"]
+    knowledge_ref = runtime_cfg["project"]["knowledge"]
+    knowledge_target = out / knowledge_ref
+    if knowledge_root.exists():
+        for p in sorted(knowledge_root.rglob("*")):
+            if p.is_file() and p.name != "KNOWLEDGE.md":
+                copy_file(p, knowledge_target / p.relative_to(knowledge_root))
+
+    contract_ref = runtime_cfg["project"]["runtime_contract"]
+    contract_path = out / contract_ref
+    contract_path.parent.mkdir(parents=True, exist_ok=True)
+    contract_path.write_text(
+        json.dumps(claude_runtime_contract(cfg), ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+    readme_tpl = (root / runtime_cfg["templates"]["readme"]).read_text(encoding="utf-8")
+    (out / "README.md").write_text(
+        render_template(readme_tpl, {
+            "GPT_NAME": cfg["project"]["name"],
+            "VERSION": version,
+        }),
+        encoding="utf-8",
+    )
+    (out / "VERSION").write_text(version + "\n", encoding="utf-8")
+
+    write_manifest(out, cfg["project"]["id"] + "-claude", version, "README.md")
+    manifest_path = out / "MANIFEST.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["adapter_id"] = "claude_project"
+    manifest["contract_snapshot"] = contract_ref
+    manifest["project_instructions"] = instructions_ref
+    manifest["project_knowledge"] = knowledge_ref
+    manifest_path.write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    return out
+
+
+def build_opencode_skills(root: Path, cfg: dict, out: Path) -> list[str]:
+    """Generate OpenCode skills from declared workflow/reference sources."""
+    runtime_cfg = cfg["runtime"]["opencode"]
+    skills_cfg = runtime_cfg.get("skills", {})
+    if not skills_cfg.get("enabled"):
+        return []
+
+    skill_root = out / skills_cfg.get("directory", ".opencode/skills")
+    built: list[str] = []
+    for skill in skills_cfg.get("definitions", []):
+        skill_id = skill["id"]
+        skill_dir = skill_root / skill_id
+        references_dir = skill_dir / "references"
+        references_dir.mkdir(parents=True, exist_ok=True)
+
+        reference_lines = []
+        for ref in skill.get("references", []):
+            src = root / ref
+            if not src.exists():
+                raise SystemExit(f"OpenCode skill reference missing: {ref}")
+            dst = references_dir / src.name
+            copy_file(src, dst)
+            reference_lines.append(f"- Read `references/{src.name}` when that part of the workflow is relevant.")
+
+        body = (
+            "---\n"
+            f"name: {skill['name']}\n"
+            f"description: {skill['description']}\n"
+            "compatibility: opencode\n"
+            "metadata:\n"
+            "  source: generated-from-canonical-project\n"
+            "---\n\n"
+            "## Purpose\n\n"
+            f"{skill['description']}\n\n"
+            "## Workflow\n\n"
+            "1. Read the workspace state before choosing work.\n"
+            "2. Prefer blockers, failed validation, hygiene, and missing dependencies before the next planned step.\n"
+            "3. Treat the development plan as guiding rather than mechanical.\n"
+            "4. After a change, validate, update project state, and rebuild the complete project package when applicable.\n"
+            "5. Do not ask the user to repeat project history already present in workspace/state.\n\n"
+            "## References\n\n"
+            + "\n".join(reference_lines)
+            + "\n"
+        )
+        (skill_dir / "SKILL.md").write_text(body, encoding="utf-8")
+        built.append(skill_id)
+    return built
+
+
+def _opencode_tool_name(tool_id: str) -> str:
+    return "gpt_" + tool_id.replace("-", "_")
+
+
+def _opencode_tool_wrapper(tool: dict, script_ref: str) -> str:
+    tool_id = tool["id"]
+    description = tool.get("purpose", tool_id).replace('"', '\\"')
+    arg_schema = 'projectRoot: tool.schema.string().optional().describe("Project root relative to the worktree")'
+    if tool_id == "project-hygiene":
+        arg_schema += ',\n    mode: tool.schema.enum(["checkpoint", "final"]).optional(),\n    fix: tool.schema.boolean().optional()'
+        command_lines = '''
+    const mode = args.mode ?? "checkpoint"
+    const fix = args.fix ? ["--fix"] : []
+    const cmd = ["python3", script, "--project-root", projectRoot, "--mode", mode, ...fix, "--json"]'''
+    elif tool_id == "build-distributions":
+        arg_schema += ',\n    version: tool.schema.string().optional(),\n    targets: tool.schema.string().optional()'
+        command_lines = '''
+    const version = args.version ?? "0.0.0-dev"
+    const targets = args.targets ?? "project,chat,custom-gpt,claude,opencode"
+    const cmd = ["python3", script, "--project-root", projectRoot, "--version", version, "--targets", targets]'''
+    elif tool_id == "recommend-next-step":
+        command_lines = '''
+    const cmd = ["python3", script, "--project-root", projectRoot, "--json"]'''
+    else:
+        command_lines = '''
+    const cmd = ["python3", script, "--project-root", projectRoot]'''
+
+    return f'''import {{ tool }} from "@opencode-ai/plugin"
+import path from "path"
+
+export default tool({{
+  description: "{description}",
+  args: {{
+    {arg_schema}
+  }},
+  async execute(args, context) {{
+    const projectRoot = path.resolve(context.worktree, args.projectRoot ?? ".")
+    const script = path.join(context.worktree, "{script_ref}"){command_lines}
+    const proc = Bun.spawn(cmd, {{ cwd: context.worktree, stdout: "pipe", stderr: "pipe" }})
+    const stdout = await new Response(proc.stdout).text()
+    const stderr = await new Response(proc.stderr).text()
+    const code = await proc.exited
+    if (code !== 0) throw new Error((stderr || stdout || ("Tool failed with exit code " + code)).trim())
+    return (stdout || stderr).trim()
+  }}
+}})
+'''
+
+
+def build_opencode_tools(root: Path, cfg: dict, out: Path) -> list[dict]:
+    runtime_cfg = cfg["runtime"]["opencode"]
+    scripts_target = out / runtime_cfg["layout"]["runtime_scripts"]
+    copied = copy_declared_tool_scripts(root, cfg, scripts_target)
+    copied_set = set(copied)
+    tools_target = out / runtime_cfg["layout"]["tools"]
+    tools_target.mkdir(parents=True, exist_ok=True)
+
+    integrations = []
+    permissions = {
+        "skill": {"*": "allow"},
+        "bash": "ask",
+        "edit": "ask",
+    }
+    for tool_cfg in normalize_tool_contract(cfg).get("tools", []):
+        if tool_cfg.get("type") != "script":
+            continue
+        script_ref = tool_cfg.get("script")
+        if not script_ref or script_ref not in copied_set:
+            continue
+        packaged_script = str(Path(runtime_cfg["layout"]["runtime_scripts"]) / Path(script_ref).name)
+        tool_name = _opencode_tool_name(tool_cfg["id"])
+        (tools_target / f"{tool_name}.ts").write_text(
+            _opencode_tool_wrapper(tool_cfg, packaged_script),
+            encoding="utf-8",
+        )
+        permissions[tool_name] = "ask" if tool_cfg.get("mutates_workspace") else "allow"
+        integrations.append({
+            "id": tool_cfg["id"],
+            "opencode_tool": tool_name,
+            "script": packaged_script,
+            "permission": permissions[tool_name],
+        })
+
+    config_path = out / runtime_cfg["layout"]["config"]
+    config_path.write_text(json.dumps({
+        "$schema": "https://opencode.ai/config.json",
+        "permission": permissions,
+    }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return integrations
+
+
+def opencode_runtime_contract(cfg: dict, built_skills: list[str] | None = None, tool_integrations: list[dict] | None = None) -> dict:
+    """Compile canonical assistant contracts into an OpenCode workspace snapshot."""
+    built_skills = list(built_skills or [])
+    tool_integrations = list(tool_integrations or [])
+    return {
+        "schema_version": 1,
+        "runtime_id": "opencode",
+        "capabilities": normalize_capability_contract(cfg),
+        "artifacts": normalize_artifact_contract(cfg),
+        "workspace_state": normalize_workspace_state_contract(cfg),
+        "tools": normalize_tool_contract(cfg),
+        "adapter": {
+            "mode": "opencode_workspace",
+            "instructions": "AGENTS.md",
+            "skills_included": bool(built_skills),
+            "skills": built_skills,
+            "tool_integration": "custom_tools",
+            "tool_integrations": tool_integrations,
+            "workspace_first": True,
+        },
+    }
+
+
+def build_opencode(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
+    out = build_root / "opencode"
+    ensure_clean_dir(out)
+
+    runtime_cfg = cfg["runtime"]["opencode"]
+
+    canonical_instruction = (root / cfg["instructions"]["canonical"]).read_text(encoding="utf-8")
+    agents_path = out / runtime_cfg["layout"]["instructions"]
+    agents_path.write_text(
+        canonical_instruction.rstrip()
+        + "\n\n## OpenCode adapter\n\n"
+        + "- Treat this AGENTS.md as a generated projection of the canonical assistant instructions.\n"
+        + "- Work inside this repository/workspace.\n"
+        + "- Reusable workflows may be available as project-local skills under .opencode/skills/.\n"
+        + "- Load a skill when its description matches the current task instead of duplicating that workflow here.\n"
+        + "- Use only the explicitly generated OpenCode custom tools for canonical runtime scripts; do not infer extra scripts as tools.\n",
+        encoding="utf-8",
+    )
+
+    knowledge_root = root / cfg["knowledge_architecture"]["canonical_root"]
+    knowledge_target = out / runtime_cfg["layout"]["knowledge"]
+    if knowledge_root.exists():
+        for p in sorted(knowledge_root.rglob("*")):
+            if p.is_file() and p.name != "KNOWLEDGE.md":
+                copy_file(p, knowledge_target / p.relative_to(knowledge_root))
+
+    built_skills = build_opencode_skills(root, cfg, out)
+    tool_integrations = build_opencode_tools(root, cfg, out)
+
+    contract_ref = runtime_cfg["layout"]["runtime_contract"]
+    contract_path = out / contract_ref
+    contract_path.parent.mkdir(parents=True, exist_ok=True)
+    contract_path.write_text(
+        json.dumps(opencode_runtime_contract(cfg, built_skills, tool_integrations), ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+    readme_tpl = (root / runtime_cfg["templates"]["readme"]).read_text(encoding="utf-8")
+    (out / "README.md").write_text(
+        render_template(readme_tpl, {
+            "GPT_NAME": cfg["project"]["name"],
+            "VERSION": version,
+        }),
+        encoding="utf-8",
+    )
+    (out / "VERSION").write_text(version + "\n", encoding="utf-8")
+
+    write_manifest(out, cfg["project"]["id"] + "-opencode", version, "AGENTS.md")
+    manifest_path = out / "MANIFEST.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["adapter_id"] = "opencode"
+    manifest["contract_snapshot"] = contract_ref
+    manifest["instructions"] = runtime_cfg["layout"]["instructions"]
+    manifest["skills_included"] = bool(built_skills)
+    manifest["skills"] = built_skills
+    manifest["tool_integration"] = "custom_tools"
+    manifest["tools"] = [item["opencode_tool"] for item in tool_integrations]
+    manifest_path.write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    return out
+
+
+RUNTIME_BUILDERS = {
+    "chat": build_chat,
+    "custom_gpt": build_custom,
+    "claude": build_claude,
+    "opencode": build_opencode,
+}
+
+
+def configured_targets(cfg: dict) -> list[str]:
+    targets = cfg.get("build_system", {}).get("targets") or ["project"]
+    return [str(target) for target in targets]
+
+
+def build_runtime_target(
+    root: Path,
+    cfg: dict,
+    build_root: Path,
+    dist: Path,
+    version: str,
+    target: str,
+) -> Path | None:
+    target_cfg = (cfg.get("build_system", {}).get("runtime_targets") or {}).get(target)
+    if not isinstance(target_cfg, dict):
+        raise SystemExit(f"Unknown runtime build target: {target}")
+
+    runtime_key = target_cfg["runtime_key"]
+    runtime_cfg = cfg.get("runtime", {}).get(runtime_key, {})
+    if not runtime_cfg.get("enabled"):
+        return None
+
+    builder_id = target_cfg["builder"]
+    builder = RUNTIME_BUILDERS.get(builder_id)
+    if builder is None:
+        raise SystemExit(f"No runtime builder registered for builder id: {builder_id}")
+
+    runtime_root = builder(root, cfg, build_root, version)
+    filename = (
+        target_cfg["filename_pattern"]
+        .replace("<project-id>", cfg["project"]["id"])
+        .replace("<version>", version)
+    )
+    zip_path = dist / filename
+    stable_write_zip(zip_path, runtime_root, [p for p in runtime_root.rglob("*") if p.is_file()])
+    return zip_path
 
 
 def project_files(root: Path) -> list[Path]:
@@ -331,36 +814,56 @@ def write_checksums(dist: Path) -> None:
     (dist / "SHA256SUMS.txt").write_text("\n".join(lines) + ("\n" if lines else ""), encoding="utf-8")
 
 
+def artifact_type_for_distribution(cfg: dict, filename: str, version: str) -> str:
+    project_id = cfg["project"]["id"]
+    if filename == f"{project_id}-project.zip":
+        return "project_zip"
+
+    for target_cfg in (cfg.get("build_system", {}).get("runtime_targets") or {}).values():
+        pattern = target_cfg.get("filename_pattern")
+        artifact_type = target_cfg.get("artifact_type")
+        if not pattern or not artifact_type:
+            continue
+        expected = pattern.replace("<project-id>", project_id).replace("<version>", version)
+        if filename == expected:
+            return artifact_type
+    return "zip"
+
+
 def write_delivery_manifest(dist: Path, cfg: dict, version: str) -> None:
     artifacts = []
     for p in sorted(dist.iterdir()):
         if not p.is_file() or p.name in {"DELIVERY-MANIFEST.json"}:
             continue
         if p.suffix == ".zip":
-            if "-project" in p.name:
-                artifact_type = "project_zip"
-            elif "-chat-" in p.name:
-                artifact_type = "chat_zip"
-            elif "-custom-gpt-" in p.name:
-                artifact_type = "custom_gpt_zip"
-            else:
-                artifact_type = "zip"
+            artifact_type = artifact_type_for_distribution(cfg, p.name, version)
         elif p.name == "SHA256SUMS.txt":
             artifact_type = "checksums"
         else:
             artifact_type = "file"
-        artifacts.append({
+        artifact = {
             "type": artifact_type,
             "file": p.name,
             "sha256": sha256(p),
             "size": p.stat().st_size,
-        })
+        }
+        contract_id = artifact_contract_id_for_delivery_type(cfg, artifact_type)
+        if contract_id:
+            artifact["artifact_id"] = contract_id
+        artifacts.append(artifact)
 
     payload = {
         "project": cfg["project"]["id"],
         "project_name": cfg["project"]["name"],
         "version": version,
+        "primary_runtime": cfg.get("runtime", {}).get("primary", "none"),
         "runtime_strategy": "peer_distributions",
+        "runtime_targets": [
+            target_cfg["runtime_id"]
+            for target, target_cfg in (cfg.get("build_system", {}).get("runtime_targets") or {}).items()
+            if target in (cfg.get("build_system", {}).get("targets") or [])
+            and cfg.get("runtime", {}).get(target_cfg["runtime_key"], {}).get("enabled")
+        ],
         "custom_gpt_enabled": bool(cfg["runtime"]["custom_gpt"]["enabled"]),
         "artifacts": artifacts,
     }
@@ -373,7 +876,11 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--project-root", default=".")
     parser.add_argument("--version", default="0.0.0-dev")
-    parser.add_argument("--targets", default="project,chat,custom-gpt")
+    parser.add_argument(
+        "--targets",
+        default=None,
+        help="Comma-separated build targets. Defaults to build_system.targets from gpt-project.yaml.",
+    )
     args = parser.parse_args()
 
     root = Path(args.project_root).resolve()
@@ -383,19 +890,24 @@ def main() -> int:
     build_root.mkdir(exist_ok=True)
     dist.mkdir(exist_ok=True)
 
-    targets = {t.strip() for t in args.targets.split(",") if t.strip()}
+    selected_targets = (
+        [t.strip() for t in args.targets.split(",") if t.strip()]
+        if args.targets
+        else configured_targets(cfg)
+    )
+    targets = set(selected_targets)
     project_id = cfg["project"]["id"]
     version = args.version
 
-    if "chat" in targets:
-        chat_root = build_chat(root, cfg, build_root, version)
-        chat_zip = dist / f"{project_id}-chat-{version}.zip"
-        stable_write_zip(chat_zip, chat_root, [p for p in chat_root.rglob("*") if p.is_file()])
+    runtime_targets = cfg.get("build_system", {}).get("runtime_targets") or {}
+    unknown = targets - (set(runtime_targets) | {"project"})
+    if unknown:
+        raise SystemExit("Unknown build target(s): " + ", ".join(sorted(unknown)))
 
-    if "custom-gpt" in targets and cfg["runtime"]["custom_gpt"]["enabled"]:
-        custom_root = build_custom(root, cfg, build_root, version)
-        custom_zip = dist / f"{project_id}-custom-gpt-{version}.zip"
-        stable_write_zip(custom_zip, custom_root, [p for p in custom_root.rglob("*") if p.is_file()])
+    for target in selected_targets:
+        if target == "project":
+            continue
+        build_runtime_target(root, cfg, build_root, dist, version, target)
 
     if "project" in targets:
         project_zip = dist / f"{project_id}-project.zip"

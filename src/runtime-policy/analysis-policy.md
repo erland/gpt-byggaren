@@ -37,6 +37,11 @@ ett verkligt verksamhetsval påverkar arkitekturen och inte kan avgöras rimligt
 
 ## Runtimeprincip
 
-Bygg normalt både Chat ZIP och Custom GPT från samma canonical capability-kontrakt. Komplexitet i sig gör inte Chat ZIP till primär runtime. Bedöm i stället faktisk funktionstäckning, plattformsbegränsningar och behov av robust instruktionsefterlevnad.
+Bedöm möjliga runtimes mot samma canonical capability-, artifact-, workspace/state- och tool-kontrakt. Aktivera flera peer targets när de har tillräcklig funktionstäckning. Komplexitet i sig gör inte någon runtime primär.
 
 Om en distribution inte kan bära en capability ska skillnaden dokumenteras explicit. Anpassning för en plattform får inte flytta kritiskt beteende till Knowledge eller göra den andra distributionen till en underförstådd referensruntime.
+
+
+## Nyprojektsregel
+
+I idéfasen ska runtimeval uttryckas som peer candidates med suitability, rationale och eventuell default-aktivering. Fråga inte användaren om teknisk runtimepreferens om inte plattformen i sig är ett verksamhetskrav.

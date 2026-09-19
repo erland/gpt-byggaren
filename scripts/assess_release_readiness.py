@@ -53,31 +53,55 @@ def assess(root, include_build_state=False):
     gates['test_model']=gate('pass' if cfg.get('testing') else 'warning')
     if not cfg.get('testing'): warnings.append('Testing configuration missing.')
 
-    custom_enabled=bool(cfg.get('runtime',{}).get('custom_gpt',{}).get('enabled'))
+    runtime_targets=cfg.get('build_system',{}).get('runtime_targets') or {}
     gates['runtime_parity']=gate('not_run' if cfg.get('runtime_parity') else 'not_applicable')
+    custom_enabled=bool(cfg.get('runtime',{}).get('custom_gpt',{}).get('enabled'))
     gates['custom_gpt_platform_validation']=gate('not_run' if custom_enabled and cfg.get('platform_validation') else 'not_applicable')
 
     if include_build_state:
         dist=root/'dist'
-        project_id=cfg.get('project',{}).get('id','project')
-        required=[dist/f'{project_id}-project.zip',dist/'SHA256SUMS.txt',dist/'DELIVERY-MANIFEST.json']
-        if all(p.exists() for p in required): gates['build']=gate('pass')
-        else:
-            gates['build']=gate('blocked','Expected build artifacts missing.'); blockers.append('Build artifacts are missing.')
-        if (root/'build'/'chat').exists():
-            r=subprocess.run([sys.executable,str(root/'scripts'/'validate_distributions.py'),'--project-root',str(root)],cwd=root,capture_output=True,text=True)
-            if r.returncode==0: gates['distribution_validation']=gate('pass')
+        manifest_path=dist/'DELIVERY-MANIFEST.json'
+        version=None
+        if manifest_path.exists():
+            try:
+                version=json.loads(manifest_path.read_text(encoding='utf-8')).get('version')
+            except Exception:
+                version=None
+        if version:
+            r=subprocess.run([
+                sys.executable,
+                str(root/'scripts'/'verify_distribution_outputs.py'),
+                '--project-root',str(root),
+                '--version',str(version)
+            ],cwd=root,capture_output=True,text=True)
+            if r.returncode==0:
+                gates['build']=gate('pass')
             else:
-                gates['distribution_validation']=gate('blocked'); blockers.append('Distribution validation failed.')
+                gates['build']=gate('blocked','Expected build artifacts missing or incomplete.'); blockers.append('Build artifacts are missing or incomplete.')
         else:
-            gates['distribution_validation']=gate('blocked','Built distributions missing.'); blockers.append('Built distributions missing.')
+            gates['build']=gate('blocked','Delivery manifest/version missing.'); blockers.append('Delivery manifest/version is missing.')
+
+        r=subprocess.run([sys.executable,str(root/'scripts'/'validate_distributions.py'),'--project-root',str(root)],cwd=root,capture_output=True,text=True)
+        if r.returncode==0:
+            gates['distribution_validation']=gate('pass')
+        else:
+            gates['distribution_validation']=gate('blocked'); blockers.append('Distribution validation failed.')
     else:
         gates['build']=gate('not_run'); gates['distribution_validation']=gate('not_run')
 
     result='blocked' if blockers else ('ready_with_warnings' if warnings else 'ready')
     dstate='blocked' if blockers else ('ready_with_warnings' if warnings else 'ready')
+    distributions={'project_zip':dstate}
+    for target_cfg in runtime_targets.values():
+        artifact_type=target_cfg.get('artifact_type')
+        runtime_key=target_cfg.get('runtime_key')
+        if not artifact_type:
+            continue
+        enabled=bool(cfg.get('runtime',{}).get(runtime_key,{}).get('enabled'))
+        distributions[artifact_type]=dstate if enabled else 'not_applicable'
+
     return {'schema_version':1,'result':result,'gates':gates,
-            'distributions':{'project_zip':dstate,'chat_zip':dstate,'custom_gpt':('not_applicable' if not custom_enabled else dstate)},
+            'distributions':distributions,
             'warnings':sorted(set(warnings)),'blockers':sorted(set(blockers))}
 
 def main():

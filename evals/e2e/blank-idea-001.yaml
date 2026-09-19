@@ -14,11 +14,17 @@ features:
 expected:
   profile: standard
   project_id: motesuppfoljaren
-  primary_runtime: chat_zip
-  custom_gpt_enabled: true
+  runtime_strategy: peer_candidates
+  default_runtime_ids:
+  - chatgpt_chat
+  - chatgpt_custom
+  - claude_project
+  non_default_runtime_ids:
+  - opencode
   artifacts:
   - project_zip
   - chat_zip
   - custom_gpt_zip
+  - claude_zip
   - delivery_manifest
   - checksums

@@ -6,7 +6,7 @@
     "id",
     "title",
     "description",
-    "primary_runtime",
+    "runtime_selection",
     "custom_gpt",
     "knowledge",
     "scripts",
@@ -29,9 +29,6 @@
       "type": "string"
     },
     "description": {
-      "type": "string"
-    },
-    "primary_runtime": {
       "type": "string"
     },
     "custom_gpt": {
@@ -88,6 +85,30 @@
           "minimum": 0
         }
       }
+    },
+    "runtime_selection": {
+      "type": "object",
+      "required": [
+        "strategy",
+        "infer_from_canonical_contracts",
+        "ask_user_only_for_business_constraints",
+        "allow_multiple_default_targets"
+      ],
+      "properties": {
+        "strategy": {
+          "const": "peer_candidates"
+        },
+        "infer_from_canonical_contracts": {
+          "type": "boolean"
+        },
+        "ask_user_only_for_business_constraints": {
+          "type": "boolean"
+        },
+        "allow_multiple_default_targets": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
     }
   }
 }

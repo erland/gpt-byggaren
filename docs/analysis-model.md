@@ -18,10 +18,11 @@ GPT Byggaren ska analysera idén i följande ordning:
 4. identifiera typer av utdata,
 5. identifiera kunskaps- och aktualitetsbehov,
 6. identifiera behov av verktyg och strukturerad runtime,
-7. bedöma komplexitet,
-8. rekommendera hur Chat ZIP och Custom GPT ska realiseras och dokumentera eventuella faktiska skillnader,
-9. rekommendera capabilities,
-10. rekommendera projektprofil,
+7. identifiera om arbetet behöver ett separat workspace och persistent state,
+8. bedöma komplexitet,
+9. härleda plattformsneutrala capability-, artifact- och workspace/state-kontrakt,
+10. bedöma vilka runtimes som kan realisera kontrakten och dokumentera faktiska skillnader,
+11. rekommendera projektprofil,
 11. identifiera risker och begränsningar,
 12. avgöra om någon verksamhetsfråga verkligen behöver ställas till användaren.
 
@@ -315,17 +316,21 @@ Profilerna är vägledning, inte låsta mallar.
 
 ## Capabilitybeslut
 
-GPT Byggaren ska uttrycka rekommendationer som:
+GPT Byggaren ska först uttrycka behovet plattformsneutralt. Exempel:
 
-```text
-Webbsökning: Rekommenderas
-Motivering: GPT:n behöver regelbundet verifiera aktuell extern information.
-
-Dataanalys: Krävs
-Motivering: GPT:n ska läsa, transformera och paketera filer.
-
-Bildgenerering: Rekommenderas inte
-Motivering: Inget användningsfall kräver genererade bilder.
+```yaml
+capabilities:
+  web:
+    level: recommended
+    reason: Behöver regelbundet verifiera aktuell extern information.
+  filesystem:
+    read: required
+    write: required
+  code_execution:
+    level: required
+    reason: Behöver transformera data och bygga artefakter.
+  image_generation:
+    level: not_required
 ```
 
 Möjliga nivåer:
@@ -333,7 +338,10 @@ Möjliga nivåer:
 - `required`
 - `recommended`
 - `optional`
-- `not_recommended`
+- `not_required`
+- `to_be_recommended`
+
+Runtime-adaptern översätter därefter detta till plattformens egna capabilitynamn. Exempelvis kan `code_execution` realiseras av olika verktyg i ChatGPT, Claude eller OpenCode utan att canonical projektkontrakt ändras.
 
 ## Arkitekturresultat
 
@@ -345,15 +353,31 @@ Exempel:
 recommended_profile: zip_first_advanced  # legacy id; semantics = advanced dual distribution
 
 runtime:
-  primary: none
-  chat_zip: peer_distribution
-  custom_gpt: peer_distribution
+  strategy: peer_candidates
+  candidates:
+    - runtime_id: chatgpt_chat
+      suitability: equivalent
+      activate_by_default: true
+      rationale: ...
+    - runtime_id: chatgpt_custom
+      suitability: equivalent
+      activate_by_default: true
+      rationale: ...
 
 capabilities:
-  web: recommended
-  data_analysis: required
-  image_generation: not_recommended
-  file_handling: required
+  contract_version: 1
+  requirements:
+    web:
+      level: recommended
+    filesystem:
+      read: required
+      write: required
+    code_execution:
+      level: required
+    structured_data:
+      level: required
+    image_generation:
+      level: not_required
 
 project_features:
   structured_knowledge: true
@@ -392,8 +416,8 @@ Analysen bör normalt innehålla:
 
 1. tolkning av idén,
 2. rekommenderad GPT-profil,
-3. rekommenderad primär runtime,
-4. Custom GPT-bedömning,
+3. rekommenderade runtime-kandidater och vilka som bör aktiveras som default,
+4. dokumenterade skillnader eller reducerad funktion per runtime,
 5. capabilities,
 6. Knowledge- och runtimebehov,
 7. testbehov,
@@ -411,3 +435,44 @@ GPT Byggaren ska hellre motivera ett härlett tekniskt beslut än be användaren
 Analysresultatet ska kopplas till närmaste maskinläsbara profil under `profiles/`.
 
 Profilen är en utgångspunkt och får justeras med projektspecifika avvikelser.
+
+
+## Workspace och state
+
+GPT Byggaren ska bedöma workspace och state separat från övriga capabilities.
+
+Persistent workspace/state rekommenderas när assistenten behöver:
+
+- fortsätta ett flerstegsarbete efter ny konversation eller ny runtime-session,
+- ändra ett konkret projekt över tid,
+- bevara strukturerad researchstatus,
+- hålla användarens arbetsdata skild från assistentens eget runtimepaket,
+- använda lokala scripts eller agentiska verktyg mot samma arbetsyta.
+
+En enkel rådgivnings-GPT ska däremot inte få persistent state som krav utan behov.
+
+Canonical kontrakt ska beskriva behovet, medan runtime-adaptern avgör realiseringen. En chattruntime kan exempelvis använda konversation + statefil, medan OpenCode kan använda en fil i workspace.
+
+
+## Tool-kontrakt
+
+GPT Byggaren ska skilja mellan capability och tool.
+
+Exempel:
+
+- `filesystem.write` är en capability,
+- `scripts/model.py` kan vara ett tool,
+- MCP eller en API-action kan vara andra tool-implementationer.
+
+Tool-kontrakt ska användas när en assistent behöver deterministiska eller återanvändbara operationer, exempelvis validering, modellmutation, build eller export.
+
+En existerande `scripts/`-katalog får inte ensam tolkas som att alla scripts är runtimeverktyg. Vid migration ska GPT Byggaren inventera syfte och användning och bara deklarera de verktyg som faktiskt tillhör assistentens körbara arbetsflöde.
+
+
+## New-project runtime UX
+
+Runtimeval ska göras efter de canonical kontrakten. Nya projekt ska använda `peer_candidates` och motivera varje runtime med suitability och rationale.
+
+Användaren ska normalt inte behöva välja mellan ChatGPT, Claude eller OpenCode i idéfasen. Fråga endast om en viss plattform är ett verksamhetskrav eller om användaren uttryckligen vill begränsa distributionsmålen.
+
+Se `docs/new-project-experience.md`.

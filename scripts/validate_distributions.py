@@ -52,6 +52,7 @@ def validate_custom(root: Path, cfg: dict) -> list[str]:
         build / "builder" / "instructions.md",
         build / "builder" / "conversation-starters.md",
         build / "builder" / "capabilities.md",
+        build / cfg["runtime"]["custom_gpt"]["builder"].get("runtime_contract", "builder/runtime-contract.json"),
         build / "README.md",
         build / "COMPATIBILITY.md",
         build / "VERSION",
@@ -60,6 +61,95 @@ def validate_custom(root: Path, cfg: dict) -> list[str]:
     for p in required:
         if not p.exists():
             errors.append(f"Missing required file: {p.relative_to(build)}")
+    return errors
+
+
+def validate_claude(root: Path, cfg: dict) -> list[str]:
+    errors = []
+    build = root / "build" / "claude"
+    if not build.exists():
+        return ["Claude build directory missing"]
+
+    runtime_cfg = cfg["runtime"]["claude"]
+    required = [
+        build / "README.md",
+        build / "VERSION",
+        build / "MANIFEST.json",
+        build / runtime_cfg["project"]["instructions"],
+        build / runtime_cfg["project"]["runtime_contract"],
+    ]
+    for p in required:
+        if not p.exists():
+            errors.append(f"Missing required file: {p.relative_to(build)}")
+    return errors
+
+
+def validate_opencode(root: Path, cfg: dict) -> list[str]:
+    errors = []
+    build = root / "build" / "opencode"
+    if not build.exists():
+        return ["OpenCode build directory missing"]
+
+    runtime_cfg = cfg["runtime"]["opencode"]
+    required = [
+        build / "README.md",
+        build / "VERSION",
+        build / "MANIFEST.json",
+        build / runtime_cfg["layout"]["instructions"],
+        build / runtime_cfg["layout"]["config"],
+        build / runtime_cfg["layout"]["runtime_contract"],
+    ]
+    for p in required:
+        if not p.exists():
+            errors.append(f"Missing required file: {p.relative_to(build)}")
+
+    if (build / "CLAUDE.md").exists():
+        errors.append("OpenCode base runtime must use AGENTS.md, not CLAUDE.md")
+
+    tool_contract = cfg.get("tools", {}).get("tools", [])
+    tools_dir = build / runtime_cfg["layout"]["tools"]
+    scripts_dir = build / runtime_cfg["layout"]["runtime_scripts"]
+    expected_tools = []
+    for item in tool_contract:
+        if item.get("type") != "script":
+            continue
+        tool_name = "gpt_" + item["id"].replace("-", "_")
+        expected_tools.append(tool_name)
+        wrapper = tools_dir / f"{tool_name}.ts"
+        script = scripts_dir / Path(item["script"]).name
+        if not wrapper.exists():
+            errors.append(f"Missing OpenCode custom tool: {wrapper.relative_to(build)}")
+        if not script.exists():
+            errors.append(f"Missing OpenCode runtime script: {script.relative_to(build)}")
+
+    config_path = build / runtime_cfg["layout"]["config"]
+    if config_path.exists():
+        try:
+            config = json.loads(config_path.read_text(encoding="utf-8"))
+            permissions = config.get("permission", {})
+            for item in tool_contract:
+                if item.get("type") != "script":
+                    continue
+                tool_name = "gpt_" + item["id"].replace("-", "_")
+                expected = "ask" if item.get("mutates_workspace") else "allow"
+                if permissions.get(tool_name) != expected:
+                    errors.append(f"OpenCode permission mismatch for {tool_name}")
+        except Exception as exc:
+            errors.append(f"Invalid OpenCode config: {exc}")
+
+    skills_cfg = runtime_cfg.get("skills", {})
+    if skills_cfg.get("enabled"):
+        root_path = build / skills_cfg.get("directory", ".opencode/skills")
+        for skill in skills_cfg.get("definitions", []):
+            skill_file = root_path / skill["id"] / "SKILL.md"
+            if not skill_file.exists():
+                errors.append(f"Missing OpenCode skill: {skill_file.relative_to(build)}")
+            else:
+                text = skill_file.read_text(encoding="utf-8")
+                if f"name: {skill['name']}" not in text:
+                    errors.append(f"OpenCode skill name mismatch: {skill['id']}")
+                if f"description: {skill['description']}" not in text:
+                    errors.append(f"OpenCode skill description mismatch: {skill['id']}")
     return errors
 
 
@@ -100,6 +190,10 @@ def main() -> int:
     errors.extend(validate_chat(root, cfg))
     if cfg["runtime"]["custom_gpt"]["enabled"]:
         errors.extend(validate_custom(root, cfg))
+    if cfg.get("runtime", {}).get("claude", {}).get("enabled"):
+        errors.extend(validate_claude(root, cfg))
+    if cfg.get("runtime", {}).get("opencode", {}).get("enabled"):
+        errors.extend(validate_opencode(root, cfg))
 
     if errors:
         print("VALIDATION: FAIL")

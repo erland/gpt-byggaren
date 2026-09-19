@@ -108,6 +108,52 @@ runtime:
       checksums: true
     deterministic_build: true
     omit_empty_runtime_directories: true
+  claude:
+    enabled: true
+    role: peer_distribution
+    mode: claude_project
+    schema: schemas/claude-portable-runtime.schema.json
+    policy: src/runtime-policy/claude-portable-runtime-policy.md
+    model: docs/claude-portable-runtime.md
+    project:
+      instructions: project/instructions.md
+      knowledge: project/knowledge
+      runtime_contract: project/runtime-contract.json
+    templates:
+      readme: templates/README.claude.md.tpl
+    validation:
+      require_instructions: true
+      require_runtime_contract: true
+  opencode:
+    enabled: true
+    role: peer_distribution
+    mode: opencode_workspace
+    schema: schemas/opencode-runtime.schema.json
+    policy: src/runtime-policy/opencode-runtime-policy.md
+    model: docs/opencode-runtime.md
+    layout:
+      instructions: AGENTS.md
+      config: opencode.json
+      tools: .opencode/tools
+      runtime_scripts: scripts
+      runtime_contract: .opencode/runtime-contract.json
+      knowledge: knowledge
+    templates:
+      readme: templates/README.opencode.md.tpl
+    skills:
+      enabled: true
+      directory: .opencode/skills
+      definitions:
+      - id: gpt-project-workflow
+        name: gpt-project-workflow
+        description: Planera, återuppta och fortsätt ett GPT Byggaren-projekt utifrån faktisk projektstatus.
+        references:
+        - docs/dynamic-planning.md
+        - docs/resume-flow.md
+        - docs/next-step-recommendation.md
+    validation:
+      require_agents_md: true
+      require_runtime_contract: true
   custom_gpt:
     enabled: true
     role: peer_distribution
@@ -133,6 +179,7 @@ runtime:
       instructions: builder/instructions.md
       conversation_starters: builder/conversation-starters.md
       capabilities: builder/capabilities.md
+      runtime_contract: builder/runtime-contract.json
       knowledge_package: builder/knowledge-package
     templates:
       readme: templates/README.custom-gpt.md.tpl
@@ -149,18 +196,85 @@ runtime:
       block_on_knowledge_limit: true
       block_on_misleading_core_functionality: true
 capabilities:
+  contract_version: 1
+  schema: schemas/capability-contract.schema.json
   recommendation_mode: inferred_from_use_case
   ask_user_only_when_business_choice_is_ambiguous: true
-  web:
-    state: to_be_recommended
-  data_analysis:
-    state: to_be_recommended
-  image_generation:
-    state: to_be_recommended
-  file_handling:
-    state: required
-  structured_knowledge:
-    state: likely_required
+  requirements:
+    web:
+      level: to_be_recommended
+    filesystem:
+      read: required
+      write: required
+    shell:
+      level: optional
+    code_execution:
+      level: recommended
+    structured_data:
+      level: required
+    persistent_state:
+      level: recommended
+    external_tools:
+      level: optional
+      preferred_protocols:
+      - mcp
+    image_generation:
+      level: to_be_recommended
+  legacy_mapping:
+    web: web
+    data_analysis: code_execution
+    file_handling: filesystem
+    image_generation: image_generation
+    structured_knowledge: structured_data
+tools:
+  contract_version: 1
+  schema: schemas/tool-contract.schema.json
+  tools:
+  - id: lint-project
+    type: script
+    requirement: required
+    purpose: Validera projektkontrakt, canonical instruktion och centrala projektregler.
+    script: scripts/lint_gpt_project.py
+    deterministic: true
+    mutates_workspace: false
+    working_directory: workspace
+    runtime_fallback: block
+  - id: recommend-next-step
+    type: script
+    requirement: required
+    purpose: Härleda rekommenderat nästa steg från faktisk projektstatus.
+    script: scripts/recommend_next_step.py
+    deterministic: true
+    mutates_workspace: false
+    working_directory: workspace
+    runtime_fallback: block
+  - id: project-hygiene
+    type: script
+    requirement: required
+    purpose: Kontrollera och vid uttryckligt fix-läge städa säkra genererade eller temporära projektfiler.
+    script: scripts/project_hygiene.py
+    deterministic: true
+    mutates_workspace: true
+    working_directory: workspace
+    runtime_fallback: manual
+  - id: build-distributions
+    type: script
+    requirement: required
+    purpose: Bygga projekt- och runtimepaket deterministiskt.
+    script: scripts/build_distributions.py
+    deterministic: true
+    mutates_workspace: true
+    working_directory: workspace
+    runtime_fallback: block
+  - id: validate-distributions
+    type: script
+    requirement: required
+    purpose: Validera byggda runtimepaket före leverans eller release.
+    script: scripts/validate_distributions.py
+    deterministic: true
+    mutates_workspace: false
+    working_directory: workspace
+    runtime_fallback: block
 analysis:
   model: docs/analysis-model.md
   recommendation_schema: schemas/analysis-recommendation.schema.json
@@ -215,6 +329,8 @@ build:
   build_project_zip: true
   build_chat_zip: true
   build_custom_gpt_zip: true
+  build_claude_zip: true
+  build_opencode_zip: true
   direct_downloads_without_github: true
 release:
   github:
@@ -233,6 +349,8 @@ release:
     - project_zip
     - chat_zip
     - custom_gpt_zip_when_enabled
+    - claude_zip_when_enabled
+    - opencode_zip_when_enabled
     - checksums
     - delivery_manifest
     policy: src/runtime-policy/github-release-policy.md
@@ -243,32 +361,94 @@ release:
     supported: true
     version_strategy_before_github_release: development_version
 artifacts:
-  project_zip:
-    required: true
-  chat_zip:
-    required: true
-  custom_gpt_zip:
-    required_when_enabled: true
-  validation_report:
-    required_for_release: true
-  parity_report:
-    required_when_multiple_runtimes: true
-  checksums:
-    required_for_release: true
+  contract_version: 1
+  schema: schemas/artifact-contract.schema.json
+  outputs:
+    development_plan:
+      kind: document
+      format: markdown
+      requirement: required
+      persistence: persistent
+      multiplicity: one
+      description: Stegvis utvecklingsplan som kan återanvändas mellan runtimes.
+    project_package:
+      kind: package
+      format: zip
+      requirement: required
+      persistence: persistent
+      multiplicity: one
+      filename_pattern: <project-id>-project.zip
+      description: Komplett utvecklingsprojekt för fortsatt arbete och migrering.
+    runtime_package:
+      kind: distribution
+      format: zip
+      requirement: required
+      persistence: persistent
+      multiplicity: many
+      description: En eller flera runtime-specifika distributioner byggda från samma canonical projekt.
+    validation_report:
+      kind: report
+      format: structured
+      requirement: required
+      persistence: persistent
+      multiplicity: one
+    parity_report:
+      kind: report
+      format: markdown
+      requirement: conditional
+      condition: multiple_runtimes
+      persistence: persistent
+      multiplicity: one
+    checksums:
+      kind: metadata
+      format: sha256
+      requirement: required
+      persistence: persistent
+      multiplicity: one
+  legacy_mapping:
+    project_zip: project_package
+    chat_zip: runtime_package
+    custom_gpt_zip: runtime_package
+    claude_zip: runtime_package
+    opencode_zip: runtime_package
+    validation_report: validation_report
+    parity_report: parity_report
+    checksums: checksums
+workspace_state:
+  contract_version: 1
+  schema: schemas/workspace-state-contract.schema.json
+  workspace:
+    requirement: required
+    persistence: required
+    portable: true
+    separate_from_assistant: true
+    artifact: project_package
+    description: GPT-projektet som användaren utvecklar är ett portabelt workspace separat från GPT Byggarens runtimepaket.
+  state:
+    requirement: required
+    persistence: required
+    authority: workspace_file
+    format: yaml
+    path: project-status.yaml
+    conversation_fallback: false
+    description: Projektets maskinläsbara status är auktoritativ och ska göra fortsatt arbete oberoende av tidigare chatthistorik.
+  runtime_preferences:
+    chat: conversation_or_file
+    agent: workspace_file
 workflow:
   initial_analysis_in_chat: true
-  plan_as_downloadable_markdown: true
-  create_project_zip_on_first_execution_step: true
-  rebuild_complete_project_zip_after_each_step: true
+  development_plan_artifact: development_plan
+  create_project_package_on_first_execution_step: true
+  rebuild_complete_project_package_after_each_step: true
   recommend_next_step_from_actual_status: true
-  resume_from_project_zip: true
+  resume_from_project_package: true
 planning:
   mode: dynamic
   model: docs/dynamic-planning.md
   schema: schemas/development-plan.schema.json
   policy: src/runtime-policy/planning-policy.md
   derive_from_analysis: true
-  downloadable_markdown_before_project_creation: true
+  persist_markdown_before_project_creation: true
   copy_into_project_on_first_execution_step: true
   allow_inserted_corrective_steps: true
   allow_step_merge: true
@@ -316,10 +496,11 @@ instructions:
     enabled: true
     required_markers:
     - Analysera verksamhetsbehov före teknikval.
-    - Bygg normalt både Chat ZIP och Custom GPT från samma canonical kontrakt.
+    - Bygg aktiverade runtime-distributioner från samma canonical kontrakt.
     - Knowledge beskriver referensmaterial och domäninformation.
     - Testa och validera efter varje relevant steg.
     - Rekommendera nästa steg från faktisk projektstatus.
+    - När persistent state krävs ska chatthistorik inte vara enda sanningskälla.
     required_runtime_dependencies: []
     max_required_file_hops: 1
     knowledge_may_not_be_required_for_core_behavior: true
@@ -377,14 +558,26 @@ runtime_parity:
   schema: schemas/runtime-parity.schema.json
   policy: src/runtime-policy/runtime-parity-policy.md
   report_template: templates/runtime-parity-report.md.tpl
-  reference_runtime: canonical_contract
+  reference:
+    type: canonical_contract
+  registered_runtimes:
+  - chatgpt_chat
+  - chatgpt_custom
+  - claude_project
+  - opencode
+  compared_categories:
+  - behavior
+  - capability
+  - artifact
+  - workspace_state
+  - tool
   levels:
   - full
   - high
   - moderate
   - low
   - not_viable
-  capability_states:
+  states:
   - equivalent
   - reduced
   - missing
@@ -417,6 +610,33 @@ build_system:
   - project
   - chat
   - custom-gpt
+  - claude
+  - opencode
+  runtime_targets:
+    chat:
+      runtime_id: chatgpt_chat
+      runtime_key: chat_zip
+      builder: chat
+      artifact_type: chat_zip
+      filename_pattern: <project-id>-chat-<version>.zip
+    custom-gpt:
+      runtime_id: chatgpt_custom
+      runtime_key: custom_gpt
+      builder: custom_gpt
+      artifact_type: custom_gpt_zip
+      filename_pattern: <project-id>-custom-gpt-<version>.zip
+    claude:
+      runtime_id: claude_project
+      runtime_key: claude
+      builder: claude
+      artifact_type: claude_zip
+      filename_pattern: <project-id>-claude-<version>.zip
+    opencode:
+      runtime_id: opencode
+      runtime_key: opencode
+      builder: opencode
+      artifact_type: opencode_zip
+      filename_pattern: <project-id>-opencode-<version>.zip
   output_root: dist
   working_root: build
   deterministic_zip: true
@@ -439,6 +659,8 @@ direct_build:
   - project_zip
   - chat_zip
   - custom_gpt_zip_when_enabled
+  - claude_zip_when_enabled
+  - opencode_zip_when_enabled
   - checksums
   - delivery_manifest
   validate_before_delivery: true
@@ -583,6 +805,12 @@ release_readiness:
   - blocked
   blocked_stops_release: true
   same_assessment_for_local_and_github: true
+new_project_experience:
+  model: docs/new-project-experience.md
+  runtime_strategy: peer_candidates
+  infer_runtime_targets: true
+  ask_user_only_for_business_constraints: true
+  allow_multiple_default_targets: true
 beginner_documentation:
   getting_started: docs/getting-started.md
   faq: docs/beginner-faq.md
@@ -590,6 +818,36 @@ beginner_documentation:
   target_audience: users_without_technical_gpt_build_knowledge
   technical_choices_inferred_when_possible: true
   project_zip_is_continuation_artifact: true
+existing_project_migration:
+  model: docs/existing-project-migration-experience.md
+  policy: src/runtime-policy/existing-project-migration-policy.md
+  script: scripts/migrate_project_for_runtime.py
+  result_schema: schemas/existing-project-migration-result.schema.json
+  natural_language_intent: true
+  apply_safe_changes_when_explicitly_requested: true
+  ask_only_for_unresolved_business_or_semantic_choices: true
+  supported_targets:
+  - opencode
+legacy_migration:
+  model: docs/legacy-migration-analysis.md
+  script: scripts/migrate_legacy_project.py
+  report_schema: schemas/legacy-migration-report.schema.json
+  source_classes:
+  - L0
+  - L1
+  - L2
+  - L3
+  confidence_levels:
+  - safe_auto
+  - auto_with_warning
+  - manual_review
+  - not_applicable
+  preserve_domain_behavior: true
+  preserve_explicit_new_contracts: true
+  generated_runtime_files_are_not_canonical: true
+  scripts_are_not_tools_without_explicit_evidence: true
+  require_report_before_apply: true
+  idempotent: true
 reference_profiles:
   model: docs/reference-profiles.md
   schema: schemas/reference-profile.schema.json
@@ -628,9 +886,12 @@ end_to_end_testing:
   - project_contract
   - project_status
   - canonical_instruction
+  - runtime_strategy
+  - peer_runtime_candidates
   - project_zip
   - chat_zip
   - custom_gpt_zip
+  - claude_zip
   - checksums
   - delivery_manifest
 architecture:

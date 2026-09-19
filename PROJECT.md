@@ -322,7 +322,7 @@ Detta beslut ersätter tidigare ZIP-first/primär-runtime-formuleringar där de 
 - GPT Byggaren bygger normalt både Chat ZIP och Custom GPT.
 - Båda härleds från samma canonical beteende- och capability-kontrakt.
 - Ingen distribution är automatiskt primär på grund av komplexitet.
-- Runtime parity mäts från canonical capability-kontrakt till respektive distribution.
+- Runtime compatibility mäts från canonical behavior-, capability-, artifact-, workspace/state- och tool-kontrakt till respektive registrerad runtime.
 - Faktiska plattformsbegränsningar dokumenteras per distribution.
 - Modellkompatibilitet får dokumenteras och testas, men ska normalt inte skapa ytterligare distributionsvarianter.
 
@@ -335,3 +335,8 @@ Projektet har nu ett standardiserat evalpaket för bootstrap, multi-turn retenti
 ## GitHub-standard
 
 Nya GPT-projekt ska normalt innehålla `README.md`, `.github/workflows/ci.yml` och `.github/workflows/release.yml`. GitHub-stöd är standard men kan väljas bort för uttryckligen lokala eller GitHub-fria projekt. Releaseversion ska härledas från GitHub Release-taggen.
+
+
+## Legacy migration
+
+Äldre GPT Byggaren-projekt ska kunna migreras till de plattformsneutrala kontrakten utan att domänbeteendet skrivs om. Migrationen ska först inventera och rapportera säkra respektive osäkra förändringar. Scripts får inte automatiskt bli runtime-tools enbart på grund av sin placering. Se `docs/legacy-migration-analysis.md`.

@@ -71,7 +71,7 @@ def scaffold_project(root, scenario, profile):
         encoding="utf-8"
     )
     (root / "README.md").write_text(
-        "# Mötesuppföljaren\n\nGPT-projekt med Chat ZIP och Custom GPT-distribution.\n\n"
+        "# Mötesuppföljaren\n\nGPT-projekt med flera runtime-distributioner från samma canonical kontrakt.\n\n"
         "## GitHub Actions\n\nCI validerar projektet vid push/PR. Publicerad GitHub Release bygger "
         "distributionerna med version från release-taggen.\n",
         encoding="utf-8"
@@ -130,7 +130,16 @@ def scaffold_project(root, scenario, profile):
         },
         "analysis": {
             "profile": profile,
-            "source": "blank-idea-001"
+            "source": "blank-idea-001",
+            "runtime": {
+                "strategy": "peer_candidates",
+                "candidates": [
+                    {"runtime_id": "chatgpt_chat", "suitability": "equivalent", "rationale": "Passar dokument- och filorienterat arbetsflöde.", "activate_by_default": True},
+                    {"runtime_id": "chatgpt_custom", "suitability": "equivalent", "rationale": "Kärnflödet ryms utan lokala runtime-tools.", "activate_by_default": True},
+                    {"runtime_id": "claude_project", "suitability": "equivalent", "rationale": "Project instructions och knowledge räcker för use caset.", "activate_by_default": True},
+                    {"runtime_id": "opencode", "suitability": "reduced", "rationale": "Agentiskt workspace är möjligt men inte nödvändigt för standardflödet.", "activate_by_default": False}
+                ]
+            }
         },
         "instructions": {
             "canonical": "src/instructions/system.md",
@@ -154,6 +163,71 @@ def scaffold_project(root, scenario, profile):
                 "enabled": True,
                 "instruction_max_characters": 8000,
                 "knowledge_max_files": 20
+            },
+            "claude": {"enabled": True},
+            "opencode": {"enabled": False}
+        },
+        "capabilities": {
+            "contract_version": 1,
+            "recommendation_mode": "inferred_from_use_case",
+            "ask_user_only_when_business_choice_is_ambiguous": True,
+            "requirements": {
+                "filesystem": {"read": "required", "write": "required"},
+                "structured_data": {"level": "recommended"},
+                "persistent_state": {"level": "required"}
+            }
+        },
+        "artifacts": {
+            "contract_version": 1,
+            "outputs": {
+                "development_plan": {
+                    "kind": "document", "format": "markdown",
+                    "requirement": "required", "persistence": "persistent"
+                },
+                "project_package": {
+                    "kind": "package", "format": "zip",
+                    "requirement": "required", "persistence": "persistent"
+                },
+                "runtime_package": {
+                    "kind": "distribution", "format": "zip",
+                    "requirement": "required", "persistence": "persistent",
+                    "multiplicity": "many"
+                }
+            }
+        },
+        "tools": {
+            "contract_version": 1,
+            "tools": []
+        },
+        "workspace_state": {
+            "contract_version": 1,
+            "workspace": {
+                "requirement": "required",
+                "persistence": "required",
+                "portable": True,
+                "separate_from_assistant": True,
+                "artifact": "project_package"
+            },
+            "state": {
+                "requirement": "required",
+                "persistence": "required",
+                "authority": "workspace_file",
+                "format": "yaml",
+                "path": "project-status.yaml",
+                "conversation_fallback": False
+            },
+            "runtime_preferences": {
+                "chat": "conversation_or_file",
+                "agent": "workspace_file"
+            }
+        },
+        "build_system": {
+            "targets": ["project", "chat", "custom-gpt", "claude"],
+            "runtime_targets": {
+                "chat": {"runtime_id": "chatgpt_chat", "runtime_key": "chat_zip"},
+                "custom-gpt": {"runtime_id": "chatgpt_custom", "runtime_key": "custom_gpt"},
+                "claude": {"runtime_id": "claude_project", "runtime_key": "claude"},
+                "opencode": {"runtime_id": "opencode", "runtime_key": "opencode"}
             }
         },
         "development": {
@@ -263,7 +337,16 @@ def build_artifacts(project_root, out_root, scenario, version="0.0.0-e2e"):
     custom_zip = out_root / f"{pid}-custom-gpt-{version}.zip"
     stable_zip(custom_zip, custom_root)
 
-    artifacts = [project_zip, chat_zip, custom_zip]
+    # Claude Projects package
+    claude_root = out_root / "_claude"
+    (claude_root / "project").mkdir(parents=True)
+    shutil.copy2(project_root / "src" / "instructions" / "system.md", claude_root / "project" / "instructions.md")
+    (claude_root / "README.md").write_text("# Claude Projects package\n", encoding="utf-8")
+    (claude_root / "VERSION").write_text(version + "\n", encoding="utf-8")
+    claude_zip = out_root / f"{pid}-claude-{version}.zip"
+    stable_zip(claude_zip, claude_root)
+
+    artifacts = [project_zip, chat_zip, custom_zip, claude_zip]
     checksum_file = out_root / "SHA256SUMS.txt"
     checksum_file.write_text(
         "\n".join(f"{sha256(p)}  {p.name}" for p in artifacts) + "\n",
@@ -277,6 +360,7 @@ def build_artifacts(project_root, out_root, scenario, version="0.0.0-e2e"):
             {"type": "project_zip", "file": project_zip.name},
             {"type": "chat_zip", "file": chat_zip.name},
             {"type": "custom_gpt_zip", "file": custom_zip.name},
+            {"type": "claude_zip", "file": claude_zip.name},
             {"type": "checksums", "file": checksum_file.name},
         ]
     }
@@ -285,6 +369,7 @@ def build_artifacts(project_root, out_root, scenario, version="0.0.0-e2e"):
 
     shutil.rmtree(chat_root)
     shutil.rmtree(custom_root)
+    shutil.rmtree(claude_root)
     return artifacts + [checksum_file, manifest_file]
 
 def run(root, scenario_path):
@@ -306,6 +391,17 @@ def run(root, scenario_path):
             "project_status": (generated_project / "project-status.yaml").exists(),
             "development_plan": (generated_project / "docs" / "development-plan.md").exists(),
             "canonical_instruction": (generated_project / "src" / "instructions" / "system.md").exists(),
+            "capability_contract": "requirements" in cfg.get("capabilities", {}),
+            "artifact_contract": "outputs" in cfg.get("artifacts", {}),
+            "workspace_state_contract": cfg.get("workspace_state", {}).get("state", {}).get("authority") == "workspace_file",
+            "tool_contract": isinstance(cfg.get("tools", {}).get("tools"), list),
+            "runtime_strategy": cfg.get("analysis", {}).get("runtime", {}).get("strategy") == "peer_candidates",
+            "no_primary_runtime": cfg.get("runtime", {}).get("primary") == "none",
+            "default_runtime_ids": sorted(
+                item["runtime_id"]
+                for item in cfg.get("analysis", {}).get("runtime", {}).get("candidates", [])
+                if item.get("activate_by_default")
+            ) == sorted(scenario["expected"]["default_runtime_ids"]),
             "readme": (generated_project / "README.md").exists(),
             "github_ci": (generated_project / ".github" / "workflows" / "ci.yml").exists(),
             "github_release": (generated_project / ".github" / "workflows" / "release.yml").exists(),
@@ -314,6 +410,7 @@ def run(root, scenario_path):
             "project_zip": any("-project.zip" in p.name for p in artifacts),
             "chat_zip": any("-chat-" in p.name for p in artifacts),
             "custom_gpt_zip": any("-custom-gpt-" in p.name for p in artifacts),
+            "claude_zip": any("-claude-" in p.name for p in artifacts),
             "delivery_manifest": any(p.name == "DELIVERY-MANIFEST.json" for p in artifacts),
             "checksums": any(p.name == "SHA256SUMS.txt" for p in artifacts),
         }

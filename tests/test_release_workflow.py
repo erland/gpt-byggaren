@@ -10,3 +10,11 @@ def test_release_workflow_contract():
     assert "scripts/build_distributions.py" in text
     assert "scripts/validate_distributions.py" in text
     assert "gh release upload" in text
+
+
+def test_release_workflow_uses_declarative_output_verifier():
+    text = (ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
+    assert "verify_distribution_outputs.py" in text
+    assert "mapfile -t FILES" in text
+    assert "gpt-byggaren-chat-" not in text
+    assert "gpt-byggaren-opencode-" not in text

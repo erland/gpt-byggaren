@@ -44,7 +44,6 @@ def main() -> int:
         str(root / "scripts" / "build_distributions.py"),
         "--project-root", str(root),
         "--version", args.version,
-        "--targets", "project,chat,custom-gpt",
     ])
 
     run([

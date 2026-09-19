@@ -17,7 +17,7 @@ CI ska normalt köras vid push, pull request och manuell dispatch och minst:
 - validera projektets strukturerade filer,
 - köra linter,
 - köra tester och relevanta kontraktsvalideringar,
-- bygga projekt-ZIP, Chat ZIP och Custom GPT ZIP,
+- bygga projekt-ZIP och samtliga aktiverade runtime-distributioner,
 - validera distributionerna.
 
 ## Release
@@ -30,7 +30,7 @@ Release-workflow ska normalt:
 
 1. validera release-taggen,
 2. köra relevanta tester,
-3. bygga projekt-ZIP, Chat ZIP och Custom GPT ZIP,
+3. bygga projekt-ZIP och samtliga aktiverade runtime-distributioner,
 4. validera distributionerna,
 5. bifoga artefakter, checksums och delivery manifest till GitHub Release.
 

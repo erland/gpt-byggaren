@@ -17,3 +17,10 @@ CI ska fånga fel före release och använda samma buildkärna som direktbyggnad
 7. uppladdning av CI-artefakter
 
 CI har endast `contents: read`. Release-workflowen behåller separat skrivbehörighet.
+
+
+## Deklarativ artefaktverifiering
+
+CI använder `scripts/verify_distribution_outputs.py` för att härleda förväntade filer från `build_system.targets` och `build_system.runtime_targets`.
+
+När en ny runtime läggs till i registret behöver CI därför inte kompletteras med en ny hårdkodad filkontroll.

@@ -88,6 +88,67 @@ def lint(root: Path) -> dict:
                 findings.append(finding("GP014", "error",
                     f"Identical Custom GPT instruction exceeds limit: {len(text)} > {max_chars}", instr_ref))
 
+    capabilities = cfg.get("capabilities")
+    if isinstance(capabilities, dict) and "requirements" in capabilities:
+        schema_ref = capabilities.get("schema", "schemas/capability-contract.schema.json")
+        schema_path = root / schema_ref
+        if not schema_path.exists():
+            findings.append(finding("GP130", "error", "Capability contract schema is missing", schema_ref))
+        else:
+            try:
+                import jsonschema
+                schema = json.loads(schema_path.read_text(encoding="utf-8"))
+                jsonschema.Draft202012Validator(schema).validate(capabilities)
+            except Exception as exc:
+                findings.append(finding("GP131", "error", f"Invalid capability contract: {exc}", "gpt-project.yaml"))
+
+    artifacts = cfg.get("artifacts")
+    if isinstance(artifacts, dict) and "outputs" in artifacts:
+        schema_ref = artifacts.get("schema", "schemas/artifact-contract.schema.json")
+        schema_path = root / schema_ref
+        if not schema_path.exists():
+            findings.append(finding("GP140", "error", "Artifact contract schema is missing", schema_ref))
+        else:
+            try:
+                import jsonschema
+                schema = json.loads(schema_path.read_text(encoding="utf-8"))
+                jsonschema.Draft202012Validator(schema).validate(artifacts)
+            except Exception as exc:
+                findings.append(finding("GP141", "error", f"Invalid artifact contract: {exc}", "gpt-project.yaml"))
+
+    workspace_state = cfg.get("workspace_state")
+    if isinstance(workspace_state, dict):
+        schema_ref = workspace_state.get("schema", "schemas/workspace-state-contract.schema.json")
+        schema_path = root / schema_ref
+        if not schema_path.exists():
+            findings.append(finding("GP150", "error", "Workspace/state contract schema is missing", schema_ref))
+        else:
+            try:
+                import jsonschema
+                schema = json.loads(schema_path.read_text(encoding="utf-8"))
+                jsonschema.Draft202012Validator(schema).validate(workspace_state)
+            except Exception as exc:
+                findings.append(finding("GP151", "error", f"Invalid workspace/state contract: {exc}", "gpt-project.yaml"))
+
+    tool_contract = cfg.get("tools")
+    if isinstance(tool_contract, dict):
+        schema_ref = tool_contract.get("schema", "schemas/tool-contract.schema.json")
+        schema_path = root / schema_ref
+        if not schema_path.exists():
+            findings.append(finding("GP160", "error", "Tool contract schema is missing", schema_ref))
+        else:
+            try:
+                import jsonschema
+                schema = json.loads(schema_path.read_text(encoding="utf-8"))
+                jsonschema.Draft202012Validator(schema).validate(tool_contract)
+                for tool in tool_contract.get("tools", []):
+                    if tool.get("type") == "script":
+                        script_ref = tool.get("script")
+                        if script_ref and not exists_ref(root, script_ref):
+                            findings.append(finding("GP161", "error", "Declared runtime tool script does not exist", script_ref))
+            except Exception as exc:
+                findings.append(finding("GP162", "error", f"Invalid tool contract: {exc}", "gpt-project.yaml"))
+
     # Small-model/runtime-complexity contract. This is opt-in per project but GPT Byggaren
     # should generate it for new projects. Critical behavior must be directly present in the
     # canonical instruction; supporting files may deepen behavior but not be required to recover it.

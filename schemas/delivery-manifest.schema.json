@@ -6,8 +6,6 @@
     "project",
     "project_name",
     "version",
-    "primary_runtime",
-    "custom_gpt_enabled",
     "artifacts"
   ],
   "properties": {
@@ -50,8 +48,21 @@
           "size": {
             "type": "integer",
             "minimum": 0
+          },
+          "artifact_id": {
+            "type": "string",
+            "minLength": 1
           }
         }
+      }
+    },
+    "runtime_strategy": {
+      "type": "string"
+    },
+    "runtime_targets": {
+      "type": "array",
+      "items": {
+        "type": "string"
       }
     }
   }

@@ -15,6 +15,10 @@ analys
 ↓
 profil = standard
 ↓
+runtime strategy = peer_candidates
+↓
+ChatGPT Chat + Custom GPT + Claude Projects aktiveras från behovet
+↓
 utvecklingsplan
 ↓
 första projektstruktur
@@ -41,9 +45,12 @@ Det isolerade E2E-testet verifierar att hela kontraktskedjan kan representeras o
 - projektkontrakt,
 - status,
 - canonical instruktion,
+- runtime-strategi utan primary-runtime-antagande,
+- default runtime-kandidater härledda från behovet,
 - projekt-ZIP,
 - Chat ZIP,
 - Custom GPT ZIP,
+- Claude Projects ZIP,
 - checksummor,
 - leveransmanifest.
 
@@ -63,6 +70,9 @@ project: mötesuppföljaren
 project ZIP: PASS
 Chat ZIP: PASS
 Custom GPT ZIP: PASS
+Claude Projects ZIP: PASS
+runtime strategy: peer_candidates
+primary runtime: none
 delivery manifest: PASS
 checksums: PASS
 ```
