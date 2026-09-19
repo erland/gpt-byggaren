@@ -55,6 +55,7 @@ builder/
 ├── instructions.md
 ├── conversation-starters.md
 ├── capabilities.md
+├── runtime-contract.json
 ├── compilation-report.json
 └── knowledge-package/
 ```
@@ -83,9 +84,13 @@ Bildgenerering: Behövs inte
 
 Exakt de filer som ska laddas upp som Knowledge.
 
+### `runtime-contract.json`
+
+Genererad snapshot av canonical capability-, artifact-, workspace/state- och tool-kontrakt för runtime `chatgpt_custom`. Snapshoten beskriver även adapterbegränsningar, exempelvis att lokala scripts och kommandon inte bäddas in i Builder-paketet.
+
 ### `compilation-report.json`
 
-Maskinläsbar rapport över instruktionsbudget och Knowledge-urval: canonical/compiled tecken, verifierade core-markörer, valda och bortvalda Knowledge-filer samt använda priority-globs.
+Maskinläsbar rapport över instruktionsbudget och Knowledge-urval: canonical/compiled tecken, verifierade core-markörer, valda och bortvalda Knowledge-filer samt använda priority-globs. Rapporten pekar även på runtime-snapshoten.
 
 ## Instruktionskompilering
 
@@ -220,7 +225,7 @@ Den ska beskriva:
 
 ## Paritet
 
-Paritet ska bedömas per capability, inte bara som antal filer.
+Paritet ska bedömas mot hela canonical assistant-kontraktet, inte bara som antal filer eller capabilities. Det omfattar behavior, capabilities, artifacts, workspace/state och tools.
 
 Exempel:
 
@@ -289,7 +294,8 @@ Distributionen ska innehålla en kort installationsguide:
 3. lägg in conversation starters,
 4. aktivera rekommenderade capabilities,
 5. ladda upp filerna i `builder/knowledge-package/`,
-6. använd `COMPATIBILITY.md` för att förstå skillnader mot Chat ZIP.
+6. använd `builder/runtime-contract.json` som maskinläsbar adapterreferens vid felsökning eller vidare automation,
+7. använd `COMPATIBILITY.md` för att förstå skillnader mot andra runtimes.
 
 ## Definition of Done
 
