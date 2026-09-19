@@ -484,3 +484,38 @@ OpenCode blockeras när exempelvis:
 ### Viktig avgränsning
 
 Steg 15 installerar OpenCode-adapterkontrakt och statiska adapterresurser i migrerade projekt. Generalisering av hela distributionsbyggsystemet och buildtarget-hanteringen sker i senare plansteg.
+
+
+## User-facing migration workflow – steg 20
+
+För vanlig användning ska låg-nivåflaggorna inte behöva exponeras. GPT Byggaren använder i stället:
+
+```text
+scripts/migrate_project_for_runtime.py
+```
+
+Exempel på intern körning för ett uttryckligt användarönskemål om OpenCode:
+
+```bash
+python scripts/migrate_project_for_runtime.py \
+  --project-root /path/to/project \
+  --target-runtime opencode \
+  --execute
+```
+
+Det användarorienterade resultatet är:
+
+- `completed`
+- `needs_review`
+- `blocked`
+- `ready_to_migrate`
+
+Den fulla tekniska migrationsrapporten behålls som `technical_report` för spårbarhet.
+
+Användaren ska kunna uttrycka samma intention i naturligt språk, exempelvis:
+
+```text
+Migrera denna GPT så att den även fungerar i OpenCode.
+```
+
+När migration uttryckligen begärts får säkra beteendebevarande ändringar appliceras utan en separat fråga om implementationen. Manual-review-områden lämnas orörda.
