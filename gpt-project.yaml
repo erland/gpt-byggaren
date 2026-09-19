@@ -108,6 +108,22 @@ runtime:
       checksums: true
     deterministic_build: true
     omit_empty_runtime_directories: true
+  claude:
+    enabled: true
+    role: peer_distribution
+    mode: claude_project
+    schema: schemas/claude-portable-runtime.schema.json
+    policy: src/runtime-policy/claude-portable-runtime-policy.md
+    model: docs/claude-portable-runtime.md
+    project:
+      instructions: project/instructions.md
+      knowledge: project/knowledge
+      runtime_contract: project/runtime-contract.json
+    templates:
+      readme: templates/README.claude.md.tpl
+    validation:
+      require_instructions: true
+      require_runtime_contract: true
   custom_gpt:
     enabled: true
     role: peer_distribution
@@ -283,6 +299,7 @@ build:
   build_project_zip: true
   build_chat_zip: true
   build_custom_gpt_zip: true
+  build_claude_zip: true
   direct_downloads_without_github: true
 release:
   github:
@@ -301,6 +318,8 @@ release:
     - project_zip
     - chat_zip
     - custom_gpt_zip_when_enabled
+  - claude_zip_when_enabled
+    - claude_zip_when_enabled
     - checksums
     - delivery_manifest
     policy: src/runtime-policy/github-release-policy.md
@@ -511,6 +530,7 @@ runtime_parity:
   registered_runtimes:
   - chatgpt_chat
   - chatgpt_custom
+  - claude_project
   compared_categories:
   - behavior
   - capability
@@ -556,6 +576,7 @@ build_system:
   - project
   - chat
   - custom-gpt
+  - claude
   output_root: dist
   working_root: build
   deterministic_zip: true
