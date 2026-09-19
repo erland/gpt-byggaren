@@ -9,6 +9,15 @@ suites:
     - standard
     - zip_first_advanced
     - workflow_research_heavy
+  runtime_independent_contracts:
+    type: contract
+    path: tests/test_runtime_independent_contracts.py
+    blocking: true
+    profiles:
+    - simple
+    - standard
+    - zip_first_advanced
+    - workflow_research_heavy
   build_and_distribution:
     type: build
     path: tests/
