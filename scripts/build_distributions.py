@@ -519,8 +519,58 @@ def build_claude(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     return out
 
 
-def opencode_runtime_contract(cfg: dict) -> dict:
+def build_opencode_skills(root: Path, cfg: dict, out: Path) -> list[str]:
+    """Generate OpenCode skills from declared workflow/reference sources."""
+    runtime_cfg = cfg["runtime"]["opencode"]
+    skills_cfg = runtime_cfg.get("skills", {})
+    if not skills_cfg.get("enabled"):
+        return []
+
+    skill_root = out / skills_cfg.get("root", ".opencode/skills")
+    built: list[str] = []
+    for skill in skills_cfg.get("definitions", []):
+        skill_id = skill["id"]
+        skill_dir = skill_root / skill_id
+        references_dir = skill_dir / "references"
+        references_dir.mkdir(parents=True, exist_ok=True)
+
+        reference_lines = []
+        for ref in skill.get("references", []):
+            src = root / ref
+            if not src.exists():
+                raise SystemExit(f"OpenCode skill reference missing: {ref}")
+            dst = references_dir / src.name
+            copy_file(src, dst)
+            reference_lines.append(f"- Read `references/{src.name}` when that part of the workflow is relevant.")
+
+        body = (
+            "---\n"
+            f"name: {skill['name']}\n"
+            f"description: {skill['description']}\n"
+            "compatibility: opencode\n"
+            "metadata:\n"
+            "  source: generated-from-canonical-project\n"
+            "---\n\n"
+            "## Purpose\n\n"
+            f"{skill['description']}\n\n"
+            "## Workflow\n\n"
+            "1. Read the workspace state before choosing work.\n"
+            "2. Prefer blockers, failed validation, hygiene, and missing dependencies before the next planned step.\n"
+            "3. Treat the development plan as guiding rather than mechanical.\n"
+            "4. After a change, validate, update project state, and rebuild the complete project package when applicable.\n"
+            "5. Do not ask the user to repeat project history already present in workspace/state.\n\n"
+            "## References\n\n"
+            + "\n".join(reference_lines)
+            + "\n"
+        )
+        (skill_dir / "SKILL.md").write_text(body, encoding="utf-8")
+        built.append(skill_id)
+    return built
+
+
+def opencode_runtime_contract(cfg: dict, built_skills: list[str] | None = None) -> dict:
     """Compile canonical assistant contracts into an OpenCode workspace snapshot."""
+    built_skills = list(built_skills or [])
     return {
         "schema_version": 1,
         "runtime_id": "opencode",
@@ -531,7 +581,8 @@ def opencode_runtime_contract(cfg: dict) -> dict:
         "adapter": {
             "mode": "opencode_workspace",
             "instructions": "AGENTS.md",
-            "skills_included": False,
+            "skills_included": bool(built_skills),
+            "skills": built_skills,
             "tool_integration": "deferred",
             "workspace_first": True,
         },
@@ -551,7 +602,8 @@ def build_opencode(root: Path, cfg: dict, build_root: Path, version: str) -> Pat
         + "\n\n## OpenCode adapter\n\n"
         + "- Treat this AGENTS.md as a generated projection of the canonical assistant instructions.\n"
         + "- Work inside this repository/workspace.\n"
-        + "- Skills are not included in the base adapter yet.\n"
+        + "- Reusable workflows may be available as project-local skills under .opencode/skills/.\n"
+        + "- Load a skill when its description matches the current task instead of duplicating that workflow here.\n"
         + "- Tool integration is added in a later adapter step; do not infer undeclared tools.\n",
         encoding="utf-8",
     )
@@ -563,11 +615,13 @@ def build_opencode(root: Path, cfg: dict, build_root: Path, version: str) -> Pat
             if p.is_file() and p.name != "KNOWLEDGE.md":
                 copy_file(p, knowledge_target / p.relative_to(knowledge_root))
 
+    built_skills = build_opencode_skills(root, cfg, out)
+
     contract_ref = runtime_cfg["layout"]["runtime_contract"]
     contract_path = out / contract_ref
     contract_path.parent.mkdir(parents=True, exist_ok=True)
     contract_path.write_text(
-        json.dumps(opencode_runtime_contract(cfg), ensure_ascii=False, indent=2) + "\n",
+        json.dumps(opencode_runtime_contract(cfg, built_skills), ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
 
@@ -587,7 +641,8 @@ def build_opencode(root: Path, cfg: dict, build_root: Path, version: str) -> Pat
     manifest["adapter_id"] = "opencode"
     manifest["contract_snapshot"] = contract_ref
     manifest["instructions"] = runtime_cfg["layout"]["instructions"]
-    manifest["skills_included"] = False
+    manifest["skills_included"] = bool(built_skills)
+    manifest["skills"] = built_skills
     manifest["tool_integration"] = "deferred"
     manifest_path.write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
