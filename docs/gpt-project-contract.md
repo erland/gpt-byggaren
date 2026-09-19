@@ -156,6 +156,38 @@ Kontraktet skiljer mellan:
 
 Detta får inte förväxlas med GPT Byggarens egen utvecklingsstatus för källprojektet. Ett genererat projekt kan ha `project-status.yaml` som sin runtime-state, men andra assistenter kan använda exempelvis `state/research-state.yaml` eller ingen persistent state alls.
 
+### `tools`
+
+Beskriver assistentens **körbara verktyg** plattformsneutralt. Kontraktet är separat från `capabilities`: en capability beskriver *vad assistenten behöver kunna*, medan ett tool beskriver *en konkret körbar mekanism* som kan realisera en del av behovet.
+
+Exempel:
+
+```yaml
+tools:
+  contract_version: 1
+  schema: schemas/tool-contract.schema.json
+  tools:
+    - id: validate-model
+      type: script
+      requirement: required
+      purpose: Validera canonical modell.
+      script: scripts/validate.py
+      deterministic: true
+      mutates_workspace: false
+      runtime_fallback: block
+```
+
+Initialt stöds typerna:
+
+- `script`
+- `local_command`
+- `mcp`
+- `api_action`
+
+En fil under `scripts/` blir **inte automatiskt** ett runtimeverktyg. Verktyg ska deklareras uttryckligen så att utvecklings- och buildscript inte exponeras av misstag.
+
+`required_runtime_dependencies` i core contract fortsätter beskriva nödvändiga **filer/beroenden**, medan `tools` beskriver körbara operationer.
+
 ### `workflow`
 
 Beskriver den centrala arbetsmodellen:
