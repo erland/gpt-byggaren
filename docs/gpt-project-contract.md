@@ -120,6 +120,42 @@ Kontraktet skiljer därmed på canonical leveranser och konkreta distributionsfi
 
 Begrepp som "nedladdningsbar fil", "länk i chatten" eller en viss plattforms artifact-UI hör hemma i runtime-adaptern och ska inte krävas av canonical kontrakt.
 
+### `workspace_state`
+
+Beskriver assistentens plattformsneutrala krav på arbetsyta och runtime-state.
+
+Exempel:
+
+```yaml
+workspace_state:
+  contract_version: 1
+  schema: schemas/workspace-state-contract.schema.json
+  workspace:
+    requirement: required
+    persistence: required
+    portable: true
+    separate_from_assistant: true
+    artifact: project_package
+  state:
+    requirement: required
+    persistence: required
+    authority: workspace_file
+    format: yaml
+    path: project-status.yaml
+    conversation_fallback: false
+  runtime_preferences:
+    chat: conversation_or_file
+    agent: workspace_file
+```
+
+Kontraktet skiljer mellan:
+
+- **assistentpaketet** – instruktioner, knowledge, schemas, scripts och runtime-adapter,
+- **workspace** – användarens konkreta arbetsprojekt eller arbetsdata,
+- **runtime-state** – den status som behövs för att fortsätta ett flerstegsarbete.
+
+Detta får inte förväxlas med GPT Byggarens egen utvecklingsstatus för källprojektet. Ett genererat projekt kan ha `project-status.yaml` som sin runtime-state, men andra assistenter kan använda exempelvis `state/research-state.yaml` eller ingen persistent state alls.
+
 ### `workflow`
 
 Beskriver den centrala arbetsmodellen:
