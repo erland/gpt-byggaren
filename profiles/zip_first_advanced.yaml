@@ -2,7 +2,11 @@ id: zip_first_advanced
 title: Advanced dual distribution
 description: Avancerad GPT där både Chat ZIP och Custom GPT byggs från samma canonical
   capability-kontrakt. Skillnader dokumenteras per capability.
-primary_runtime: none
+runtime_selection:
+  strategy: peer_candidates
+  infer_from_canonical_contracts: true
+  ask_user_only_for_business_constraints: true
+  allow_multiple_default_targets: true
 custom_gpt:
   enabled: true
   expected_parity: moderate_or_high
