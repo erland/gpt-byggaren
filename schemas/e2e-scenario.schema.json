@@ -33,8 +33,9 @@
       "required": [
         "profile",
         "project_id",
-        "primary_runtime",
-        "custom_gpt_enabled",
+        "runtime_strategy",
+        "default_runtime_ids",
+        "non_default_runtime_ids",
         "artifacts"
       ],
       "properties": {
@@ -49,16 +50,23 @@
         "project_id": {
           "type": "string"
         },
-        "primary_runtime": {
-          "enum": [
-            "chat_zip",
-            "custom_gpt"
-          ]
-        },
-        "custom_gpt_enabled": {
-          "type": "boolean"
-        },
         "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "runtime_strategy": {
+          "const": "peer_candidates"
+        },
+        "default_runtime_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "non_default_runtime_ids": {
           "type": "array",
           "items": {
             "type": "string"
