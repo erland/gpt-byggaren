@@ -577,13 +577,13 @@ def _opencode_tool_wrapper(tool: dict, script_ref: str) -> str:
     description = tool.get("purpose", tool_id).replace('"', '\\"')
     arg_schema = 'projectRoot: tool.schema.string().optional().describe("Project root relative to the worktree")'
     if tool_id == "project-hygiene":
-        arg_schema += ',\\n    mode: tool.schema.enum(["checkpoint", "final"]).optional(),\\n    fix: tool.schema.boolean().optional()'
+        arg_schema += ',\n    mode: tool.schema.enum(["checkpoint", "final"]).optional(),\n    fix: tool.schema.boolean().optional()'
         command_lines = '''
     const mode = args.mode ?? "checkpoint"
     const fix = args.fix ? ["--fix"] : []
     const cmd = ["python3", script, "--project-root", projectRoot, "--mode", mode, ...fix, "--json"]'''
     elif tool_id == "build-distributions":
-        arg_schema += ',\\n    version: tool.schema.string().optional(),\\n    targets: tool.schema.string().optional()'
+        arg_schema += ',\n    version: tool.schema.string().optional(),\n    targets: tool.schema.string().optional()'
         command_lines = '''
     const version = args.version ?? "0.0.0-dev"
     const targets = args.targets ?? "project,chat,custom-gpt,claude,opencode"
@@ -626,11 +626,11 @@ def build_opencode_tools(root: Path, cfg: dict, out: Path) -> list[dict]:
     tools_target.mkdir(parents=True, exist_ok=True)
 
     integrations = []
-    permissions = {{
-        "skill": {{"*": "allow"}},
+    permissions = {
+        "skill": {"*": "allow"},
         "bash": "ask",
         "edit": "ask",
-    }}
+    }
     for tool_cfg in normalize_tool_contract(cfg).get("tools", []):
         if tool_cfg.get("type") != "script":
             continue
@@ -639,23 +639,23 @@ def build_opencode_tools(root: Path, cfg: dict, out: Path) -> list[dict]:
             continue
         packaged_script = str(Path(runtime_cfg["layout"]["runtime_scripts"]) / Path(script_ref).name)
         tool_name = _opencode_tool_name(tool_cfg["id"])
-        (tools_target / f"{{tool_name}}.ts").write_text(
+        (tools_target / f"{tool_name}.ts").write_text(
             _opencode_tool_wrapper(tool_cfg, packaged_script),
             encoding="utf-8",
         )
         permissions[tool_name] = "ask" if tool_cfg.get("mutates_workspace") else "allow"
-        integrations.append({{
+        integrations.append({
             "id": tool_cfg["id"],
             "opencode_tool": tool_name,
             "script": packaged_script,
             "permission": permissions[tool_name],
-        }})
+        })
 
     config_path = out / runtime_cfg["layout"]["config"]
-    config_path.write_text(json.dumps({{
+    config_path.write_text(json.dumps({
         "$schema": "https://opencode.ai/config.json",
         "permission": permissions,
-    }}, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+    }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return integrations
 
 
@@ -697,7 +697,7 @@ def build_opencode(root: Path, cfg: dict, build_root: Path, version: str) -> Pat
         + "- Work inside this repository/workspace.\n"
         + "- Reusable workflows may be available as project-local skills under .opencode/skills/.\n"
         + "- Load a skill when its description matches the current task instead of duplicating that workflow here.\n"
-        + "- Tool integration is added in a later adapter step; do not infer undeclared tools.\n",
+        + "- Use only the explicitly generated OpenCode custom tools for canonical runtime scripts; do not infer extra scripts as tools.\n",
         encoding="utf-8",
     )
 
