@@ -1,7 +1,11 @@
 id: standard
 title: Standard
 description: Normal GPT med tydligt arbetsflöde, viss Knowledge och strukturerad kvalitetssäkring.
-primary_runtime: chat_zip_or_custom_gpt
+runtime_selection:
+  strategy: peer_candidates
+  infer_from_canonical_contracts: true
+  ask_user_only_for_business_constraints: true
+  allow_multiple_default_targets: true
 custom_gpt:
   enabled: true
   expected_parity: high
