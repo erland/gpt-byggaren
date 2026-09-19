@@ -67,7 +67,8 @@
         "instructions",
         "conversation_starters",
         "capabilities",
-        "knowledge_package"
+        "knowledge_package",
+        "runtime_contract"
       ],
       "properties": {
         "instructions": {
@@ -83,7 +84,8 @@
           "type": "string"
         },
         "runtime_contract": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         }
       }
     },
