@@ -395,6 +395,13 @@ def run(root, scenario_path):
             "artifact_contract": "outputs" in cfg.get("artifacts", {}),
             "workspace_state_contract": cfg.get("workspace_state", {}).get("state", {}).get("authority") == "workspace_file",
             "tool_contract": isinstance(cfg.get("tools", {}).get("tools"), list),
+            "runtime_strategy": cfg.get("analysis", {}).get("runtime", {}).get("strategy") == "peer_candidates",
+            "no_primary_runtime": cfg.get("runtime", {}).get("primary") == "none",
+            "default_runtime_ids": sorted(
+                item["runtime_id"]
+                for item in cfg.get("analysis", {}).get("runtime", {}).get("candidates", [])
+                if item.get("activate_by_default")
+            ) == sorted(scenario["expected"]["default_runtime_ids"]),
             "readme": (generated_project / "README.md").exists(),
             "github_ci": (generated_project / ".github" / "workflows" / "ci.yml").exists(),
             "github_release": (generated_project / ".github" / "workflows" / "release.yml").exists(),
@@ -403,6 +410,7 @@ def run(root, scenario_path):
             "project_zip": any("-project.zip" in p.name for p in artifacts),
             "chat_zip": any("-chat-" in p.name for p in artifacts),
             "custom_gpt_zip": any("-custom-gpt-" in p.name for p in artifacts),
+            "claude_zip": any("-claude-" in p.name for p in artifacts),
             "delivery_manifest": any(p.name == "DELIVERY-MANIFEST.json" for p in artifacts),
             "checksums": any(p.name == "SHA256SUMS.txt" for p in artifacts),
         }
