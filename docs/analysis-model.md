@@ -353,9 +353,16 @@ Exempel:
 recommended_profile: zip_first_advanced  # legacy id; semantics = advanced dual distribution
 
 runtime:
-  primary: none
-  chat_zip: peer_distribution
-  custom_gpt: peer_distribution
+  strategy: peer_candidates
+  candidates:
+    - runtime_id: chatgpt_chat
+      suitability: equivalent
+      activate_by_default: true
+      rationale: ...
+    - runtime_id: chatgpt_custom
+      suitability: equivalent
+      activate_by_default: true
+      rationale: ...
 
 capabilities:
   contract_version: 1
@@ -409,8 +416,8 @@ Analysen bör normalt innehålla:
 
 1. tolkning av idén,
 2. rekommenderad GPT-profil,
-3. rekommenderad primär runtime,
-4. Custom GPT-bedömning,
+3. rekommenderade runtime-kandidater och vilka som bör aktiveras som default,
+4. dokumenterade skillnader eller reducerad funktion per runtime,
 5. capabilities,
 6. Knowledge- och runtimebehov,
 7. testbehov,
@@ -460,3 +467,12 @@ Exempel:
 Tool-kontrakt ska användas när en assistent behöver deterministiska eller återanvändbara operationer, exempelvis validering, modellmutation, build eller export.
 
 En existerande `scripts/`-katalog får inte ensam tolkas som att alla scripts är runtimeverktyg. Vid migration ska GPT Byggaren inventera syfte och användning och bara deklarera de verktyg som faktiskt tillhör assistentens körbara arbetsflöde.
+
+
+## New-project runtime UX
+
+Runtimeval ska göras efter de canonical kontrakten. Nya projekt ska använda `peer_candidates` och motivera varje runtime med suitability och rationale.
+
+Användaren ska normalt inte behöva välja mellan ChatGPT, Claude eller OpenCode i idéfasen. Fråga endast om en viss plattform är ett verksamhetskrav eller om användaren uttryckligen vill begränsa distributionsmålen.
+
+Se `docs/new-project-experience.md`.
