@@ -25,4 +25,5 @@ def test_direct_build():
     assert "gpt-byggaren-project.zip" in files
     assert "gpt-byggaren-chat-0.0.0-testdirect.zip" in files
     assert "gpt-byggaren-custom-gpt-0.0.0-testdirect.zip" in files
+    assert "gpt-byggaren-claude-0.0.0-testdirect.zip" in files
     assert (dist / "SHA256SUMS.txt").exists()
