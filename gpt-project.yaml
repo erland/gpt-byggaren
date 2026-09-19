@@ -133,6 +133,7 @@ runtime:
       instructions: builder/instructions.md
       conversation_starters: builder/conversation-starters.md
       capabilities: builder/capabilities.md
+      runtime_contract: builder/runtime-contract.json
       knowledge_package: builder/knowledge-package
     templates:
       readme: templates/README.custom-gpt.md.tpl
