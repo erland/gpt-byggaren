@@ -4,6 +4,8 @@
 
 GPT Byggaren måste kunna fortsätta ett GPT-projekt i en ny konversation utan att användaren behöver återberätta tidigare arbete.
 
+Detta dokument beskriver **GPT Byggarens projektutvecklingsstatus**. Den ska hållas isär från ett genererat assistants eget runtime-state, även när samma filnamn eller liknande princip används.
+
 Därför används två statusrepresentationer:
 
 - `project-status.yaml` – maskinläsbar sanningskälla för progression och återupptagning,
