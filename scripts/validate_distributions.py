@@ -52,6 +52,7 @@ def validate_custom(root: Path, cfg: dict) -> list[str]:
         build / "builder" / "instructions.md",
         build / "builder" / "conversation-starters.md",
         build / "builder" / "capabilities.md",
+        build / cfg["runtime"]["custom_gpt"]["builder"].get("runtime_contract", "builder/runtime-contract.json"),
         build / "README.md",
         build / "COMPATIBILITY.md",
         build / "VERSION",
