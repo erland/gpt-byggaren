@@ -4,7 +4,7 @@
 
 OpenCode-adaptern är en agentisk workspace-runtime som genereras från samma canonical assistant-kontrakt som övriga distributioner.
 
-Steg 10 etablerar **basadaptern**. Skills och explicit tool-integration byggs i senare steg.
+Steg 10 etablerar basadaptern. Steg 11 lägger till projektlokala Skills. Explicit tool-integration byggs i ett senare steg.
 
 ## Officiell OpenCode-modell
 
@@ -58,7 +58,11 @@ OpenCode är workspace-orienterat och passar därför väl för assistenter som 
 
 ## Skills
 
-Skills införs först i steg 11 via `.opencode/skills/<name>/SKILL.md`.
+OpenCode Skills genereras under `.opencode/skills/<skill-id>/SKILL.md` med giltig YAML-frontmatter och en beskrivning som gör att agenten kan upptäcka dem vid rätt uppgift.
+
+GPT Byggaren genererar initialt `gpt-project-workflow`, som kapslar flerstepsflödet för planering, resume och next-step-hantering. Tillhörande referensdokument kopieras till skillens privata `references/`-katalog så att skillen kan ladda dem vid behov.
+
+Skillen är en runtimeprojektion. Canonical instruktion, policies och projektdokumentation förblir sanningskälla.
 
 ## Tools
 
@@ -73,5 +77,5 @@ Basadaptern är klar när:
 - runtime contract snapshot genereras,
 - paketet valideras,
 - CI/release/direct build producerar OpenCode ZIP,
-- inga Skills skapas ännu,
+- projektlokala Skills genereras från deklarerade canonical workflowkällor,
 - ingen implicit tool-integration görs ännu.
