@@ -242,3 +242,27 @@ def normalize_workspace_state_contract(cfg: dict[str, Any]) -> dict[str, Any]:
         result["state"]["path"] = "project-status.yaml"
 
     return result
+
+
+def normalize_tool_contract(cfg: dict[str, Any]) -> dict[str, Any]:
+    """Return a platform-neutral tool contract.
+
+    Explicit tool declarations are authoritative. Legacy projects are handled
+    conservatively: scripts are not promoted to runtime tools merely because
+    they exist in a scripts directory.
+    """
+    current = cfg.get("tools")
+    if isinstance(current, dict):
+        return current
+
+    legacy = cfg.get("tooling")
+    if isinstance(legacy, dict) and isinstance(legacy.get("tools"), list):
+        return {
+            "contract_version": 1,
+            "tools": legacy.get("tools", []),
+        }
+
+    return {
+        "contract_version": 1,
+        "tools": [],
+    }
