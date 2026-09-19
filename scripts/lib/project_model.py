@@ -187,3 +187,58 @@ def artifact_contract_id_for_delivery_type(cfg: dict[str, Any], delivery_type: s
     contract = normalize_artifact_contract(cfg)
     mapping = contract.get("legacy_mapping") or LEGACY_ARTIFACT_MAP
     return mapping.get(delivery_type)
+
+
+def normalize_workspace_state_contract(cfg: dict[str, Any]) -> dict[str, Any]:
+    """Return a platform-neutral workspace/state contract.
+
+    New projects use workspace_state directly. Legacy projects are inferred
+    conservatively from resume/workflow settings without mutating source data.
+    """
+    current = cfg.get("workspace_state")
+    if isinstance(current, dict):
+        return current
+
+    resume = cfg.get("resume") or {}
+    workflow = cfg.get("workflow") or {}
+    supported = bool(resume.get("supported"))
+    independent_of_chat = resume.get("requires_previous_chat_history") is False
+
+    uses_project_package = bool(
+        workflow.get("resume_from_project_zip")
+        or workflow.get("resume_from_project_package")
+        or workflow.get("create_project_zip_on_first_execution_step")
+        or workflow.get("create_project_package_on_first_execution_step")
+    )
+
+    workspace_required = supported or uses_project_package
+    state_required = supported and independent_of_chat
+
+    result: dict[str, Any] = {
+        "contract_version": 1,
+        "workspace": {
+            "requirement": "required" if workspace_required else "optional",
+            "persistence": "required" if supported else "preferred",
+            "portable": True,
+            "separate_from_assistant": True,
+        },
+        "state": {
+            "requirement": "required" if state_required else "optional",
+            "persistence": "required" if state_required else "preferred",
+            "authority": "workspace_file" if state_required else "conversation",
+            "conversation_fallback": not state_required,
+        },
+        "runtime_preferences": {
+            "chat": "conversation_or_file",
+            "agent": "workspace_file" if workspace_required else "runtime_managed",
+        },
+    }
+
+    if uses_project_package:
+        result["workspace"]["artifact"] = "project_package"
+
+    if state_required:
+        result["state"]["format"] = "yaml"
+        result["state"]["path"] = "project-status.yaml"
+
+    return result
