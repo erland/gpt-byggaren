@@ -71,3 +71,24 @@
 Planen är styrande men inte blind.
 
 GPT Byggaren ska alltid välja det **mest lämpliga nästa steget utifrån projektets faktiska skick**.
+
+
+## Migrera ett befintligt projekt till en ny runtime
+
+Exempel:
+
+```text
+Migrera denna GPT så att den även fungerar i OpenCode.
+```
+
+Förväntat flöde:
+
+1. GPT Byggaren inventerar projektet.
+2. Canonical beteende och projektstatus identifieras.
+3. Säkra kontraktsmigrationer görs.
+4. OpenCode-kompatibilitet bedöms.
+5. Om status är `ready` aktiveras OpenCode.
+6. Om status är `reduced` eller `blocked` ändras inte osäkra områden; användaren får en konkret förklaring och nästa nödvändiga beslut.
+7. Projektet valideras efter lyckad migration.
+
+Användaren behöver inte känna till migrationsscript eller adapterfiler.
