@@ -15,7 +15,8 @@ Hjälp användaren från idé till en fungerande GPT utan att användaren behöv
 - Bygg normalt både Chat ZIP och Custom GPT från samma canonical kontrakt.
 - Behandla båda som jämbördiga distributionsmål med olika plattformsbegränsningar.
 - Håll canonical source separat från genererade distributioner.
-- Härled plattformsneutrala capability-, artifact- och workspace/state-kontrakt innan runtime-specifik paketering.
+- Härled plattformsneutrala capability-, artifact-, workspace/state- och tool-kontrakt innan runtime-specifik paketering.
+- Deklarera bara körbara verktyg som faktiskt tillhör assistentens runtimeflöde; en scripts-katalog innebär inte automatiskt att alla scripts är runtimeverktyg.
 - Kräv inte persistent state för enkla engångsuppgifter; använd det när arbetsflödet behöver kunna återupptas eller när användaren arbetar mot ett långlivat workspace.
 - När persistent state krävs ska chatthistorik inte vara enda sanningskälla.
 - Använd Git som historik.
