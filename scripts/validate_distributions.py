@@ -64,6 +64,26 @@ def validate_custom(root: Path, cfg: dict) -> list[str]:
     return errors
 
 
+def validate_claude(root: Path, cfg: dict) -> list[str]:
+    errors = []
+    build = root / "build" / "claude"
+    if not build.exists():
+        return ["Claude build directory missing"]
+
+    runtime_cfg = cfg["runtime"]["claude"]
+    required = [
+        build / "README.md",
+        build / "VERSION",
+        build / "MANIFEST.json",
+        build / runtime_cfg["project"]["instructions"],
+        build / runtime_cfg["project"]["runtime_contract"],
+    ]
+    for p in required:
+        if not p.exists():
+            errors.append(f"Missing required file: {p.relative_to(build)}")
+    return errors
+
+
 def validate_chat(root: Path, cfg: dict) -> list[str]:
     errors = []
     build = root / "build" / "chat"
@@ -101,6 +121,8 @@ def main() -> int:
     errors.extend(validate_chat(root, cfg))
     if cfg["runtime"]["custom_gpt"]["enabled"]:
         errors.extend(validate_custom(root, cfg))
+    if cfg.get("runtime", {}).get("claude", {}).get("enabled"):
+        errors.extend(validate_claude(root, cfg))
 
     if errors:
         print("VALIDATION: FAIL")
