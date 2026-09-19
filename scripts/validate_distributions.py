@@ -107,7 +107,7 @@ def validate_opencode(root: Path, cfg: dict) -> list[str]:
 
     skills_cfg = runtime_cfg.get("skills", {})
     if skills_cfg.get("enabled"):
-        root_path = build / skills_cfg.get("root", ".opencode/skills")
+        root_path = build / skills_cfg.get("directory", ".opencode/skills")
         for skill in skills_cfg.get("definitions", []):
             skill_file = root_path / skill["id"] / "SKILL.md"
             if not skill_file.exists():
