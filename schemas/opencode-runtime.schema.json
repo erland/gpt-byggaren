@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "OpenCode Base Runtime Configuration",
+  "type": "object",
+  "required": ["enabled", "role", "mode", "layout", "validation"],
+  "properties": {
+    "enabled": {"type": "boolean"},
+    "role": {"enum": ["primary", "secondary", "peer_distribution"]},
+    "mode": {"const": "opencode_workspace"},
+    "layout": {
+      "type": "object",
+      "required": ["instructions", "runtime_contract", "knowledge"],
+      "properties": {
+        "instructions": {"const": "AGENTS.md"},
+        "runtime_contract": {"type": "string", "minLength": 1},
+        "knowledge": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "validation": {
+      "type": "object",
+      "required": ["require_agents_md", "require_runtime_contract"],
+      "properties": {
+        "require_agents_md": {"type": "boolean"},
+        "require_runtime_contract": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": true
+}
