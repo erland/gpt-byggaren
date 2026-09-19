@@ -116,6 +116,20 @@ def lint(root: Path) -> dict:
             except Exception as exc:
                 findings.append(finding("GP141", "error", f"Invalid artifact contract: {exc}", "gpt-project.yaml"))
 
+    workspace_state = cfg.get("workspace_state")
+    if isinstance(workspace_state, dict):
+        schema_ref = workspace_state.get("schema", "schemas/workspace-state-contract.schema.json")
+        schema_path = root / schema_ref
+        if not schema_path.exists():
+            findings.append(finding("GP150", "error", "Workspace/state contract schema is missing", schema_ref))
+        else:
+            try:
+                import jsonschema
+                schema = json.loads(schema_path.read_text(encoding="utf-8"))
+                jsonschema.Draft202012Validator(schema).validate(workspace_state)
+            except Exception as exc:
+                findings.append(finding("GP151", "error", f"Invalid workspace/state contract: {exc}", "gpt-project.yaml"))
+
     # Small-model/runtime-complexity contract. This is opt-in per project but GPT Byggaren
     # should generate it for new projects. Critical behavior must be directly present in the
     # canonical instruction; supporting files may deepen behavior but not be required to recover it.
