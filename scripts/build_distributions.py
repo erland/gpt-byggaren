@@ -359,7 +359,12 @@ def build_custom(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     (builder / "capabilities.md").write_text(cap_text, encoding="utf-8")
 
     contract_snapshot = custom_runtime_contract(cfg)
-    (builder / "runtime-contract.json").write_text(
+    contract_ref = cfg["runtime"]["custom_gpt"]["builder"].get(
+        "runtime_contract", "builder/runtime-contract.json"
+    )
+    contract_path = out / contract_ref
+    contract_path.parent.mkdir(parents=True, exist_ok=True)
+    contract_path.write_text(
         json.dumps(contract_snapshot, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
@@ -373,7 +378,7 @@ def build_custom(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     excluded_rel = [p.relative_to(knowledge_root).as_posix() for p in canonical_knowledge if p.relative_to(knowledge_root).as_posix() not in selected_set]
     compilation_report = {
         "runtime_id": "chatgpt_custom",
-        "contract_snapshot": "builder/runtime-contract.json",
+        "contract_snapshot": contract_ref,
         "instruction": {
             "mode": mode,
             "canonical_characters": len(instr),
@@ -414,7 +419,7 @@ def build_custom(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     manifest_path = out / "MANIFEST.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     manifest["adapter_id"] = "chatgpt_custom"
-    manifest["contract_snapshot"] = "builder/runtime-contract.json"
+    manifest["contract_snapshot"] = contract_ref
     manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return out
 
