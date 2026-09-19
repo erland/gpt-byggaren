@@ -70,21 +70,17 @@ def test_all_runtime_snapshots_project_the_same_canonical_contracts():
 def test_every_registered_runtime_has_an_enabled_adapter_and_build_target():
     cfg = load_cfg()
 
-    runtime_mapping = {
-        "chatgpt_chat": ("chat_zip", "chat"),
-        "chatgpt_custom": ("custom_gpt", "custom-gpt"),
-        "claude_project": ("claude", "claude"),
-        "opencode": ("opencode", "opencode"),
-    }
-
+    runtime_targets = cfg["build_system"]["runtime_targets"]
     registered = set(cfg["runtime_parity"]["registered_runtimes"])
-    assert registered == set(runtime_mapping)
+    declared_runtime_ids = {item["runtime_id"] for item in runtime_targets.values()}
+
+    assert registered == declared_runtime_ids
 
     build_targets = set(cfg["build_system"]["targets"])
-    for runtime_id in registered:
-        runtime_key, build_target = runtime_mapping[runtime_id]
-        assert cfg["runtime"][runtime_key]["enabled"] is True
+    for build_target, target_cfg in runtime_targets.items():
         assert build_target in build_targets
+        assert cfg["runtime"][target_cfg["runtime_key"]]["enabled"] is True
+        assert target_cfg["builder"] in build_distributions.RUNTIME_BUILDERS
 
 
 def test_core_behavior_contract_is_runtime_neutral():
