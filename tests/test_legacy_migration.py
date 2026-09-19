@@ -6,9 +6,11 @@ import sys
 import tempfile
 
 import yaml
+import jsonschema
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "migrate_legacy_project.py"
+REPORT_SCHEMA = json.loads((ROOT / "schemas" / "legacy-migration-report.schema.json").read_text(encoding="utf-8"))
 
 
 def run_migration(project: Path, *args: str):
@@ -18,7 +20,9 @@ def run_migration(project: Path, *args: str):
         text=True,
     )
     assert result.returncode == 0, result.stdout + result.stderr
-    return json.loads(result.stdout)
+    report = json.loads(result.stdout)
+    jsonschema.Draft202012Validator(REPORT_SCHEMA).validate(report)
+    return report
 
 
 def write_cfg(project: Path, cfg: dict):
