@@ -241,15 +241,24 @@ def test_opencode_build_compiles_base_workspace_from_canonical_contracts():
     assert snapshot["workspace_state"]["contract_version"] == 1
     assert snapshot["tools"]["contract_version"] == 1
     assert snapshot["adapter"]["workspace_first"] is True
-    assert snapshot["adapter"]["skills_included"] is False
+    assert snapshot["adapter"]["skills_included"] is True
+    assert snapshot["adapter"]["skills"] == ["gpt-project-workflow"]
     assert snapshot["adapter"]["tool_integration"] == "deferred"
 
     assert "OpenCode adapter" in agents
     assert (opencode / "AGENTS.md").exists()
     assert not (opencode / "CLAUDE.md").exists()
-    assert not (opencode / ".opencode" / "skills").exists()
+    skill = opencode / ".opencode" / "skills" / "gpt-project-workflow" / "SKILL.md"
+    assert skill.exists()
+    skill_text = skill.read_text(encoding="utf-8")
+    assert "name: gpt-project-workflow" in skill_text
+    assert "description:" in skill_text
+    assert (skill.parent / "references" / "dynamic-planning.md").exists()
+    assert (skill.parent / "references" / "resume-flow.md").exists()
+    assert (skill.parent / "references" / "next-step-recommendation.md").exists()
 
     assert manifest["adapter_id"] == "opencode"
     assert manifest["contract_snapshot"] == ".opencode/runtime-contract.json"
     assert manifest["instructions"] == "AGENTS.md"
-    assert manifest["skills_included"] is False
+    assert manifest["skills_included"] is True
+    assert manifest["skills"] == ["gpt-project-workflow"]
