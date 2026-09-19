@@ -337,7 +337,16 @@ def build_artifacts(project_root, out_root, scenario, version="0.0.0-e2e"):
     custom_zip = out_root / f"{pid}-custom-gpt-{version}.zip"
     stable_zip(custom_zip, custom_root)
 
-    artifacts = [project_zip, chat_zip, custom_zip]
+    # Claude Projects package
+    claude_root = out_root / "_claude"
+    (claude_root / "project").mkdir(parents=True)
+    shutil.copy2(project_root / "src" / "instructions" / "system.md", claude_root / "project" / "instructions.md")
+    (claude_root / "README.md").write_text("# Claude Projects package\n", encoding="utf-8")
+    (claude_root / "VERSION").write_text(version + "\n", encoding="utf-8")
+    claude_zip = out_root / f"{pid}-claude-{version}.zip"
+    stable_zip(claude_zip, claude_root)
+
+    artifacts = [project_zip, chat_zip, custom_zip, claude_zip]
     checksum_file = out_root / "SHA256SUMS.txt"
     checksum_file.write_text(
         "\n".join(f"{sha256(p)}  {p.name}" for p in artifacts) + "\n",
@@ -351,6 +360,7 @@ def build_artifacts(project_root, out_root, scenario, version="0.0.0-e2e"):
             {"type": "project_zip", "file": project_zip.name},
             {"type": "chat_zip", "file": chat_zip.name},
             {"type": "custom_gpt_zip", "file": custom_zip.name},
+            {"type": "claude_zip", "file": claude_zip.name},
             {"type": "checksums", "file": checksum_file.name},
         ]
     }
@@ -359,6 +369,7 @@ def build_artifacts(project_root, out_root, scenario, version="0.0.0-e2e"):
 
     shutil.rmtree(chat_root)
     shutil.rmtree(custom_root)
+    shutil.rmtree(claude_root)
     return artifacts + [checksum_file, manifest_file]
 
 def run(root, scenario_path):
