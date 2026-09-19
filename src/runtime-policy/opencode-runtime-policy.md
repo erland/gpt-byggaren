@@ -20,7 +20,7 @@ Canonical knowledge får kopieras till workspace för läsning vid behov.
 
 ## Skills
 
-Steg 10 skapar inga Skills. Dessa läggs till separat i steg 11.
+Projektlokala Skills får genereras under `.opencode/skills/<skill-id>/SKILL.md` från deklarerade canonical workflows och referenser. Skills ska ha tydlig description, giltigt kebab-case-id och får inte bli en ny canonical source.
 
 ## Tools
 
