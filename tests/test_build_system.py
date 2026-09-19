@@ -211,3 +211,45 @@ def test_claude_build_compiles_project_package_from_canonical_contracts():
     assert manifest["adapter_id"] == "claude_project"
     assert manifest["contract_snapshot"] == "project/runtime-contract.json"
     assert manifest["project_instructions"] == "project/instructions.md"
+
+
+def test_opencode_build_compiles_base_workspace_from_canonical_contracts():
+    import json
+    import shutil
+
+    for name in ["build", "dist"]:
+        p = ROOT / name
+        if p.exists():
+            shutil.rmtree(p)
+
+    r = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "build_distributions.py"),
+         "--project-root", str(ROOT), "--version", "0.0.0-opencodecontract",
+         "--targets", "opencode"],
+        capture_output=True, text=True
+    )
+    assert r.returncode == 0, r.stdout + r.stderr
+
+    opencode = ROOT / "build" / "opencode"
+    snapshot = json.loads((opencode / ".opencode" / "runtime-contract.json").read_text(encoding="utf-8"))
+    manifest = json.loads((opencode / "MANIFEST.json").read_text(encoding="utf-8"))
+    agents = (opencode / "AGENTS.md").read_text(encoding="utf-8")
+
+    assert snapshot["runtime_id"] == "opencode"
+    assert snapshot["capabilities"]["contract_version"] == 1
+    assert snapshot["artifacts"]["contract_version"] == 1
+    assert snapshot["workspace_state"]["contract_version"] == 1
+    assert snapshot["tools"]["contract_version"] == 1
+    assert snapshot["adapter"]["workspace_first"] is True
+    assert snapshot["adapter"]["skills_included"] is False
+    assert snapshot["adapter"]["tool_integration"] == "deferred"
+
+    assert "OpenCode adapter" in agents
+    assert (opencode / "AGENTS.md").exists()
+    assert not (opencode / "CLAUDE.md").exists()
+    assert not (opencode / ".opencode" / "skills").exists()
+
+    assert manifest["adapter_id"] == "opencode"
+    assert manifest["contract_snapshot"] == ".opencode/runtime-contract.json"
+    assert manifest["instructions"] == "AGENTS.md"
+    assert manifest["skills_included"] is False
