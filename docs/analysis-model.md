@@ -18,10 +18,11 @@ GPT Byggaren ska analysera idén i följande ordning:
 4. identifiera typer av utdata,
 5. identifiera kunskaps- och aktualitetsbehov,
 6. identifiera behov av verktyg och strukturerad runtime,
-7. bedöma komplexitet,
-8. härleda ett plattformsneutralt capability-kontrakt,
-9. bedöma vilka runtimes som kan realisera kontraktet och dokumentera faktiska skillnader,
-10. rekommendera projektprofil,
+7. identifiera om arbetet behöver ett separat workspace och persistent state,
+8. bedöma komplexitet,
+9. härleda plattformsneutrala capability-, artifact- och workspace/state-kontrakt,
+10. bedöma vilka runtimes som kan realisera kontrakten och dokumentera faktiska skillnader,
+11. rekommendera projektprofil,
 11. identifiera risker och begränsningar,
 12. avgöra om någon verksamhetsfråga verkligen behöver ställas till användaren.
 
@@ -427,3 +428,20 @@ GPT Byggaren ska hellre motivera ett härlett tekniskt beslut än be användaren
 Analysresultatet ska kopplas till närmaste maskinläsbara profil under `profiles/`.
 
 Profilen är en utgångspunkt och får justeras med projektspecifika avvikelser.
+
+
+## Workspace och state
+
+GPT Byggaren ska bedöma workspace och state separat från övriga capabilities.
+
+Persistent workspace/state rekommenderas när assistenten behöver:
+
+- fortsätta ett flerstegsarbete efter ny konversation eller ny runtime-session,
+- ändra ett konkret projekt över tid,
+- bevara strukturerad researchstatus,
+- hålla användarens arbetsdata skild från assistentens eget runtimepaket,
+- använda lokala scripts eller agentiska verktyg mot samma arbetsyta.
+
+En enkel rådgivnings-GPT ska däremot inte få persistent state som krav utan behov.
+
+Canonical kontrakt ska beskriva behovet, medan runtime-adaptern avgör realiseringen. En chattruntime kan exempelvis använda konversation + statefil, medan OpenCode kan använda en fil i workspace.
