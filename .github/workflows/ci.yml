@@ -71,14 +71,7 @@ jobs:
         run: python scripts/validate_distributions.py --project-root .
 
       - name: Verify expected build outputs
-        run: |
-          test -f dist/gpt-byggaren-project.zip
-          test -f dist/gpt-byggaren-chat-0.0.0-ci.zip
-          test -f dist/gpt-byggaren-custom-gpt-0.0.0-ci.zip
-          test -f dist/gpt-byggaren-claude-0.0.0-ci.zip
-          test -f dist/gpt-byggaren-opencode-0.0.0-ci.zip
-          test -f dist/SHA256SUMS.txt
-          test -f dist/DELIVERY-MANIFEST.json
+        run: python scripts/verify_distribution_outputs.py --project-root . --version 0.0.0-ci
 
       - name: Verify project hygiene
         shell: bash
