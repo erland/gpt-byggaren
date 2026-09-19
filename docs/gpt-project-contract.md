@@ -235,3 +235,21 @@ instructions:
 ```
 
 Markörerna ska representera verkligt obligatoriska beteenden. De är ett regressionsskydd, inte en full kopia av systeminstruktionen.
+
+
+### `legacy_migration`
+
+Beskriver hur äldre GPT Byggaren-projekt ska analyseras innan de skrivs om.
+
+Viktiga invariants:
+
+- domänbeteende ska bevaras,
+- explicita nya kontrakt vinner över äldre fält,
+- generated runtime-filer är inte canonical source,
+- en `scripts/`-katalog är inte i sig ett tool-kontrakt,
+- migration ska rapporteras före apply,
+- migration ska vara idempotent.
+
+Legacyprojekt klassificeras som `L0`–`L3`, och varje migrationsbeslut märks `safe_auto`, `auto_with_warning`, `manual_review` eller `not_applicable`.
+
+Se `docs/legacy-migration-analysis.md`.
