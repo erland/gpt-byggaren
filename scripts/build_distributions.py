@@ -858,6 +858,12 @@ def write_delivery_manifest(dist: Path, cfg: dict, version: str) -> None:
         "version": version,
         "primary_runtime": cfg.get("runtime", {}).get("primary", "none"),
         "runtime_strategy": "peer_distributions",
+        "runtime_targets": [
+            target_cfg["runtime_id"]
+            for target, target_cfg in (cfg.get("build_system", {}).get("runtime_targets") or {}).items()
+            if target in (cfg.get("build_system", {}).get("targets") or [])
+            and cfg.get("runtime", {}).get(target_cfg["runtime_key"], {}).get("enabled")
+        ],
         "custom_gpt_enabled": bool(cfg["runtime"]["custom_gpt"]["enabled"]),
         "artifacts": artifacts,
     }
