@@ -1,119 +1,132 @@
-# Funktionell paritet mellan runtimes – GPT Byggaren
+# Runtime compatibility och paritet – GPT Byggaren
 
 ## Syfte
 
-GPT Byggaren ska kunna beskriva hur väl en Custom GPT-distribution motsvarar den fulla Chat ZIP-runtime.
+GPT Byggaren ska kunna beskriva hur väl varje runtime realiserar samma canonical assistant-kontrakt.
 
-Paritet ska inte bedömas utifrån antal filer utan utifrån **faktisk funktionalitet**.
+Modellen får inte anta att det bara finns två runtimes. ChatGPT Chat och ChatGPT Custom är de första registrerade runtime-målen, men samma schema ska senare kunna användas för Claude, OpenCode och andra adapters.
 
-Grundprincip:
+## Referens
 
-> Det canonical capability-kontraktet beskriver full målbild. Chat ZIP och Custom GPT jämförs var för sig mot denna capability för capability.
-
-## Paritetsnivåer
-
-Varje capability klassificeras som:
-
-- `equivalent` – funktionen är i praktiken likvärdig,
-- `reduced` – funktionen finns men är begränsad,
-- `missing` – funktionen saknas,
-- `not_applicable` – capabilityn är inte relevant i den aktuella runtime.
-
-## Symboler
-
-För mänskligt läsbara rapporter:
+Canonical projektkontrakt är alltid referens:
 
 ```text
-✓  equivalent
-~  reduced
--  missing
-N/A not_applicable
+behavior
+capabilities
+artifacts
+workspace/state
+tools
 ```
 
-## Capability-katalog
+Ingen runtime är automatiskt norm för de andra.
 
-Projektet ska kunna deklarera vilka funktionella capabilities som ska jämföras.
+## Vad som jämförs
 
-Exempel:
+Paritet bedöms per requirement i fem kategorier:
 
-```yaml
-capabilities:
-  - id: core_workflow
-    title: Grundarbetsflöde
-    criticality: critical
+- `behavior`
+- `capability`
+- `artifact`
+- `workspace_state`
+- `tool`
 
-  - id: web_research
-    title: Webbresearch
-    criticality: important
+Det gör att exempelvis OpenCode senare kan vara `equivalent` för lokala scripts och persistent workspace även om en chattruntime är `reduced`, samtidigt som båda kan vara `equivalent` för kärnbeteendet.
 
-  - id: structured_model_handling
-    title: Strukturerad modellhantering
-    criticality: important
+## States
 
-  - id: local_scripts
-    title: Lokala projektscripts
-    criticality: optional
-```
+Varje runtime får per requirement ett av:
+
+- `equivalent`
+- `reduced`
+- `missing`
+- `not_applicable`
+
+Reducerad eller saknad funktion ska motiveras.
 
 ## Kritikalitet
 
-Varje capability ska kunna klassificeras som:
+Varje requirement klassificeras som:
 
 - `critical`
 - `important`
 - `optional`
 
-### Critical
+En saknad critical requirement kan göra just den runtime-distributionen `not_viable`.
 
-Om en critical capability saknas i Custom GPT ska GPT Byggaren normalt avråda från Custom GPT som meningsfull distribution.
-
-### Important
-
-Reducerad eller saknad funktion ska dokumenteras och påverka paritetsbedömningen.
-
-### Optional
-
-Kan saknas utan att kärnfunktionen nödvändigtvis påverkas.
-
-## Runtime-matris
+## Generisk runtime-matris
 
 Exempel:
 
 ```text
-Capability                     Chat ZIP   Custom GPT
-----------------------------------------------------
-Grundarbetsflöde                  ✓           ✓
-Webbresearch                      ✓           ✓
-Strukturerad modellhantering      ✓           ~
-Lokala projektscripts             ✓           -
-Avancerad export                  ✓           ~
+Requirement                    ChatGPT Chat  ChatGPT Custom  OpenCode
+--------------------------------------------------------------------
+Core workflow                      ✓              ✓             ✓
+Persistent workspace               ~              ~             ✓
+Local validation script            ~              -             ✓
+Markdown report                    ✓              ✓             ✓
 ```
+
+OpenCode i exemplet är illustrativt; en runtime får inte registreras som stödd förrän dess adapter faktiskt finns och valideras.
 
 ## Maskinläsbar modell
 
-Exempel:
-
 ```yaml
-capabilities:
-  - id: core_workflow
-    criticality: critical
-    chat_zip: equivalent
-    custom_gpt: equivalent
+schema_version: 2
+reference:
+  type: canonical_contract
 
-  - id: structured_model_handling
+runtimes:
+  chatgpt_chat:
+    level: high
+    weighted_score: 92
+    release_recommendation: publish
+
+  chatgpt_custom:
+    level: moderate
+    weighted_score: 76
+    release_recommendation: publish_with_warning
+
+requirements:
+  - category: capability
+    id: filesystem-write
+    title: Skriv filer
     criticality: important
-    chat_zip: equivalent
-    custom_gpt: reduced
-    reason: >
-      Custom GPT använder konsoliderad Knowledge och saknar delar av
-      den strukturerade runtime som finns i ZIP.
+    runtime_states:
+      chatgpt_chat:
+        state: equivalent
+      chatgpt_custom:
+        state: reduced
+        reason: Begränsad filhantering i denna runtime.
+
+  - category: tool
+    id: validate-model
+    title: Deterministisk modellvalidering
+    criticality: critical
+    runtime_states:
+      chatgpt_chat:
+        state: reduced
+      chatgpt_custom:
+        state: missing
+        reason: Runtime saknar den deklarerade lokala tool-implementationen.
 ```
 
-## Paritetspoäng
+Runtime-ID:n är dynamiska objektkeys och är inte hårdkodade i schemat.
 
-GPT Byggaren får beräkna en sammanfattande poäng, men poängen får aldrig ersätta capability-matrisen.
+## Sammanfattande nivå
 
-Föreslagen viktning:
+Per runtime används:
+
+- `full`
+- `high`
+- `moderate`
+- `low`
+- `not_viable`
+
+Poäng får användas som stöd men får aldrig ersätta requirement-matrisen.
+
+## Viktning
+
+Standard:
 
 ```text
 equivalent = 1.0
@@ -121,7 +134,7 @@ reduced    = 0.5
 missing    = 0.0
 ```
 
-Kritikalitet kan viktas:
+Kritikalitet:
 
 ```text
 critical  = 3
@@ -129,125 +142,48 @@ important = 2
 optional  = 1
 ```
 
-Exempel:
-
-```text
-Weighted parity: 82 %
-```
-
-Detta är en översikt, inte en garanti för likvärdig funktion.
-
-## Bedömningsnivåer
-
-Föreslagen sammanfattning:
-
-### `full`
-
-Alla critical och important capabilities är equivalent.
-
-### `high`
-
-Alla critical capabilities är equivalent och endast mindre reduktioner finns.
-
-### `moderate`
-
-Kärnfunktionen fungerar men flera important capabilities är reducerade.
-
-### `low`
-
-Väsentliga funktioner saknas eller är kraftigt reducerade.
-
-### `not_viable`
-
-Minst en central critical capability saknas på ett sätt som gör distributionen missvisande.
-
-## Rekommenderad runtime
-
-Paritetsrapporten ska ange rekommenderad runtime endast när en verklig skillnad i capability eller plattformsbegränsning motiverar det; annars ska distributionerna behandlas som jämbördiga.
-
-Exempel:
-
-```text
-Recommended runtime: no default primary; both distributions supported
-Custom GPT compatibility: Moderate
-```
-
-## Orsaker till reducerad paritet
-
-Vanliga orsaker:
-
-- instruktionsbudget,
-- Knowledge-filgräns,
-- saknade lokala scripts,
-- saknade schemas eller runtimeverktyg,
-- reducerad filhantering,
-- mer begränsad projektåterupptagning,
-- förenklade exportflöden.
-
-## Spårbarhet
-
-Varje reducerad eller saknad capability ska ha en motivering.
-
-Exempel:
-
-```yaml
-reason: >
-  Custom GPT saknar lokalt query-script och kan därför endast utföra
-  förenklad modellnavigering.
-```
+`not_applicable` ska normalt inte dra ned poängen.
 
 ## Releasebeslut
 
-Paritetsnivån ska påverka releasebeslutet.
+Per runtime:
 
-### Full/high
+- `full` / `high` → `publish`
+- `moderate` / `low` → `publish_with_warning` när kärnbeteendet fortfarande är meningsfullt
+- `not_viable` → `do_not_publish`
 
-Custom GPT kan normalt publiceras.
+Det ska inte finnas en generell `prefer_chat_zip`-regel. En runtime kan rekommenderas framför en annan endast när konkret compatibilitydata motiverar det.
 
-### Moderate
+## Bakåtkompatibilitet
 
-Kan publiceras om reducerad funktionalitet är tydligt dokumenterad.
+Legacyrapporter med:
 
-### Low
+- `primary_runtime`
+- en gemensam `summary`
+- fasta `chat_zip`- och `custom_gpt`-fält i capabilities
 
-GPT Byggaren ska aktivt varna för den distribution som har låg paritet och rekommendera en annan distribution endast när capability- eller plattformsdata faktiskt motiverar det.
+kan normaliseras till schema version 2.
 
-### Not viable
+Legacyformatet är läsbart under migration men ska inte genereras av nya projekt.
 
-En distribution som saknar kritisk capability ska normalt inte beskrivas som fullt användbar. Den andra distributionen kan fortfarande publiceras om den uppfyller kontraktet.
+## Rapport
 
-## `COMPATIBILITY.md`
+Mänsklig rapport ska minst innehålla:
 
-Paritetsresultatet ska användas för att generera `COMPATIBILITY.md`.
-
-Dokumentet ska minst innehålla:
-
-- rekommenderad runtime endast när verkliga skillnader motiverar det,
-- capability-matris,
-- reducerade funktioner,
-- saknade funktioner,
-- sammanfattad paritetsnivå,
-- eventuell poäng,
-- releasebedömning.
-
-## Direktleverans
-
-När GPT Byggaren bygger båda distributionerna direkt åt användaren ska den även kunna leverera paritetsrapporten som separat artefakt.
-
-Exempel:
-
-```text
-my-gpt-parity-report-v1.0.0.md
-```
+- registrerade runtimes,
+- nivå och releasebedömning per runtime,
+- requirement-matris,
+- reducerade requirements,
+- saknade requirements,
+- motiveringar.
 
 ## Definition of Done
 
-Paritetsmodellen är definierad när:
+Paritetsmodellen är generaliserad när:
 
-- capabilities jämförs funktionellt,
-- kritikalitet finns,
-- equivalent/reduced/missing kan uttryckas,
-- sammanfattad nivå kan beräknas,
-- eventuell runtime-rekommendation grundas på faktisk capability/paritet,
-- releasebeslut påverkas,
-- rapporten kan användas både mänskligt och maskinläsbart.
+- godtyckliga runtime-ID:n kan representeras,
+- canonical kontrakt är enda referensen,
+- capability, artifact, workspace/state och tools kan jämföras,
+- releasebedömning sker per runtime,
+- gamla två-runtime-rapporter kan normaliseras,
+- inga ännu ej implementerade runtimes deklareras som stödda.
