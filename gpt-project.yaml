@@ -876,9 +876,12 @@ end_to_end_testing:
   - project_contract
   - project_status
   - canonical_instruction
+  - runtime_strategy
+  - peer_runtime_candidates
   - project_zip
   - chat_zip
   - custom_gpt_zip
+  - claude_zip
   - checksums
   - delivery_manifest
 architecture:
