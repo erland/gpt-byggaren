@@ -14,9 +14,9 @@ När en GPT är distributionsbar ska GPT Byggaren normalt kunna leverera:
 
 ```text
 <project-id>-project.zip
-<project-id>-chat-<version>.zip
-<project-id>-custom-gpt-<version>.zip
+<en eller flera runtime-distributioner enligt build target-registret>
 SHA256SUMS.txt
+DELIVERY-MANIFEST.json
 ```
 
 Om Custom GPT inte är aktiverad eller inte är meningsfull ska den artefakten utelämnas.
@@ -78,8 +78,8 @@ GPT Byggaren ska kunna skapa ett maskinläsbart leveransmanifest med:
 - skapade artefakter,
 - SHA-256,
 - valideringsresultat,
-- primär runtime,
-- Custom GPT-status.
+- runtime-strategi,
+- aktiverade runtime-targets.
 
 Exempel:
 
