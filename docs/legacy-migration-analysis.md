@@ -353,3 +353,70 @@ Steg 13 är klart när:
 - OpenCode-aktivering för legacyprojekt har tydliga kriterier,
 - testfallen för automatisk migration är definierade,
 - nästa steg kan implementera migration utan att behöva fatta nya arkitekturbeslut.
+
+
+## Automatisk migration – steg 14
+
+Migreringsverktyget finns i:
+
+```text
+scripts/migrate_legacy_project.py
+```
+
+Standardkörning gör endast inventory/report:
+
+```bash
+python scripts/migrate_legacy_project.py --project-root /path/to/project
+```
+
+Maskinläsbar JSON:
+
+```bash
+python scripts/migrate_legacy_project.py --project-root /path/to/project --json
+```
+
+Spara YAML-rapport:
+
+```bash
+python scripts/migrate_legacy_project.py \
+  --project-root /path/to/project \
+  --report-file migration-report.yaml
+```
+
+Applicera säkra förändringar:
+
+```bash
+python scripts/migrate_legacy_project.py \
+  --project-root /path/to/project \
+  --apply
+```
+
+### Apply-semantik
+
+`--apply` skriver endast nya canonical kontraktssektioner för områden där migrationen är `safe_auto` eller `auto_with_warning`.
+
+Om ett område innehåller `manual_review`:
+
+- det området lämnas oförändrat,
+- andra oberoende säkra områden får fortfarande migreras,
+- osäker legacyinformation får inte tappas.
+
+Exempel:
+
+- okänd legacy-capability → `capabilities` lämnas oförändrad,
+- domänspecifik legacy-artifact → `artifacts` lämnas oförändrad,
+- scripts utan explicit legacy-tool-kontrakt → inget tomt `tools`-kontrakt skrivs, eftersom det skulle kunna dölja ett framtida tool-inventeringsbehov.
+
+### Vad verktyget aldrig ändrar i steg 14
+
+- canonical instruktion,
+- domänregler,
+- runtime-generated files,
+- scripts,
+- tester,
+- Knowledge,
+- domänspecifika outputs.
+
+### Idempotens
+
+En andra `--apply` på ett redan migrerat projekt ska ge `no_changes` och inte skriva om explicita kontrakt.
