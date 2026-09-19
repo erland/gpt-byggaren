@@ -312,6 +312,27 @@ artifacts:
     validation_report: validation_report
     parity_report: parity_report
     checksums: checksums
+workspace_state:
+  contract_version: 1
+  schema: schemas/workspace-state-contract.schema.json
+  workspace:
+    requirement: required
+    persistence: required
+    portable: true
+    separate_from_assistant: true
+    artifact: project_package
+    description: GPT-projektet som användaren utvecklar är ett portabelt workspace separat från GPT Byggarens runtimepaket.
+  state:
+    requirement: required
+    persistence: required
+    authority: workspace_file
+    format: yaml
+    path: project-status.yaml
+    conversation_fallback: false
+    description: Projektets maskinläsbara status är auktoritativ och ska göra fortsatt arbete oberoende av tidigare chatthistorik.
+  runtime_preferences:
+    chat: conversation_or_file
+    agent: workspace_file
 workflow:
   initial_analysis_in_chat: true
   development_plan_artifact: development_plan
