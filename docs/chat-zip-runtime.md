@@ -69,7 +69,7 @@ Ska beskriva:
 
 ## Assistant
 
-`assistant/` innehåller runtime-kompilerad assistentkonfiguration.
+`assistant/` innehåller runtime-kompilerad assistentkonfiguration. Chat-adaptern ska också skriva `assistant/runtime-contract.json`, en maskinläsbar snapshot av de canonical capability-, artifact-, workspace/state- och tool-kontrakten som distributionen byggdes från.
 
 Exempel:
 
@@ -114,7 +114,7 @@ Utvecklingsscheman som endast används av CI behöver inte följa med.
 
 ## Scripts
 
-`scripts/` inkluderas endast för script som är användbara eller nödvändiga i runtime.
+`scripts/` inkluderas endast för script som är explicit deklarerade som runtimeverktyg i tool-kontraktet. Att ett script finns i källprojektets `scripts/`-katalog är inte tillräckligt för att det ska följa med.
 
 Exempel:
 
@@ -124,7 +124,7 @@ Exempel:
 - rapportgenerering,
 - filmanipulation.
 
-Buildscript som bara används för att skapa distributionen ska inte följa med.
+Build- eller utvecklingsscript som inte är deklarerade runtimeverktyg ska inte följa med. Om ett deklarerat runtimeverktyg använder ett gemensamt scriptbibliotek får adaptern inkludera det beroendet.
 
 ## Templates
 
@@ -247,7 +247,7 @@ Före paketering ska builden kontrollera:
 
 ## Funktionell fullständighet
 
-Chat ZIP ska valideras mot projektets canonical capability-set och deklarerade runtimekrav.
+Chat ZIP ska valideras mot projektets canonical behavior-, capability-, artifact-, workspace/state- och tool-kontrakt. `assistant/runtime-contract.json` gör den projektionen spårbar i den byggda distributionen.
 
 Om nödvändigt runtime-stöd saknas ska builden faila eller ge blockerande fel. Skillnader mot Custom GPT ska redovisas separat och får inte döljas genom att någon av distributionerna behandlas som implicit sanningskälla.
 
