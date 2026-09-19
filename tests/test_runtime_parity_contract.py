@@ -116,3 +116,36 @@ def test_generic_report_is_not_modified_by_normalizer():
     }
 
     assert project_model.normalize_runtime_parity_report(report) is report
+
+
+def test_parity_semantic_validation_requires_every_runtime_per_requirement():
+    report = {
+        "schema_version": 2,
+        "reference": {"type": "canonical_contract"},
+        "runtimes": {
+            "chatgpt_chat": {
+                "level": "high",
+                "release_recommendation": "publish",
+            },
+            "opencode": {
+                "level": "high",
+                "release_recommendation": "publish",
+            },
+        },
+        "requirements": [
+            {
+                "category": "tool",
+                "id": "validate-model",
+                "title": "Validate model",
+                "criticality": "critical",
+                "runtime_states": {
+                    "chatgpt_chat": {"state": "reduced"}
+                },
+            }
+        ],
+    }
+
+    errors = project_model.validate_runtime_parity_report(report)
+
+    assert len(errors) == 1
+    assert "opencode" in errors[0]
