@@ -102,6 +102,20 @@ def lint(root: Path) -> dict:
             except Exception as exc:
                 findings.append(finding("GP131", "error", f"Invalid capability contract: {exc}", "gpt-project.yaml"))
 
+    artifacts = cfg.get("artifacts")
+    if isinstance(artifacts, dict) and "outputs" in artifacts:
+        schema_ref = artifacts.get("schema", "schemas/artifact-contract.schema.json")
+        schema_path = root / schema_ref
+        if not schema_path.exists():
+            findings.append(finding("GP140", "error", "Artifact contract schema is missing", schema_ref))
+        else:
+            try:
+                import jsonschema
+                schema = json.loads(schema_path.read_text(encoding="utf-8"))
+                jsonschema.Draft202012Validator(schema).validate(artifacts)
+            except Exception as exc:
+                findings.append(finding("GP141", "error", f"Invalid artifact contract: {exc}", "gpt-project.yaml"))
+
     # Small-model/runtime-complexity contract. This is opt-in per project but GPT Byggaren
     # should generate it for new projects. Critical behavior must be directly present in the
     # canonical instruction; supporting files may deepen behavior but not be required to recover it.
