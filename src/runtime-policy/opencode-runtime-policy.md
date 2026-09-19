@@ -24,7 +24,13 @@ Projektlokala Skills får genereras under `.opencode/skills/<skill-id>/SKILL.md`
 
 ## Tools
 
-Steg 10 gör ingen explicit tool-integration. Tool-kontraktet finns med i snapshoten men integrationen implementeras i steg 12.
+Script-tools som uttryckligen deklarerats i canonical tool-kontrakt får projiceras till OpenCode custom tools under `.opencode/tools/`.
+
+Kopiera endast de deklarerade runtime-scripten och nödvändigt delat bibliotek. Exponera aldrig hela `scripts/` implicit.
+
+Genererade tool-wrappers ska använda begränsade, typade argument. Fri shell-input ska inte införas för ett script-tool om canonical kontrakt inte kräver det.
+
+Muterande tools ska som standard kräva godkännande i `opencode.json`; icke-muternade canonical tools kan tillåtas direkt.
 
 ## Canonical source
 
