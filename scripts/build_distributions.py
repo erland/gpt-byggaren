@@ -701,7 +701,8 @@ def build_opencode(root: Path, cfg: dict, build_root: Path, version: str) -> Pat
         + "- Work inside this repository/workspace.\n"
         + "- Reusable workflows may be available as project-local skills under .opencode/skills/.\n"
         + "- Load a skill when its description matches the current task instead of duplicating that workflow here.\n"
-        + "- Use only the explicitly generated OpenCode custom tools for canonical runtime scripts; do not infer extra scripts as tools.\n",
+        + "- Use only the explicitly generated OpenCode custom tools for canonical runtime scripts; do not infer extra scripts as tools.\n"
+        + "- The OpenCode workspace is the GPT Byggaren runtime; the GPT project being worked on may be a subdirectory. Pass projectRoot to generated tools when the target project is not the workspace root.\n",
         encoding="utf-8",
     )
 

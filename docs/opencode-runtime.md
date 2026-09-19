@@ -56,6 +56,10 @@ Canonical knowledge kopieras till `knowledge/` och kan läsas av OpenCode-agente
 
 OpenCode är workspace-orienterat och passar därför väl för assistenter som behöver persistent projektstruktur. Själva stateprojektionen styrs fortfarande av canonical workspace/state-kontraktet och får inte ersättas av OpenCode-specifik state som ny sanningskälla.
 
+OpenCode-distributionens workspace är GPT Byggarens runtime-workspace. Det GPT-projekt som ska analyseras eller ändras är ett separat målprojekt och bör normalt ligga som en underkatalog, exempelvis `project/`.
+
+Genererade tools använder argumentet `projectRoot` för att peka ut målprojektet. Om argumentet utelämnas används workspace-roten. Därför ska README och adapterinstruktionen tydligt skilja på runtime-workspace och målprojekt.
+
 ## Skills
 
 OpenCode Skills genereras under `.opencode/skills/<skill-id>/SKILL.md` med giltig YAML-frontmatter och en beskrivning som gör att agenten kan upptäcka dem vid rätt uppgift.
