@@ -132,3 +132,43 @@ def test_chat_build_compiles_canonical_contract_snapshot_and_declared_tools():
 
     assert manifest["adapter_id"] == "chatgpt_chat"
     assert manifest["contract_snapshot"] == "assistant/runtime-contract.json"
+
+
+def test_custom_build_compiles_canonical_contract_snapshot():
+    import json
+    import shutil
+
+    for name in ["build", "dist"]:
+        p = ROOT / name
+        if p.exists():
+            shutil.rmtree(p)
+
+    r = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "build_distributions.py"),
+         "--project-root", str(ROOT), "--version", "0.0.0-customcontract",
+         "--targets", "custom-gpt"],
+        capture_output=True, text=True
+    )
+    assert r.returncode == 0, r.stdout + r.stderr
+
+    custom = ROOT / "build" / "custom-gpt"
+    snapshot = json.loads((custom / "builder" / "runtime-contract.json").read_text(encoding="utf-8"))
+    manifest = json.loads((custom / "MANIFEST.json").read_text(encoding="utf-8"))
+    report = json.loads((custom / "builder" / "compilation-report.json").read_text(encoding="utf-8"))
+
+    assert snapshot["runtime_id"] == "chatgpt_custom"
+    assert snapshot["capabilities"]["contract_version"] == 1
+    assert snapshot["artifacts"]["contract_version"] == 1
+    assert snapshot["workspace_state"]["contract_version"] == 1
+    assert snapshot["tools"]["contract_version"] == 1
+    assert snapshot["adapter"]["builder_package"] is True
+    assert snapshot["adapter"]["tool_execution"] == "not_embedded"
+
+    tool_states = {item["id"]: item for item in snapshot["adapter"]["tool_states"]}
+    assert tool_states["lint-project"]["state"] == "missing"
+    assert tool_states["project-hygiene"]["state"] == "reduced"
+
+    assert manifest["adapter_id"] == "chatgpt_custom"
+    assert manifest["contract_snapshot"] == "builder/runtime-contract.json"
+    assert report["runtime_id"] == "chatgpt_custom"
+    assert report["contract_snapshot"] == "builder/runtime-contract.json"
