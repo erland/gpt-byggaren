@@ -183,3 +183,144 @@ def test_apply_does_not_overwrite_unknown_capabilities_or_domain_artifacts():
         assert migrated["capabilities"] == original_caps
         assert migrated["artifacts"] == original_artifacts
         assert migrated["workspace_state"]["contract_version"] == 1
+
+
+def test_opencode_ready_project_can_be_enabled_and_receives_adapter_assets():
+    with tempfile.TemporaryDirectory() as td:
+        project = Path(td)
+        canonical = project / "src" / "instructions"
+        canonical.mkdir(parents=True)
+        (canonical / "system.md").write_text("# Canonical\n", encoding="utf-8")
+
+        write_cfg(project, {
+            "project": {"id": "ready"},
+            "instructions": {"canonical": "src/instructions/system.md"},
+            "capabilities": {"web": "optional"},
+            "workflow": {"resume_from_project_zip": True},
+            "resume": {
+                "supported": True,
+                "requires_previous_chat_history": False,
+            },
+        })
+
+        preview = run_migration(project)
+        assert preview["opencode"]["status"] == "ready"
+        assert preview["opencode"]["can_enable_automatically"] is True
+
+        applied = run_migration(project, "--apply", "--enable-opencode")
+        migrated = yaml.safe_load((project / "gpt-project.yaml").read_text(encoding="utf-8"))
+
+        assert applied["apply"]["result"] == "changed"
+        assert migrated["runtime"]["opencode"]["enabled"] is True
+        assert migrated["runtime"]["opencode"]["layout"]["instructions"] == "AGENTS.md"
+        assert (project / "schemas" / "opencode-runtime.schema.json").exists()
+        assert (project / "src" / "runtime-policy" / "opencode-runtime-policy.md").exists()
+        assert (project / "docs" / "opencode-runtime.md").exists()
+        assert (project / "templates" / "README.opencode.md.tpl").exists()
+
+
+def test_opencode_is_reduced_and_enablement_blocked_when_scripts_need_tool_review():
+    with tempfile.TemporaryDirectory() as td:
+        project = Path(td)
+        canonical = project / "src" / "instructions"
+        canonical.mkdir(parents=True)
+        (canonical / "system.md").write_text("# Canonical\n", encoding="utf-8")
+        scripts = project / "scripts"
+        scripts.mkdir()
+        (scripts / "domain_helper.py").write_text("print('x')\n", encoding="utf-8")
+
+        write_cfg(project, {
+            "project": {"id": "scripted"},
+            "instructions": {"canonical": "src/instructions/system.md"},
+            "capabilities": {"web": "optional"},
+            "workflow": {"resume_from_project_zip": True},
+            "resume": {
+                "supported": True,
+                "requires_previous_chat_history": False,
+            },
+        })
+
+        preview = run_migration(project)
+        assert preview["opencode"]["status"] == "reduced"
+        assert preview["opencode"]["can_enable_automatically"] is False
+        assert any("tool inventory" in reason.lower() for reason in preview["opencode"]["reasons"])
+
+        applied = run_migration(project, "--apply", "--enable-opencode")
+        migrated = yaml.safe_load((project / "gpt-project.yaml").read_text(encoding="utf-8"))
+
+        assert applied["apply"]["result"] == "blocked"
+        assert "runtime" not in migrated or "opencode" not in migrated.get("runtime", {})
+
+
+def test_opencode_is_blocked_without_resolved_canonical_instruction():
+    with tempfile.TemporaryDirectory() as td:
+        project = Path(td)
+        write_cfg(project, {
+            "project": {"id": "blocked"},
+            "capabilities": {"web": "optional"},
+        })
+
+        report = run_migration(project)
+
+        assert report["opencode"]["status"] == "blocked"
+        assert report["opencode"]["can_enable_automatically"] is False
+        assert any("canonical instruction" in reason.lower() for reason in report["opencode"]["reasons"])
+
+
+def test_opencode_can_be_enabled_on_already_migrated_project_without_other_changes():
+    with tempfile.TemporaryDirectory() as td:
+        project = Path(td)
+        canonical = project / "src" / "instructions"
+        canonical.mkdir(parents=True)
+        (canonical / "system.md").write_text("# Canonical\n", encoding="utf-8")
+
+        write_cfg(project, {
+            "project": {"id": "modern"},
+            "instructions": {"canonical": "src/instructions/system.md"},
+            "capabilities": {
+                "contract_version": 1,
+                "recommendation_mode": "explicit",
+                "requirements": {"web": {"level": "optional"}},
+            },
+            "artifacts": {
+                "contract_version": 1,
+                "outputs": {
+                    "runtime_package": {
+                        "kind": "distribution",
+                        "format": "zip",
+                        "requirement": "optional",
+                        "persistence": "persistent",
+                    }
+                },
+            },
+            "workspace_state": {
+                "contract_version": 1,
+                "workspace": {
+                    "requirement": "required",
+                    "persistence": "required",
+                    "portable": True,
+                    "separate_from_assistant": True,
+                },
+                "state": {
+                    "requirement": "optional",
+                    "persistence": "preferred",
+                    "authority": "workspace_file",
+                    "format": "yaml",
+                    "path": "project-status.yaml",
+                },
+            },
+            "tools": {
+                "contract_version": 1,
+                "tools": [],
+            },
+            "runtime_parity": {
+                "reference": {"type": "canonical_contract"},
+                "registered_runtimes": ["chatgpt_chat"],
+            },
+        })
+
+        report = run_migration(project, "--apply", "--enable-opencode")
+        migrated = yaml.safe_load((project / "gpt-project.yaml").read_text(encoding="utf-8"))
+
+        assert report["apply"]["result"] == "changed"
+        assert migrated["runtime"]["opencode"]["enabled"] is True
