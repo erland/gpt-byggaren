@@ -398,6 +398,7 @@ instructions:
     - Knowledge beskriver referensmaterial och domäninformation.
     - Testa och validera efter varje relevant steg.
     - Rekommendera nästa steg från faktisk projektstatus.
+    - När persistent state krävs ska chatthistorik inte vara enda sanningskälla.
     required_runtime_dependencies: []
     max_required_file_hops: 1
     knowledge_may_not_be_required_for_core_behavior: true
