@@ -318,7 +318,6 @@ release:
     - project_zip
     - chat_zip
     - custom_gpt_zip_when_enabled
-  - claude_zip_when_enabled
     - claude_zip_when_enabled
     - checksums
     - delivery_manifest
