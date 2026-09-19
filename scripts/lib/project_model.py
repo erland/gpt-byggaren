@@ -266,3 +266,53 @@ def normalize_tool_contract(cfg: dict[str, Any]) -> dict[str, Any]:
         "contract_version": 1,
         "tools": [],
     }
+
+
+def normalize_runtime_parity_report(report: dict[str, Any]) -> dict[str, Any]:
+    """Normalize legacy two-runtime parity reports to the generic v2 model."""
+    if report.get("schema_version") == 2 and isinstance(report.get("runtimes"), dict):
+        return report
+
+    capabilities = report.get("capabilities")
+    if not isinstance(capabilities, list):
+        return report
+
+    summary = report.get("summary") or {}
+    runtimes: dict[str, Any] = {}
+    for runtime_id in ("chat_zip", "custom_gpt"):
+        runtimes[runtime_id] = {
+            "level": summary.get("level", "moderate"),
+            "release_recommendation": summary.get("release_recommendation", "publish_with_warning"),
+        }
+        if isinstance(summary.get("weighted_score"), (int, float)):
+            runtimes[runtime_id]["weighted_score"] = summary["weighted_score"]
+
+    requirements = []
+    for item in capabilities:
+        states = {}
+        for runtime_id in ("chat_zip", "custom_gpt"):
+            if runtime_id in item:
+                states[runtime_id] = {
+                    "state": item.get(runtime_id, "not_applicable"),
+                }
+                if item.get("reason"):
+                    states[runtime_id]["reason"] = item["reason"]
+        requirements.append({
+            "category": "capability",
+            "id": item.get("id", "unknown"),
+            "title": item.get("title", item.get("id", "unknown")),
+            "criticality": item.get("criticality", "important"),
+            "runtime_states": states,
+        })
+
+    return {
+        "schema_version": 2,
+        "reference": {"type": "canonical_contract"},
+        "runtimes": runtimes,
+        "requirements": requirements,
+    }
+
+
+def runtime_ids_from_parity(report: dict[str, Any]) -> list[str]:
+    normalized = normalize_runtime_parity_report(report)
+    return sorted((normalized.get("runtimes") or {}).keys())
