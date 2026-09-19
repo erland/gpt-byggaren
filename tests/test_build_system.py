@@ -89,3 +89,46 @@ def test_custom_build_emits_compilation_report():
     report = json.loads(report_path.read_text(encoding="utf-8"))
     assert report["instruction"]["compiled_characters"] <= report["instruction"]["max_characters"]
     assert report["knowledge"]["selected_files"] <= report["knowledge"]["max_files"]
+
+
+def test_chat_build_compiles_canonical_contract_snapshot_and_declared_tools():
+    import json
+    import shutil
+
+    for name in ["build", "dist"]:
+        p = ROOT / name
+        if p.exists():
+            shutil.rmtree(p)
+
+    r = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "build_distributions.py"),
+         "--project-root", str(ROOT), "--version", "0.0.0-chatcontract",
+         "--targets", "chat"],
+        capture_output=True, text=True
+    )
+    assert r.returncode == 0, r.stdout + r.stderr
+
+    chat = ROOT / "build" / "chat"
+    snapshot = json.loads((chat / "assistant" / "runtime-contract.json").read_text(encoding="utf-8"))
+    manifest = json.loads((chat / "MANIFEST.json").read_text(encoding="utf-8"))
+
+    assert snapshot["runtime_id"] == "chatgpt_chat"
+    assert snapshot["capabilities"]["contract_version"] == 1
+    assert snapshot["artifacts"]["contract_version"] == 1
+    assert snapshot["workspace_state"]["contract_version"] == 1
+    assert snapshot["tools"]["contract_version"] == 1
+
+    declared = set(snapshot["declared_tool_scripts"])
+    assert "scripts/lint_gpt_project.py" in declared
+    assert "scripts/build_distributions.py" in declared
+
+    assert (chat / "scripts" / "lint_gpt_project.py").exists()
+    assert (chat / "scripts" / "build_distributions.py").exists()
+    assert (chat / "scripts" / "lib" / "project_model.py").exists()
+
+    # Development/release scripts are not runtime tools merely because they live under scripts/.
+    assert not (chat / "scripts" / "validate_release_candidate.py").exists()
+    assert not (chat / "scripts" / "validate_stable_release.py").exists()
+
+    assert manifest["adapter_id"] == "chatgpt_chat"
+    assert manifest["contract_snapshot"] == "assistant/runtime-contract.json"
