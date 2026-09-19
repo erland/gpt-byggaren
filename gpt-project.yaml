@@ -789,6 +789,8 @@ beginner_documentation:
   project_zip_is_continuation_artifact: true
 legacy_migration:
   model: docs/legacy-migration-analysis.md
+  script: scripts/migrate_legacy_project.py
+  report_schema: schemas/legacy-migration-report.schema.json
   source_classes:
   - L0
   - L1
