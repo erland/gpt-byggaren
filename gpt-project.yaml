@@ -133,6 +133,9 @@ runtime:
     model: docs/opencode-runtime.md
     layout:
       instructions: AGENTS.md
+      config: opencode.json
+      tools: .opencode/tools
+      runtime_scripts: scripts
       runtime_contract: .opencode/runtime-contract.json
       knowledge: knowledge
     templates:
