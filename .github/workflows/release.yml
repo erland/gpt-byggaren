@@ -40,7 +40,7 @@ jobs:
           python -m pytest -q -p no:cacheprovider tests/test_build_system.py tests/test_direct_build.py tests/test_release_workflow.py
       - name: Build distributions
         run: |
-          python scripts/build_distributions.py --project-root . --version "${{ steps.version.outputs.version }}" --targets project,chat,custom-gpt,claude
+          python scripts/build_distributions.py --project-root . --version "${{ steps.version.outputs.version }}" --targets project,chat,custom-gpt,claude,opencode
       - name: Validate distributions
         run: |
           python scripts/validate_distributions.py --project-root .
@@ -56,6 +56,7 @@ jobs:
           test -f "dist/gpt-byggaren-chat-${VERSION}.zip"
           test -f "dist/gpt-byggaren-custom-gpt-${VERSION}.zip"
           test -f "dist/gpt-byggaren-claude-${VERSION}.zip"
+          test -f "dist/gpt-byggaren-opencode-${VERSION}.zip"
           test -f "dist/SHA256SUMS.txt"
           test -f "dist/DELIVERY-MANIFEST.json"
       - name: Upload release artifacts
@@ -69,6 +70,7 @@ jobs:
             dist/gpt-byggaren-chat-${{ steps.version.outputs.version }}.zip \
             dist/gpt-byggaren-custom-gpt-${{ steps.version.outputs.version }}.zip \
             dist/gpt-byggaren-claude-${{ steps.version.outputs.version }}.zip \
+            dist/gpt-byggaren-opencode-${{ steps.version.outputs.version }}.zip \
             dist/SHA256SUMS.txt \
             dist/DELIVERY-MANIFEST.json \
             --clobber
