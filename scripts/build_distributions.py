@@ -746,6 +746,52 @@ def build_opencode(root: Path, cfg: dict, build_root: Path, version: str) -> Pat
     return out
 
 
+RUNTIME_BUILDERS = {
+    "chat": build_chat,
+    "custom_gpt": build_custom,
+    "claude": build_claude,
+    "opencode": build_opencode,
+}
+
+
+def configured_targets(cfg: dict) -> list[str]:
+    targets = cfg.get("build_system", {}).get("targets") or ["project"]
+    return [str(target) for target in targets]
+
+
+def build_runtime_target(
+    root: Path,
+    cfg: dict,
+    build_root: Path,
+    dist: Path,
+    version: str,
+    target: str,
+) -> Path | None:
+    target_cfg = (cfg.get("build_system", {}).get("runtime_targets") or {}).get(target)
+    if not isinstance(target_cfg, dict):
+        raise SystemExit(f"Unknown runtime build target: {target}")
+
+    runtime_key = target_cfg["runtime_key"]
+    runtime_cfg = cfg.get("runtime", {}).get(runtime_key, {})
+    if not runtime_cfg.get("enabled"):
+        return None
+
+    builder_id = target_cfg["builder"]
+    builder = RUNTIME_BUILDERS.get(builder_id)
+    if builder is None:
+        raise SystemExit(f"No runtime builder registered for builder id: {builder_id}")
+
+    runtime_root = builder(root, cfg, build_root, version)
+    filename = (
+        target_cfg["filename_pattern"]
+        .replace("<project-id>", cfg["project"]["id"])
+        .replace("<version>", version)
+    )
+    zip_path = dist / filename
+    stable_write_zip(zip_path, runtime_root, [p for p in runtime_root.rglob("*") if p.is_file()])
+    return zip_path
+
+
 def project_files(root: Path) -> list[Path]:
     excluded_top = {"build", "dist", ".git"}
     result = []
@@ -819,7 +865,11 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--project-root", default=".")
     parser.add_argument("--version", default="0.0.0-dev")
-    parser.add_argument("--targets", default="project,chat,custom-gpt,claude,opencode")
+    parser.add_argument(
+        "--targets",
+        default=None,
+        help="Comma-separated build targets. Defaults to build_system.targets from gpt-project.yaml.",
+    )
     args = parser.parse_args()
 
     root = Path(args.project_root).resolve()
@@ -829,29 +879,24 @@ def main() -> int:
     build_root.mkdir(exist_ok=True)
     dist.mkdir(exist_ok=True)
 
-    targets = {t.strip() for t in args.targets.split(",") if t.strip()}
+    selected_targets = (
+        [t.strip() for t in args.targets.split(",") if t.strip()]
+        if args.targets
+        else configured_targets(cfg)
+    )
+    targets = set(selected_targets)
     project_id = cfg["project"]["id"]
     version = args.version
 
-    if "chat" in targets:
-        chat_root = build_chat(root, cfg, build_root, version)
-        chat_zip = dist / f"{project_id}-chat-{version}.zip"
-        stable_write_zip(chat_zip, chat_root, [p for p in chat_root.rglob("*") if p.is_file()])
+    runtime_targets = cfg.get("build_system", {}).get("runtime_targets") or {}
+    unknown = targets - (set(runtime_targets) | {"project"})
+    if unknown:
+        raise SystemExit("Unknown build target(s): " + ", ".join(sorted(unknown)))
 
-    if "custom-gpt" in targets and cfg["runtime"]["custom_gpt"]["enabled"]:
-        custom_root = build_custom(root, cfg, build_root, version)
-        custom_zip = dist / f"{project_id}-custom-gpt-{version}.zip"
-        stable_write_zip(custom_zip, custom_root, [p for p in custom_root.rglob("*") if p.is_file()])
-
-    if "claude" in targets and cfg.get("runtime", {}).get("claude", {}).get("enabled"):
-        claude_root = build_claude(root, cfg, build_root, version)
-        claude_zip = dist / f"{project_id}-claude-{version}.zip"
-        stable_write_zip(claude_zip, claude_root, [p for p in claude_root.rglob("*") if p.is_file()])
-
-    if "opencode" in targets and cfg.get("runtime", {}).get("opencode", {}).get("enabled"):
-        opencode_root = build_opencode(root, cfg, build_root, version)
-        opencode_zip = dist / f"{project_id}-opencode-{version}.zip"
-        stable_write_zip(opencode_zip, opencode_root, [p for p in opencode_root.rglob("*") if p.is_file()])
+    for target in selected_targets:
+        if target == "project":
+            continue
+        build_runtime_target(root, cfg, build_root, dist, version, target)
 
     if "project" in targets:
         project_zip = dist / f"{project_id}-project.zip"
