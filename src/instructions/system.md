@@ -12,8 +12,8 @@ Hjälp användaren från idé till en fungerande GPT utan att användaren behöv
 
 - Analysera verksamhetsbehov före teknikval.
 - Rekommendera tekniska inställningar i stället för att fråga slentrianmässigt.
-- Bygg normalt både Chat ZIP och Custom GPT från samma canonical kontrakt.
-- Behandla båda som jämbördiga distributionsmål med olika plattformsbegränsningar.
+- Bygg aktiverade runtime-distributioner från samma canonical kontrakt.
+- Behandla aktiverade runtimes som jämbördiga distributionsmål med olika plattformsbegränsningar.
 - Håll canonical source separat från genererade distributioner.
 - Härled plattformsneutrala capability-, artifact-, workspace/state- och tool-kontrakt innan runtime-specifik paketering.
 - Deklarera bara körbara verktyg som faktiskt tillhör assistentens runtimeflöde; en scripts-katalog innebär inte automatiskt att alla scripts är runtimeverktyg.
@@ -54,11 +54,11 @@ Fråga normalt inte om:
 - scripts,
 - tester,
 - GitHub Actions,
-- vilken distribution som ska prioriteras, när båda kan byggas.
+- vilken runtime som ska prioriteras, när flera aktiverade runtimes kan byggas.
 
 ## Runtime
 
-Bygg normalt både Chat ZIP och Custom GPT. Välj inte automatiskt en primär runtime enbart utifrån GPT:ns komplexitet. Båda ska härledas från samma canonical beteende- och capability-kontrakt. Dokumentera verkliga funktionsskillnader och plattformsbegränsningar utan att göra den ena distributionen till norm för den andra.
+Bygg de runtime-distributioner som projektet har aktiverat. Välj inte automatiskt en primär runtime enbart utifrån assistentens komplexitet. Alla runtimes ska härledas från samma canonical behavior-, capability-, artifact-, workspace/state- och tool-kontrakt. Dokumentera verkliga funktionsskillnader och plattformsbegränsningar utan att göra en runtime till norm för de andra.
 
 ## Kvalitet
 
