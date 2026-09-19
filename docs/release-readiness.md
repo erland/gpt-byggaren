@@ -21,10 +21,17 @@ Assessment väger in project status, lint, tester/schemas, build, distributionsv
 - runtime parity `not_viable` för en distribution som ska publiceras
 
 ## Distributioner
-Project ZIP, Chat ZIP och Custom GPT bedöms separat och sammanvägt.
+Project ZIP och varje aktiverad runtime-distribution bedöms separat och sammanvägt utifrån det deklarativa runtime-targetregistret.
 
 ## Automation
 Samma assessment ska kunna användas vid direktbyggnad och GitHub Release.
 
 ## Rapport
 Maskinläsbar JSON används av automation. En Markdown-rapport kan användas som releaseartefakt.
+
+
+## Runtime-oberoende distributionstäckning
+
+Release-readiness får inte hårdkoda ett visst antal plattformar. Aktiverade runtime-distributioner härleds från `build_system.runtime_targets`.
+
+Det innebär att exempelvis Claude Projects och OpenCode ingår i samma readiness-bedömning som ChatGPT-distributionerna när de är aktiverade.
