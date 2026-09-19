@@ -261,32 +261,71 @@ release:
     supported: true
     version_strategy_before_github_release: development_version
 artifacts:
-  project_zip:
-    required: true
-  chat_zip:
-    required: true
-  custom_gpt_zip:
-    required_when_enabled: true
-  validation_report:
-    required_for_release: true
-  parity_report:
-    required_when_multiple_runtimes: true
-  checksums:
-    required_for_release: true
+  contract_version: 1
+  schema: schemas/artifact-contract.schema.json
+  outputs:
+    development_plan:
+      kind: document
+      format: markdown
+      requirement: required
+      persistence: persistent
+      multiplicity: one
+      description: Stegvis utvecklingsplan som kan återanvändas mellan runtimes.
+    project_package:
+      kind: package
+      format: zip
+      requirement: required
+      persistence: persistent
+      multiplicity: one
+      filename_pattern: <project-id>-project.zip
+      description: Komplett utvecklingsprojekt för fortsatt arbete och migrering.
+    runtime_package:
+      kind: distribution
+      format: zip
+      requirement: required
+      persistence: persistent
+      multiplicity: many
+      description: En eller flera runtime-specifika distributioner byggda från samma canonical projekt.
+    validation_report:
+      kind: report
+      format: structured
+      requirement: required
+      persistence: persistent
+      multiplicity: one
+    parity_report:
+      kind: report
+      format: markdown
+      requirement: conditional
+      condition: multiple_runtimes
+      persistence: persistent
+      multiplicity: one
+    checksums:
+      kind: metadata
+      format: sha256
+      requirement: required
+      persistence: persistent
+      multiplicity: one
+  legacy_mapping:
+    project_zip: project_package
+    chat_zip: runtime_package
+    custom_gpt_zip: runtime_package
+    validation_report: validation_report
+    parity_report: parity_report
+    checksums: checksums
 workflow:
   initial_analysis_in_chat: true
-  plan_as_downloadable_markdown: true
-  create_project_zip_on_first_execution_step: true
-  rebuild_complete_project_zip_after_each_step: true
+  development_plan_artifact: development_plan
+  create_project_package_on_first_execution_step: true
+  rebuild_complete_project_package_after_each_step: true
   recommend_next_step_from_actual_status: true
-  resume_from_project_zip: true
+  resume_from_project_package: true
 planning:
   mode: dynamic
   model: docs/dynamic-planning.md
   schema: schemas/development-plan.schema.json
   policy: src/runtime-policy/planning-policy.md
   derive_from_analysis: true
-  downloadable_markdown_before_project_creation: true
+  persist_markdown_before_project_creation: true
   copy_into_project_on_first_execution_step: true
   allow_inserted_corrective_steps: true
   allow_step_merge: true
