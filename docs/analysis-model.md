@@ -445,3 +445,18 @@ Persistent workspace/state rekommenderas när assistenten behöver:
 En enkel rådgivnings-GPT ska däremot inte få persistent state som krav utan behov.
 
 Canonical kontrakt ska beskriva behovet, medan runtime-adaptern avgör realiseringen. En chattruntime kan exempelvis använda konversation + statefil, medan OpenCode kan använda en fil i workspace.
+
+
+## Tool-kontrakt
+
+GPT Byggaren ska skilja mellan capability och tool.
+
+Exempel:
+
+- `filesystem.write` är en capability,
+- `scripts/model.py` kan vara ett tool,
+- MCP eller en API-action kan vara andra tool-implementationer.
+
+Tool-kontrakt ska användas när en assistent behöver deterministiska eller återanvändbara operationer, exempelvis validering, modellmutation, build eller export.
+
+En existerande `scripts/`-katalog får inte ensam tolkas som att alla scripts är runtimeverktyg. Vid migration ska GPT Byggaren inventera syfte och användning och bara deklarera de verktyg som faktiskt tillhör assistentens körbara arbetsflöde.
