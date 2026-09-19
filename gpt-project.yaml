@@ -124,6 +124,22 @@ runtime:
     validation:
       require_instructions: true
       require_runtime_contract: true
+  opencode:
+    enabled: true
+    role: peer_distribution
+    mode: opencode_workspace
+    schema: schemas/opencode-runtime.schema.json
+    policy: src/runtime-policy/opencode-runtime-policy.md
+    model: docs/opencode-runtime.md
+    layout:
+      instructions: AGENTS.md
+      runtime_contract: .opencode/runtime-contract.json
+      knowledge: knowledge
+    templates:
+      readme: templates/README.opencode.md.tpl
+    validation:
+      require_agents_md: true
+      require_runtime_contract: true
   custom_gpt:
     enabled: true
     role: peer_distribution
@@ -300,6 +316,7 @@ build:
   build_chat_zip: true
   build_custom_gpt_zip: true
   build_claude_zip: true
+  build_opencode_zip: true
   direct_downloads_without_github: true
 release:
   github:
@@ -319,6 +336,7 @@ release:
     - chat_zip
     - custom_gpt_zip_when_enabled
     - claude_zip_when_enabled
+    - opencode_zip_when_enabled
     - checksums
     - delivery_manifest
     policy: src/runtime-policy/github-release-policy.md
@@ -530,6 +548,7 @@ runtime_parity:
   - chatgpt_chat
   - chatgpt_custom
   - claude_project
+  - opencode
   compared_categories:
   - behavior
   - capability
@@ -576,6 +595,7 @@ build_system:
   - chat
   - custom-gpt
   - claude
+  - opencode
   output_root: dist
   working_root: build
   deterministic_zip: true
@@ -598,6 +618,8 @@ direct_build:
   - project_zip
   - chat_zip
   - custom_gpt_zip_when_enabled
+  - claude_zip_when_enabled
+  - opencode_zip_when_enabled
   - checksums
   - delivery_manifest
   validate_before_delivery: true
