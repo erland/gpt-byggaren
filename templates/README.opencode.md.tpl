@@ -12,8 +12,8 @@ Detta paket är en basruntime för OpenCode.
 
 ## Avgränsning i denna version
 
-- Skills under `.opencode/skills/` läggs till i nästa steg.
-- Explicit tool-integration läggs till efter skills-steget.
+- Återanvändbara Skills finns under `.opencode/skills/` och laddas av OpenCode vid behov.
+- Explicit tool-integration läggs till i nästa utvecklingssteg.
 - `CLAUDE.md` används inte; OpenCode V2 använder `AGENTS.md` för projektinstruktioner.
 
 ## Version
