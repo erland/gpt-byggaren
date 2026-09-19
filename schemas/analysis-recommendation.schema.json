@@ -20,24 +20,54 @@
     "runtime": {
       "type": "object",
       "required": [
-        "primary",
-        "custom_gpt"
+        "strategy",
+        "candidates"
       ],
       "properties": {
+        "strategy": {
+          "const": "peer_candidates"
+        },
+        "candidates": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "runtime_id",
+              "suitability",
+              "rationale"
+            ],
+            "properties": {
+              "runtime_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "suitability": {
+                "enum": [
+                  "equivalent",
+                  "reduced",
+                  "not_recommended"
+                ]
+              },
+              "rationale": {
+                "type": "string",
+                "minLength": 1
+              },
+              "activate_by_default": {
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
         "primary": {
-          "enum": [
-            "chat_zip",
-            "custom_gpt"
-          ]
+          "type": "string"
         },
         "custom_gpt": {
-          "enum": [
-            "equivalent",
-            "secondary",
-            "not_recommended"
-          ]
+          "type": "string"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "capabilities": {
       "type": "object",
