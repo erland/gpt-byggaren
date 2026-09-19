@@ -96,6 +96,7 @@ def validate_opencode(root: Path, cfg: dict) -> list[str]:
         build / "VERSION",
         build / "MANIFEST.json",
         build / runtime_cfg["layout"]["instructions"],
+        build / runtime_cfg["layout"]["config"],
         build / runtime_cfg["layout"]["runtime_contract"],
     ]
     for p in required:
@@ -104,6 +105,37 @@ def validate_opencode(root: Path, cfg: dict) -> list[str]:
 
     if (build / "CLAUDE.md").exists():
         errors.append("OpenCode base runtime must use AGENTS.md, not CLAUDE.md")
+
+    tool_contract = cfg.get("tools", {}).get("tools", [])
+    tools_dir = build / runtime_cfg["layout"]["tools"]
+    scripts_dir = build / runtime_cfg["layout"]["runtime_scripts"]
+    expected_tools = []
+    for item in tool_contract:
+        if item.get("type") != "script":
+            continue
+        tool_name = "gpt_" + item["id"].replace("-", "_")
+        expected_tools.append(tool_name)
+        wrapper = tools_dir / f"{tool_name}.ts"
+        script = scripts_dir / Path(item["script"]).name
+        if not wrapper.exists():
+            errors.append(f"Missing OpenCode custom tool: {wrapper.relative_to(build)}")
+        if not script.exists():
+            errors.append(f"Missing OpenCode runtime script: {script.relative_to(build)}")
+
+    config_path = build / runtime_cfg["layout"]["config"]
+    if config_path.exists():
+        try:
+            config = json.loads(config_path.read_text(encoding="utf-8"))
+            permissions = config.get("permission", {})
+            for item in tool_contract:
+                if item.get("type") != "script":
+                    continue
+                tool_name = "gpt_" + item["id"].replace("-", "_")
+                expected = "ask" if item.get("mutates_workspace") else "allow"
+                if permissions.get(tool_name) != expected:
+                    errors.append(f"OpenCode permission mismatch for {tool_name}")
+        except Exception as exc:
+            errors.append(f"Invalid OpenCode config: {exc}")
 
     skills_cfg = runtime_cfg.get("skills", {})
     if skills_cfg.get("enabled"):
