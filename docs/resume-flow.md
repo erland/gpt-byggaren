@@ -1,6 +1,8 @@
 # Resume flow – GPT Byggaren
 
-Projekt-ZIP ska kunna återuppta utvecklingen utan tidigare chathistorik.
+Projektpaketet ska kunna återuppta utvecklingen utan tidigare chathistorik.
+
+Detta är ett konkret exempel på det generella workspace/state-kontraktet: projektpaketet är workspace och `project-status.yaml` är dess auktoritativa state. En annan skapad assistent kan använda en annan statefil eller klara sig utan persistent state.
 
 ## Läsordning
 1. `gpt-project.yaml`
@@ -26,4 +28,4 @@ Kör i första hand lint och next-step recommendation. Vid behov körs tester, b
 Projekt utan `gpt-project.yaml` inventeras som legacy/unknown och migreras innan normal resume.
 
 ## Regel
-Be inte användaren återberätta projekthistorik som redan finns i projekt-ZIP:en.
+Be inte användaren återberätta projekthistorik som redan finns i workspace/state. Chatthistorik får vara ett komplement men inte enda sanningskälla när kontraktet kräver persistent state.
