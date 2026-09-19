@@ -6,8 +6,6 @@
     "project",
     "project_name",
     "version",
-    "primary_runtime",
-    "custom_gpt_enabled",
     "artifacts"
   ],
   "properties": {
@@ -60,6 +58,12 @@
     },
     "runtime_strategy": {
       "type": "string"
+    },
+    "runtime_targets": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     }
   }
 }
