@@ -17,7 +17,8 @@
     "role": {
       "enum": [
         "primary",
-        "secondary"
+        "secondary",
+        "peer_distribution"
       ]
     },
     "instruction": {
@@ -79,6 +80,9 @@
           "type": "string"
         },
         "knowledge_package": {
+          "type": "string"
+        },
+        "runtime_contract": {
           "type": "string"
         }
       }
