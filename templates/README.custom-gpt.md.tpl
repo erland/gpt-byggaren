@@ -9,7 +9,8 @@ Detta paket innehåller Builder-underlaget för **{{GPT_NAME}}**.
 3. Lägg in `builder/conversation-starters.md`.
 4. Följ rekommendationerna i `builder/capabilities.md`.
 5. Ladda upp filerna i `builder/knowledge-package/`.
-6. Läs `COMPATIBILITY.md` för skillnader mot Chat ZIP.
+6. `builder/runtime-contract.json` dokumenterar hur denna distribution realiserar canonical kontrakt.
+7. Läs `COMPATIBILITY.md` för skillnader mot andra runtimes.
 
 ## Version
 
