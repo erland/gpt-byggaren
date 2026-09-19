@@ -13,12 +13,13 @@ Bygger konkreta distributioner från artifact- och runtime-kontrakten:
 - projekt-ZIP som realisering av `project_package`,
 - Chat ZIP som realisering av `runtime_package`,
 - Custom GPT ZIP som realisering av `runtime_package`,
+- Claude Projects ZIP som realisering av `runtime_package`,
 - delivery manifest med koppling till canonical artifact-id,
 - SHA-256-checksummor.
 
 ### `scripts/validate_distributions.py`
 
-Validerar de byggda Chat- och Custom GPT-distributionerna.
+Validerar de byggda Chat-, Custom GPT- och Claude-distributionerna.
 
 ## Lokal användning
 
@@ -84,3 +85,17 @@ Detta är första buildimplementationen.
 Buildsystemet stöder även GitHub Actions som standard för nya projekt: CI vid push/PR och releasebygge vid publicerad GitHub Release. Releaseversion härleds från release-taggen. Avancerad capability-paritetsanalys kan fortfarande förfinas vidare.
 
 Toolchainen är avsiktligt byggd så att dessa delar kan läggas ovanpå samma kärna.
+
+
+## Claude Projects ZIP
+
+Buildsystemet skapar:
+
+- `README.md`,
+- `project/instructions.md`,
+- `project/runtime-contract.json`,
+- `project/knowledge/`,
+- `VERSION`,
+- `MANIFEST.json`.
+
+Distributionen är avsedd för vanlig Claude Projects-användning och använder inte `CLAUDE.md` eller andra Claude Code-specifika konventioner.
