@@ -65,7 +65,7 @@ jobs:
 
       - name: Build distributions
         run: |
-          python scripts/build_distributions.py             --project-root .             --version 0.0.0-ci             --targets project,chat,custom-gpt,claude
+          python scripts/build_distributions.py             --project-root .             --version 0.0.0-ci             --targets project,chat,custom-gpt,claude,opencode
 
       - name: Validate distributions
         run: python scripts/validate_distributions.py --project-root .
@@ -76,6 +76,7 @@ jobs:
           test -f dist/gpt-byggaren-chat-0.0.0-ci.zip
           test -f dist/gpt-byggaren-custom-gpt-0.0.0-ci.zip
           test -f dist/gpt-byggaren-claude-0.0.0-ci.zip
+          test -f dist/gpt-byggaren-opencode-0.0.0-ci.zip
           test -f dist/SHA256SUMS.txt
           test -f dist/DELIVERY-MANIFEST.json
 
