@@ -66,7 +66,18 @@ Skillen är en runtimeprojektion. Canonical instruktion, policies och projektdok
 
 ## Tools
 
-Explicit integration av canonical tool-kontrakt sker först i steg 12. Basadaptern får inte härleda eller exponera extra verktyg bara för att scripts råkar finnas i projektet.
+Canonical script-tools projiceras till projektlokala OpenCode custom tools under `.opencode/tools/`. Filnamnet blir OpenCode tool-namnet och wrappers anropar de explicit kopierade Python-scripten i `scripts/`.
+
+Endast scripts som är deklarerade i canonical tool-kontrakt kopieras. Utvecklings- och release-scripts följer inte med automatiskt.
+
+`opencode.json` sätter permissions per genererat tool:
+
+- icke-muternade tools: `allow`,
+- tools som kan ändra workspace: `ask`,
+- generell `bash`: `ask`,
+- generell `edit`: `ask`.
+
+Det gör OpenCode-integrationen användbar utan att ge generell shell-åtkomst för de canonical operationerna.
 
 ## Definition of Done
 
@@ -78,4 +89,5 @@ Basadaptern är klar när:
 - paketet valideras,
 - CI/release/direct build producerar OpenCode ZIP,
 - projektlokala Skills genereras från deklarerade canonical workflowkällor,
-- ingen implicit tool-integration görs ännu.
+- canonical script-tools projiceras till begränsade OpenCode custom tools,
+- permissions genereras från tool-kontraktets mutationsegenskaper.
