@@ -126,6 +126,7 @@ LEGACY_ARTIFACT_MAP = {
     "project_zip": "project_package",
     "chat_zip": "runtime_package",
     "custom_gpt_zip": "runtime_package",
+    "claude_zip": "runtime_package",
     "validation_report": "validation_report",
     "parity_report": "parity_report",
     "checksums": "checksums",
