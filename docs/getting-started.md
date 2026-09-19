@@ -67,7 +67,7 @@ GPT Byggaren försöker förstå:
 - om den behöver strukturerad information,
 - om scripts eller schemas behövs,
 - hur avancerad testningen behöver vara,
-- vilken runtime som passar bäst.
+- vilka runtime-mål som kan realisera behovet bäst och vilka skillnader som finns.
 
 Den ska bara fråga dig om sådant som verkligen kräver ett verksamhetsbeslut.
 
@@ -292,9 +292,11 @@ Något blockerande problem måste lösas först.
 
 ---
 
-## 13. Chat ZIP eller Custom GPT?
+## 13. Vilken runtime behöver jag välja?
 
-Chat ZIP och Custom GPT är jämbördiga distributionsmål från samma canonical kontrakt. För enklare GPT:er kan de vara nästan likvärdiga. För större GPT:er kan Chat ZIP bära rikare runtime-material när Custom GPT-plattformens begränsningar kräver det.
+Normalt ingen. GPT Byggaren bedömer aktiverade runtime-mål utifrån samma canonical kontrakt och kan föreslå flera samtidigt, exempelvis ChatGPT Chat, Custom GPT, Claude Projects eller OpenCode.
+
+Du behöver främst välja plattform själv när det finns ett verkligt verksamhetskrav, exempelvis att assistenten måste köras i en viss miljö. Tekniska skillnader och reducerad funktion ska annars härledas och förklaras av GPT Byggaren.
 
 Exempel på sådant som kan ge Chat ZIP större capability-täckning än Custom GPT:
 
