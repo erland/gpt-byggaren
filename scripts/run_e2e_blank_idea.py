@@ -71,7 +71,7 @@ def scaffold_project(root, scenario, profile):
         encoding="utf-8"
     )
     (root / "README.md").write_text(
-        "# Mötesuppföljaren\n\nGPT-projekt med Chat ZIP och Custom GPT-distribution.\n\n"
+        "# Mötesuppföljaren\n\nGPT-projekt med flera runtime-distributioner från samma canonical kontrakt.\n\n"
         "## GitHub Actions\n\nCI validerar projektet vid push/PR. Publicerad GitHub Release bygger "
         "distributionerna med version från release-taggen.\n",
         encoding="utf-8"
@@ -130,7 +130,16 @@ def scaffold_project(root, scenario, profile):
         },
         "analysis": {
             "profile": profile,
-            "source": "blank-idea-001"
+            "source": "blank-idea-001",
+            "runtime": {
+                "strategy": "peer_candidates",
+                "candidates": [
+                    {"runtime_id": "chatgpt_chat", "suitability": "equivalent", "rationale": "Passar dokument- och filorienterat arbetsflöde.", "activate_by_default": True},
+                    {"runtime_id": "chatgpt_custom", "suitability": "equivalent", "rationale": "Kärnflödet ryms utan lokala runtime-tools.", "activate_by_default": True},
+                    {"runtime_id": "claude_project", "suitability": "equivalent", "rationale": "Project instructions och knowledge räcker för use caset.", "activate_by_default": True},
+                    {"runtime_id": "opencode", "suitability": "reduced", "rationale": "Agentiskt workspace är möjligt men inte nödvändigt för standardflödet.", "activate_by_default": False}
+                ]
+            }
         },
         "instructions": {
             "canonical": "src/instructions/system.md",
@@ -154,7 +163,9 @@ def scaffold_project(root, scenario, profile):
                 "enabled": True,
                 "instruction_max_characters": 8000,
                 "knowledge_max_files": 20
-            }
+            },
+            "claude": {"enabled": True},
+            "opencode": {"enabled": False}
         },
         "capabilities": {
             "contract_version": 1,
@@ -208,6 +219,15 @@ def scaffold_project(root, scenario, profile):
             "runtime_preferences": {
                 "chat": "conversation_or_file",
                 "agent": "workspace_file"
+            }
+        },
+        "build_system": {
+            "targets": ["project", "chat", "custom-gpt", "claude"],
+            "runtime_targets": {
+                "chat": {"runtime_id": "chatgpt_chat", "runtime_key": "chat_zip"},
+                "custom-gpt": {"runtime_id": "chatgpt_custom", "runtime_key": "custom_gpt"},
+                "claude": {"runtime_id": "claude_project", "runtime_key": "claude"},
+                "opencode": {"runtime_id": "opencode", "runtime_key": "opencode"}
             }
         },
         "development": {
