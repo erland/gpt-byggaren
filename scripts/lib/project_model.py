@@ -316,3 +316,30 @@ def normalize_runtime_parity_report(report: dict[str, Any]) -> dict[str, Any]:
 def runtime_ids_from_parity(report: dict[str, Any]) -> list[str]:
     normalized = normalize_runtime_parity_report(report)
     return sorted((normalized.get("runtimes") or {}).keys())
+
+
+def validate_runtime_parity_report(report: dict[str, Any]) -> list[str]:
+    """Return semantic errors not expressible conveniently in JSON Schema."""
+    normalized = normalize_runtime_parity_report(report)
+    runtimes = set((normalized.get("runtimes") or {}).keys())
+    errors: list[str] = []
+
+    if not runtimes:
+        errors.append("Runtime parity report has no runtimes.")
+        return errors
+
+    for requirement in normalized.get("requirements") or []:
+        req_id = str(requirement.get("id", "unknown"))
+        states = set((requirement.get("runtime_states") or {}).keys())
+        missing = runtimes - states
+        unknown = states - runtimes
+        if missing:
+            errors.append(
+                f"Requirement {req_id} is missing runtime states for: {', '.join(sorted(missing))}"
+            )
+        if unknown:
+            errors.append(
+                f"Requirement {req_id} references unknown runtimes: {', '.join(sorted(unknown))}"
+            )
+
+    return errors
