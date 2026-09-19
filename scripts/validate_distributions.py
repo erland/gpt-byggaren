@@ -84,6 +84,29 @@ def validate_claude(root: Path, cfg: dict) -> list[str]:
     return errors
 
 
+def validate_opencode(root: Path, cfg: dict) -> list[str]:
+    errors = []
+    build = root / "build" / "opencode"
+    if not build.exists():
+        return ["OpenCode build directory missing"]
+
+    runtime_cfg = cfg["runtime"]["opencode"]
+    required = [
+        build / "README.md",
+        build / "VERSION",
+        build / "MANIFEST.json",
+        build / runtime_cfg["layout"]["instructions"],
+        build / runtime_cfg["layout"]["runtime_contract"],
+    ]
+    for p in required:
+        if not p.exists():
+            errors.append(f"Missing required file: {p.relative_to(build)}")
+
+    if (build / "CLAUDE.md").exists():
+        errors.append("OpenCode base runtime must use AGENTS.md, not CLAUDE.md")
+    return errors
+
+
 def validate_chat(root: Path, cfg: dict) -> list[str]:
     errors = []
     build = root / "build" / "chat"
@@ -123,6 +146,8 @@ def main() -> int:
         errors.extend(validate_custom(root, cfg))
     if cfg.get("runtime", {}).get("claude", {}).get("enabled"):
         errors.extend(validate_claude(root, cfg))
+    if cfg.get("runtime", {}).get("opencode", {}).get("enabled"):
+        errors.extend(validate_opencode(root, cfg))
 
     if errors:
         print("VALIDATION: FAIL")
