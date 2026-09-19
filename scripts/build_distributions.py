@@ -424,6 +424,101 @@ def build_custom(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     return out
 
 
+def claude_runtime_contract(cfg: dict) -> dict:
+    """Compile canonical assistant contracts into a Claude Projects snapshot."""
+    tool_contract = normalize_tool_contract(cfg)
+    tool_states = []
+    for tool in tool_contract.get("tools", []):
+        state = "not_applicable"
+        reason = None
+        if tool.get("type") in {"script", "local_command"}:
+            state = "reduced" if tool.get("runtime_fallback") == "manual" else "missing"
+            reason = "Claude Projects package does not embed local command execution."
+        elif tool.get("type") in {"mcp", "api_action"}:
+            state = "reduced"
+            reason = "Availability depends on the Claude account/project integration."
+
+        item = {
+            "id": tool.get("id"),
+            "type": tool.get("type"),
+            "requirement": tool.get("requirement"),
+            "state": state,
+        }
+        if reason:
+            item["reason"] = reason
+        tool_states.append(item)
+
+    return {
+        "schema_version": 1,
+        "runtime_id": "claude_project",
+        "capabilities": normalize_capability_contract(cfg),
+        "artifacts": normalize_artifact_contract(cfg),
+        "workspace_state": normalize_workspace_state_contract(cfg),
+        "tools": tool_contract,
+        "adapter": {
+            "mode": "claude_project",
+            "project_instructions": True,
+            "project_knowledge": True,
+            "claude_code_conventions": False,
+            "embedded_local_tools": False,
+            "tool_states": tool_states,
+        },
+    }
+
+
+def build_claude(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
+    out = build_root / "claude"
+    ensure_clean_dir(out)
+
+    runtime_cfg = cfg["runtime"]["claude"]
+    project_dir = out / "project"
+    project_dir.mkdir(parents=True)
+
+    instr_src = root / cfg["instructions"]["canonical"]
+    instructions_ref = runtime_cfg["project"]["instructions"]
+    instructions_path = out / instructions_ref
+    copy_file(instr_src, instructions_path)
+
+    knowledge_root = root / cfg["knowledge_architecture"]["canonical_root"]
+    knowledge_ref = runtime_cfg["project"]["knowledge"]
+    knowledge_target = out / knowledge_ref
+    if knowledge_root.exists():
+        for p in sorted(knowledge_root.rglob("*")):
+            if p.is_file() and p.name != "KNOWLEDGE.md":
+                copy_file(p, knowledge_target / p.relative_to(knowledge_root))
+
+    contract_ref = runtime_cfg["project"]["runtime_contract"]
+    contract_path = out / contract_ref
+    contract_path.parent.mkdir(parents=True, exist_ok=True)
+    contract_path.write_text(
+        json.dumps(claude_runtime_contract(cfg), ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+    readme_tpl = (root / runtime_cfg["templates"]["readme"]).read_text(encoding="utf-8")
+    (out / "README.md").write_text(
+        render_template(readme_tpl, {
+            "GPT_NAME": cfg["project"]["name"],
+            "VERSION": version,
+        }),
+        encoding="utf-8",
+    )
+    (out / "VERSION").write_text(version + "\n", encoding="utf-8")
+
+    write_manifest(out, cfg["project"]["id"] + "-claude", version, "README.md")
+    manifest_path = out / "MANIFEST.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["adapter_id"] = "claude_project"
+    manifest["contract_snapshot"] = contract_ref
+    manifest["project_instructions"] = instructions_ref
+    manifest["project_knowledge"] = knowledge_ref
+    manifest_path.write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    return out
+
+
 def project_files(root: Path) -> list[Path]:
     excluded_top = {"build", "dist", ".git"}
     result = []
@@ -458,6 +553,8 @@ def write_delivery_manifest(dist: Path, cfg: dict, version: str) -> None:
                 artifact_type = "chat_zip"
             elif "-custom-gpt-" in p.name:
                 artifact_type = "custom_gpt_zip"
+            elif "-claude-" in p.name:
+                artifact_type = "claude_zip"
             else:
                 artifact_type = "zip"
         elif p.name == "SHA256SUMS.txt":
@@ -493,7 +590,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--project-root", default=".")
     parser.add_argument("--version", default="0.0.0-dev")
-    parser.add_argument("--targets", default="project,chat,custom-gpt")
+    parser.add_argument("--targets", default="project,chat,custom-gpt,claude")
     args = parser.parse_args()
 
     root = Path(args.project_root).resolve()
@@ -516,6 +613,11 @@ def main() -> int:
         custom_root = build_custom(root, cfg, build_root, version)
         custom_zip = dist / f"{project_id}-custom-gpt-{version}.zip"
         stable_write_zip(custom_zip, custom_root, [p for p in custom_root.rglob("*") if p.is_file()])
+
+    if "claude" in targets and cfg.get("runtime", {}).get("claude", {}).get("enabled"):
+        claude_root = build_claude(root, cfg, build_root, version)
+        claude_zip = dist / f"{project_id}-claude-{version}.zip"
+        stable_write_zip(claude_zip, claude_root, [p for p in claude_root.rglob("*") if p.is_file()])
 
     if "project" in targets:
         project_zip = dist / f"{project_id}-project.zip"
