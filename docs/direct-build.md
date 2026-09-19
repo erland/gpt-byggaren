@@ -2,7 +2,9 @@
 
 ## Syfte
 
-GPT Byggaren ska kunna färdigställa en GPT och ge användaren nedladdningsbara artefakter direkt, utan att GitHub används.
+GPT Byggaren ska kunna färdigställa en GPT och producera persistenta artefakter direkt, utan att GitHub används.
+
+Canonical artifact-kontrakt beskriver **vad** som ska produceras. Den interaktiva runtime-adaptern avgör **hur** användaren får åtkomst till resultatet, exempelvis som nedladdningslänk i ChatGPT eller som fil i ett lokalt workspace.
 
 GitHub ska vara en valfri kanal för versionshantering och releaseautomation, inte ett krav för att få en fungerande GPT.
 
@@ -100,7 +102,7 @@ Exempel:
 
 ## Direktleveransens användarupplevelse
 
-GPT Byggaren ska normalt svara kort och ge tydliga länkar.
+När runtime stöder fil-/länkleverans ska GPT Byggaren normalt svara kort och ge tydliga länkar. Detta är adapterbeteende och inte en del av det canonical artifact-kontraktet.
 
 Exempel:
 
@@ -180,4 +182,4 @@ Direktbyggnad utan GitHub är klar när:
 - checksummor skapas,
 - leveransmanifest skapas,
 - validering körs före leverans,
-- GPT Byggaren kan ge direkta nedladdningslänkar.
+- den aktiva runtime-adaptern kan göra artefakterna tillgängliga på ett korrekt sätt.
