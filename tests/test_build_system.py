@@ -172,3 +172,42 @@ def test_custom_build_compiles_canonical_contract_snapshot():
     assert manifest["contract_snapshot"] == "builder/runtime-contract.json"
     assert report["runtime_id"] == "chatgpt_custom"
     assert report["contract_snapshot"] == "builder/runtime-contract.json"
+
+
+def test_claude_build_compiles_project_package_from_canonical_contracts():
+    import json
+    import shutil
+
+    for name in ["build", "dist"]:
+        p = ROOT / name
+        if p.exists():
+            shutil.rmtree(p)
+
+    r = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "build_distributions.py"),
+         "--project-root", str(ROOT), "--version", "0.0.0-claudecontract",
+         "--targets", "claude"],
+        capture_output=True, text=True
+    )
+    assert r.returncode == 0, r.stdout + r.stderr
+
+    claude = ROOT / "build" / "claude"
+    snapshot = json.loads((claude / "project" / "runtime-contract.json").read_text(encoding="utf-8"))
+    manifest = json.loads((claude / "MANIFEST.json").read_text(encoding="utf-8"))
+
+    assert snapshot["runtime_id"] == "claude_project"
+    assert snapshot["capabilities"]["contract_version"] == 1
+    assert snapshot["artifacts"]["contract_version"] == 1
+    assert snapshot["workspace_state"]["contract_version"] == 1
+    assert snapshot["tools"]["contract_version"] == 1
+    assert snapshot["adapter"]["claude_code_conventions"] is False
+    assert snapshot["adapter"]["project_instructions"] is True
+    assert snapshot["adapter"]["project_knowledge"] is True
+
+    assert (claude / "project" / "instructions.md").exists()
+    assert (claude / "README.md").exists()
+    assert not (claude / "CLAUDE.md").exists()
+
+    assert manifest["adapter_id"] == "claude_project"
+    assert manifest["contract_snapshot"] == "project/runtime-contract.json"
+    assert manifest["project_instructions"] == "project/instructions.md"
