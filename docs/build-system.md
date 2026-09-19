@@ -14,12 +14,13 @@ Bygger konkreta distributioner från artifact- och runtime-kontrakten:
 - Chat ZIP som realisering av `runtime_package`,
 - Custom GPT ZIP som realisering av `runtime_package`,
 - Claude Projects ZIP som realisering av `runtime_package`,
+- OpenCode ZIP som realisering av `runtime_package`,
 - delivery manifest med koppling till canonical artifact-id,
 - SHA-256-checksummor.
 
 ### `scripts/validate_distributions.py`
 
-Validerar de byggda Chat-, Custom GPT- och Claude-distributionerna.
+Validerar de byggda Chat-, Custom GPT-, Claude- och OpenCode-distributionerna.
 
 ## Lokal användning
 
@@ -99,3 +100,17 @@ Buildsystemet skapar:
 - `MANIFEST.json`.
 
 Distributionen är avsedd för vanlig Claude Projects-användning och använder inte `CLAUDE.md` eller andra Claude Code-specifika konventioner.
+
+
+## OpenCode ZIP
+
+Buildsystemet skapar en basruntime med:
+
+- `AGENTS.md`,
+- `.opencode/runtime-contract.json`,
+- `knowledge/`,
+- `README.md`,
+- `VERSION`,
+- `MANIFEST.json`.
+
+Skills och explicit tool-integration läggs på i efterföljande steg.
