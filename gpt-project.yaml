@@ -505,14 +505,24 @@ runtime_parity:
   schema: schemas/runtime-parity.schema.json
   policy: src/runtime-policy/runtime-parity-policy.md
   report_template: templates/runtime-parity-report.md.tpl
-  reference_runtime: canonical_contract
+  reference:
+    type: canonical_contract
+  registered_runtimes:
+  - chatgpt_chat
+  - chatgpt_custom
+  compared_categories:
+  - behavior
+  - capability
+  - artifact
+  - workspace_state
+  - tool
   levels:
   - full
   - high
   - moderate
   - low
   - not_viable
-  capability_states:
+  states:
   - equivalent
   - reduced
   - missing
