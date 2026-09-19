@@ -222,6 +222,7 @@ def test_opencode_build_compiles_base_workspace_from_canonical_contracts():
     snapshot = json.loads((opencode / ".opencode" / "runtime-contract.json").read_text(encoding="utf-8"))
     manifest = json.loads((opencode / "MANIFEST.json").read_text(encoding="utf-8"))
     agents = (opencode / "AGENTS.md").read_text(encoding="utf-8")
+    readme = (opencode / "README.md").read_text(encoding="utf-8")
 
     assert snapshot["runtime_id"] == "opencode"
     assert snapshot["adapter"]["workspace_first"] is True
@@ -230,6 +231,9 @@ def test_opencode_build_compiles_base_workspace_from_canonical_contracts():
     assert snapshot["adapter"]["tool_integration"] == "custom_tools"
 
     assert "OpenCode adapter" in agents
+    assert "projectRoot" in agents
+    assert "projectRoot" in readme
+    assert "runtime, inte det GPT-projekt som ska bearbetas" in readme
     assert (opencode / "AGENTS.md").exists()
     assert not (opencode / "CLAUDE.md").exists()
     skill = opencode / ".opencode" / "skills" / "gpt-project-workflow" / "SKILL.md"
