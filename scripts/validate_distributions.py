@@ -104,6 +104,20 @@ def validate_opencode(root: Path, cfg: dict) -> list[str]:
 
     if (build / "CLAUDE.md").exists():
         errors.append("OpenCode base runtime must use AGENTS.md, not CLAUDE.md")
+
+    skills_cfg = runtime_cfg.get("skills", {})
+    if skills_cfg.get("enabled"):
+        root_path = build / skills_cfg.get("root", ".opencode/skills")
+        for skill in skills_cfg.get("definitions", []):
+            skill_file = root_path / skill["id"] / "SKILL.md"
+            if not skill_file.exists():
+                errors.append(f"Missing OpenCode skill: {skill_file.relative_to(build)}")
+            else:
+                text = skill_file.read_text(encoding="utf-8")
+                if f"name: {skill['name']}" not in text:
+                    errors.append(f"OpenCode skill name mismatch: {skill['id']}")
+                if f"description: {skill['description']}" not in text:
+                    errors.append(f"OpenCode skill description mismatch: {skill['id']}")
     return errors
 
 
