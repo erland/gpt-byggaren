@@ -58,7 +58,7 @@ def test_legacy_project_reports_warning_for_file_handling_and_does_not_promote_s
             "write": "recommended",
         }
         assert report["changes"]["workspace_state"]["state"]["authority"] == "workspace_file"
-        assert report["changes"]["tools"] == {"contract_version": 1, "tools": []}
+        assert "tools" not in report["changes"]
         tool_decisions = [d for d in report["decisions"] if d["area"] == "tools"]
         assert any(d["confidence"] == "manual_review" for d in tool_decisions)
         assert any("scripts/helper.py" in d.get("evidence", []) for d in tool_decisions)
@@ -152,3 +152,30 @@ def test_missing_project_contract_is_l0_and_apply_is_blocked():
         assert report["migration"]["status"] == "manual_review"
         assert report["apply"]["result"] == "blocked"
         assert not (project / "gpt-project.yaml").exists()
+
+
+def test_apply_does_not_overwrite_unknown_capabilities_or_domain_artifacts():
+    with tempfile.TemporaryDirectory() as td:
+        project = Path(td)
+        original_caps = {
+            "web": "required",
+            "special_runtime_capability": "required",
+        }
+        original_artifacts = {
+            "project_zip": {"required": True},
+            "domain_model": {"required": True},
+        }
+        write_cfg(project, {
+            "project": {"id": "uncertain"},
+            "capabilities": original_caps,
+            "artifacts": original_artifacts,
+            "workflow": {"resume_from_project_zip": True},
+        })
+
+        report = run_migration(project, "--apply")
+        migrated = yaml.safe_load((project / "gpt-project.yaml").read_text(encoding="utf-8"))
+
+        assert report["migration"]["status"] == "ready_with_manual_review"
+        assert migrated["capabilities"] == original_caps
+        assert migrated["artifacts"] == original_artifacts
+        assert migrated["workspace_state"]["contract_version"] == 1
