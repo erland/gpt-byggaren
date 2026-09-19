@@ -1,19 +1,27 @@
-# Runtime parity policy
-
-## Regel
-
-Jämför Chat ZIP och Custom GPT per funktionell capability.
+# Runtime compatibility policy
 
 ## Referens
 
-Det canonical capability-kontraktet representerar full avsedd funktionalitet. Både Chat ZIP och Custom GPT jämförs mot detta kontrakt; ingen distribution är automatiskt referensruntime.
+Jämför varje registrerad runtime mot canonical assistant-kontraktet. Ingen runtime är automatiskt referensruntime.
 
-## Nivåer
+## Kategorier
+
+Bedöm requirement-paritet för:
+
+- behavior
+- capability
+- artifact
+- workspace_state
+- tool
+
+## States
 
 - equivalent
 - reduced
 - missing
 - not_applicable
+
+Reducerad eller saknad funktion ska ha en konkret motivering när det är relevant.
 
 ## Kritikalitet
 
@@ -21,10 +29,22 @@ Det canonical capability-kontraktet representerar full avsedd funktionalitet. B�
 - important
 - optional
 
+Saknad critical requirement kan göra just den runtime-distributionen `not_viable`.
+
+## Runtime-registrering
+
+Registrera inte en runtime som stödd endast för att schema eller adapterplan finns. Runtime ska först ha en faktisk adapter/buildväg och relevant validering.
+
 ## Release
 
-Saknad critical capability kan göra en enskild distribution `not_viable`.
+Releasebedömning sker per runtime:
 
-## Rapport
+- publish
+- publish_with_warning
+- do_not_publish
 
-Paritetsrapport ska generera underlag till `COMPATIBILITY.md` och releasebedömningen.
+En runtime får rekommenderas framför en annan endast från faktisk compatibilitydata.
+
+## Legacy
+
+Legacyrapporter för Chat ZIP/Custom GPT får normaliseras, men nya rapporter ska använda den generiska modellen.
