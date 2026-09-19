@@ -42,7 +42,38 @@ GPT Byggaren har normalt ingen förvald primär runtime. Chat ZIP och Custom GPT
 
 ### `capabilities`
 
-Anger att capabilities normalt ska rekommenderas utifrån användningsfallet i stället för att frågas fram tekniskt.
+Beskriver projektets **plattformsneutrala capability-kontrakt**. Kontraktet anger vilka förmågor assistenten behöver, inte vilket produktnamn en viss runtime använder för att realisera dem.
+
+Exempel:
+
+```yaml
+capabilities:
+  contract_version: 1
+  schema: schemas/capability-contract.schema.json
+  recommendation_mode: inferred_from_use_case
+  requirements:
+    web:
+      level: recommended
+    filesystem:
+      read: required
+      write: required
+    shell:
+      level: optional
+    code_execution:
+      level: required
+    structured_data:
+      level: required
+    persistent_state:
+      level: recommended
+    external_tools:
+      level: optional
+      preferred_protocols:
+        - mcp
+```
+
+Tillåtna nivåer är `required`, `recommended`, `optional`, `not_required` och `to_be_recommended`.
+
+Äldre projekt med fält som `data_analysis`, `file_handling`, `structured_knowledge` och motsvarande ska kunna normaliseras till detta kontrakt utan att källprojektet måste skrivas om direkt. Runtime-adaptrar ansvarar därefter för översättningen till plattformens egna capabilitybegrepp.
 
 ### `project_hygiene`
 
