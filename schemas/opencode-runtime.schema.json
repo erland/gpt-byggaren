@@ -65,16 +65,12 @@
       "type": "object",
       "required": [
         "enabled",
-        "root",
+        "directory",
         "definitions"
       ],
       "properties": {
         "enabled": {
           "type": "boolean"
-        },
-        "root": {
-          "type": "string",
-          "minLength": 1
         },
         "definitions": {
           "type": "array",
@@ -113,6 +109,10 @@
             },
             "additionalProperties": false
           }
+        },
+        "directory": {
+          "type": "string",
+          "minLength": 1
         }
       },
       "additionalProperties": false
