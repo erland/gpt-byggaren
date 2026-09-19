@@ -179,6 +179,55 @@ capabilities:
     file_handling: filesystem
     image_generation: image_generation
     structured_knowledge: structured_data
+tools:
+  contract_version: 1
+  schema: schemas/tool-contract.schema.json
+  tools:
+  - id: lint-project
+    type: script
+    requirement: required
+    purpose: Validera projektkontrakt, canonical instruktion och centrala projektregler.
+    script: scripts/lint_gpt_project.py
+    deterministic: true
+    mutates_workspace: false
+    working_directory: workspace
+    runtime_fallback: block
+  - id: recommend-next-step
+    type: script
+    requirement: required
+    purpose: Härleda rekommenderat nästa steg från faktisk projektstatus.
+    script: scripts/recommend_next_step.py
+    deterministic: true
+    mutates_workspace: false
+    working_directory: workspace
+    runtime_fallback: block
+  - id: project-hygiene
+    type: script
+    requirement: required
+    purpose: Kontrollera och vid uttryckligt fix-läge städa säkra genererade eller temporära projektfiler.
+    script: scripts/project_hygiene.py
+    deterministic: true
+    mutates_workspace: true
+    working_directory: workspace
+    runtime_fallback: manual
+  - id: build-distributions
+    type: script
+    requirement: required
+    purpose: Bygga projekt- och runtimepaket deterministiskt.
+    script: scripts/build_distributions.py
+    deterministic: true
+    mutates_workspace: true
+    working_directory: workspace
+    runtime_fallback: block
+  - id: validate-distributions
+    type: script
+    requirement: required
+    purpose: Validera byggda runtimepaket före leverans eller release.
+    script: scripts/validate_distributions.py
+    deterministic: true
+    mutates_workspace: false
+    working_directory: workspace
+    runtime_fallback: block
 analysis:
   model: docs/analysis-model.md
   recommendation_schema: schemas/analysis-recommendation.schema.json
