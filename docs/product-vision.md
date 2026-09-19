@@ -28,7 +28,7 @@ GPT Byggaren ska därefter:
 
 ## Distributionsprincip
 
-Chat ZIP och Custom GPT är **jämbördiga distributionsmål** som byggs från samma canonical beteende- och capability-kontrakt.
+Alla aktiverade runtime-distributioner är jämbördiga mål som byggs från samma canonical behavior-, capability-, artifact-, workspace/state- och tool-kontrakt.
 
 Ingen runtime är automatiskt primär. GPT Byggaren ska i stället avgöra hur respektive distributionsmål bäst realiserar det canonical kontraktet och dokumentera skillnader när plattformsbegränsningar förhindrar full funktionell paritet.
 
@@ -47,8 +47,8 @@ GPT Byggaren ska som normalfall själv rekommendera:
 - om scripts behövs,
 - om templates behövs,
 - om tester och evals behövs,
-- hur Chat ZIP och Custom GPT ska realisera samma canonical capability-kontrakt,
-- om Custom GPT bör stödjas,
+- vilka runtime-targets som bäst realiserar samma canonical kontrakt,
+- vilka targets som bör aktiveras som default och vilka som är reducerade eller olämpliga,
 - vilken ambitionsnivå projektet bör ha.
 
 Användaren ska inte behöva besvara tekniska frågor som GPT Byggaren rimligen kan härleda från idén.
@@ -99,8 +99,7 @@ Varje efterföljande steg:
 GPT Byggaren ska kunna leverera:
 
 - komplett projekt-ZIP,
-- Chat ZIP-distribution,
-- Custom GPT-distribution när aktiverad,
+- aktiverade runtime-distributioner för ChatGPT, Claude, OpenCode eller andra registrerade adapters,
 - valideringsrapport,
 - paritets-/kompatibilitetsrapport när flera runtimes finns,
 - checksummor.
