@@ -496,7 +496,7 @@ instructions:
     enabled: true
     required_markers:
     - Analysera verksamhetsbehov före teknikval.
-    - Bygg normalt både Chat ZIP och Custom GPT från samma canonical kontrakt.
+    - Bygg aktiverade runtime-distributioner från samma canonical kontrakt.
     - Knowledge beskriver referensmaterial och domäninformation.
     - Testa och validera efter varje relevant steg.
     - Rekommendera nästa steg från faktisk projektstatus.
