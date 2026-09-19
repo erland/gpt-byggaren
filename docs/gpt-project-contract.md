@@ -89,7 +89,36 @@ Beskriver GitHub-baserad releaseautomation och lokal/direct build. För GPT Bygg
 
 ### `artifacts`
 
-Beskriver vilka leveranser en färdig GPT normalt ska producera.
+Beskriver ett **plattformsneutralt artifact/output-kontrakt**: vad assistenten eller buildkedjan ska producera, oberoende av hur en viss runtime gör resultatet tillgängligt.
+
+Exempel:
+
+```yaml
+artifacts:
+  contract_version: 1
+  schema: schemas/artifact-contract.schema.json
+  outputs:
+    development_plan:
+      kind: document
+      format: markdown
+      requirement: required
+      persistence: persistent
+    project_package:
+      kind: package
+      format: zip
+      requirement: required
+      persistence: persistent
+    runtime_package:
+      kind: distribution
+      format: zip
+      requirement: required
+      persistence: persistent
+      multiplicity: many
+```
+
+Kontraktet skiljer därmed på canonical leveranser och konkreta distributionsfiler. Exempelvis kan både Chat ZIP, Custom GPT, Claude och OpenCode vara realiseringar av samma canonical `runtime_package`.
+
+Begrepp som "nedladdningsbar fil", "länk i chatten" eller en viss plattforms artifact-UI hör hemma i runtime-adaptern och ska inte krävas av canonical kontrakt.
 
 ### `workflow`
 
