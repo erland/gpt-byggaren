@@ -156,6 +156,56 @@ def scaffold_project(root, scenario, profile):
                 "knowledge_max_files": 20
             }
         },
+        "capabilities": {
+            "contract_version": 1,
+            "recommendation_mode": "inferred_from_use_case",
+            "ask_user_only_when_business_choice_is_ambiguous": True,
+            "requirements": {
+                "filesystem": {"read": "required", "write": "required"},
+                "structured_data": {"level": "recommended"},
+                "persistent_state": {"level": "required"}
+            }
+        },
+        "artifacts": {
+            "contract_version": 1,
+            "outputs": {
+                "development_plan": {
+                    "kind": "document", "format": "markdown",
+                    "requirement": "required", "persistence": "persistent"
+                },
+                "project_package": {
+                    "kind": "package", "format": "zip",
+                    "requirement": "required", "persistence": "persistent"
+                },
+                "runtime_package": {
+                    "kind": "distribution", "format": "zip",
+                    "requirement": "required", "persistence": "persistent",
+                    "multiplicity": "many"
+                }
+            }
+        },
+        "workspace_state": {
+            "contract_version": 1,
+            "workspace": {
+                "requirement": "required",
+                "persistence": "required",
+                "portable": True,
+                "separate_from_assistant": True,
+                "artifact": "project_package"
+            },
+            "state": {
+                "requirement": "required",
+                "persistence": "required",
+                "authority": "workspace_file",
+                "format": "yaml",
+                "path": "project-status.yaml",
+                "conversation_fallback": False
+            },
+            "runtime_preferences": {
+                "chat": "conversation_or_file",
+                "agent": "workspace_file"
+            }
+        },
         "development": {
             "plan": "docs/development-plan.md",
             "status": "project-status.yaml"
@@ -306,6 +356,9 @@ def run(root, scenario_path):
             "project_status": (generated_project / "project-status.yaml").exists(),
             "development_plan": (generated_project / "docs" / "development-plan.md").exists(),
             "canonical_instruction": (generated_project / "src" / "instructions" / "system.md").exists(),
+            "capability_contract": "requirements" in cfg.get("capabilities", {}),
+            "artifact_contract": "outputs" in cfg.get("artifacts", {}),
+            "workspace_state_contract": cfg.get("workspace_state", {}).get("state", {}).get("authority") == "workspace_file",
             "readme": (generated_project / "README.md").exists(),
             "github_ci": (generated_project / ".github" / "workflows" / "ci.yml").exists(),
             "github_release": (generated_project / ".github" / "workflows" / "release.yml").exists(),
