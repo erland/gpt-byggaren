@@ -8,12 +8,12 @@ Steg 14 introducerar den första körbara toolchainen för att bygga GPT-projekt
 
 ### `scripts/build_distributions.py`
 
-Bygger:
+Bygger konkreta distributioner från artifact- och runtime-kontrakten:
 
-- projekt-ZIP,
-- Chat ZIP,
-- Custom GPT ZIP,
-- manifest,
+- projekt-ZIP som realisering av `project_package`,
+- Chat ZIP som realisering av `runtime_package`,
+- Custom GPT ZIP som realisering av `runtime_package`,
+- delivery manifest med koppling till canonical artifact-id,
 - SHA-256-checksummor.
 
 ### `scripts/validate_distributions.py`
