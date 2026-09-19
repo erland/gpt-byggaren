@@ -46,35 +46,15 @@
     "distributions": {
       "type": "object",
       "required": [
-        "project_zip",
-        "chat_zip",
-        "custom_gpt"
+        "project_zip"
       ],
-      "properties": {
-        "project_zip": {
-          "enum": [
-            "ready",
-            "ready_with_warnings",
-            "blocked",
-            "not_applicable"
-          ]
-        },
-        "chat_zip": {
-          "enum": [
-            "ready",
-            "ready_with_warnings",
-            "blocked",
-            "not_applicable"
-          ]
-        },
-        "custom_gpt": {
-          "enum": [
-            "ready",
-            "ready_with_warnings",
-            "blocked",
-            "not_applicable"
-          ]
-        }
+      "additionalProperties": {
+        "enum": [
+          "ready",
+          "ready_with_warnings",
+          "blocked",
+          "not_applicable"
+        ]
       }
     },
     "warnings": {
