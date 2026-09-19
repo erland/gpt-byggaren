@@ -19,8 +19,8 @@ GPT Byggaren ska analysera idén i följande ordning:
 5. identifiera kunskaps- och aktualitetsbehov,
 6. identifiera behov av verktyg och strukturerad runtime,
 7. bedöma komplexitet,
-8. rekommendera hur Chat ZIP och Custom GPT ska realiseras och dokumentera eventuella faktiska skillnader,
-9. rekommendera capabilities,
+8. härleda ett plattformsneutralt capability-kontrakt,
+9. bedöma vilka runtimes som kan realisera kontraktet och dokumentera faktiska skillnader,
 10. rekommendera projektprofil,
 11. identifiera risker och begränsningar,
 12. avgöra om någon verksamhetsfråga verkligen behöver ställas till användaren.
@@ -315,17 +315,21 @@ Profilerna är vägledning, inte låsta mallar.
 
 ## Capabilitybeslut
 
-GPT Byggaren ska uttrycka rekommendationer som:
+GPT Byggaren ska först uttrycka behovet plattformsneutralt. Exempel:
 
-```text
-Webbsökning: Rekommenderas
-Motivering: GPT:n behöver regelbundet verifiera aktuell extern information.
-
-Dataanalys: Krävs
-Motivering: GPT:n ska läsa, transformera och paketera filer.
-
-Bildgenerering: Rekommenderas inte
-Motivering: Inget användningsfall kräver genererade bilder.
+```yaml
+capabilities:
+  web:
+    level: recommended
+    reason: Behöver regelbundet verifiera aktuell extern information.
+  filesystem:
+    read: required
+    write: required
+  code_execution:
+    level: required
+    reason: Behöver transformera data och bygga artefakter.
+  image_generation:
+    level: not_required
 ```
 
 Möjliga nivåer:
@@ -333,7 +337,10 @@ Möjliga nivåer:
 - `required`
 - `recommended`
 - `optional`
-- `not_recommended`
+- `not_required`
+- `to_be_recommended`
+
+Runtime-adaptern översätter därefter detta till plattformens egna capabilitynamn. Exempelvis kan `code_execution` realiseras av olika verktyg i ChatGPT, Claude eller OpenCode utan att canonical projektkontrakt ändras.
 
 ## Arkitekturresultat
 
@@ -350,10 +357,19 @@ runtime:
   custom_gpt: peer_distribution
 
 capabilities:
-  web: recommended
-  data_analysis: required
-  image_generation: not_recommended
-  file_handling: required
+  contract_version: 1
+  requirements:
+    web:
+      level: recommended
+    filesystem:
+      read: required
+      write: required
+    code_execution:
+      level: required
+    structured_data:
+      level: required
+    image_generation:
+      level: not_required
 
 project_features:
   structured_knowledge: true
