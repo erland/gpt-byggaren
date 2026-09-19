@@ -48,29 +48,15 @@ jobs:
         run: python scripts/assess_release_readiness.py --project-root . --include-build-state
 
       - name: Verify release filenames
-        shell: bash
-        run: |
-          set -euo pipefail
-          VERSION="${{ steps.version.outputs.version }}"
-          test -f "dist/gpt-byggaren-project.zip"
-          test -f "dist/gpt-byggaren-chat-${VERSION}.zip"
-          test -f "dist/gpt-byggaren-custom-gpt-${VERSION}.zip"
-          test -f "dist/gpt-byggaren-claude-${VERSION}.zip"
-          test -f "dist/gpt-byggaren-opencode-${VERSION}.zip"
-          test -f "dist/SHA256SUMS.txt"
-          test -f "dist/DELIVERY-MANIFEST.json"
+        run: python scripts/verify_distribution_outputs.py --project-root . --version "${{ steps.version.outputs.version }}"
       - name: Upload release artifacts
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          gh release upload "${{ github.event.release.tag_name }}" \
-            dist/gpt-byggaren-project.zip \
-            dist/gpt-byggaren-chat-${{ steps.version.outputs.version }}.zip \
-            dist/gpt-byggaren-custom-gpt-${{ steps.version.outputs.version }}.zip \
-            dist/gpt-byggaren-claude-${{ steps.version.outputs.version }}.zip \
-            dist/gpt-byggaren-opencode-${{ steps.version.outputs.version }}.zip \
-            dist/SHA256SUMS.txt \
-            dist/DELIVERY-MANIFEST.json \
-            --clobber
+          mapfile -t FILES < <(python scripts/verify_distribution_outputs.py \
+            --project-root . \
+            --version "${{ steps.version.outputs.version }}" \
+            --print-files)
+          gh release upload "${{ github.event.release.tag_name }}" "${FILES[@]}" --clobber
