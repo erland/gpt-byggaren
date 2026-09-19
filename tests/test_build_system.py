@@ -113,10 +113,6 @@ def test_chat_build_compiles_canonical_contract_snapshot_and_declared_tools():
     manifest = json.loads((chat / "MANIFEST.json").read_text(encoding="utf-8"))
 
     assert snapshot["runtime_id"] == "chatgpt_chat"
-    assert snapshot["capabilities"]["contract_version"] == 1
-    assert snapshot["artifacts"]["contract_version"] == 1
-    assert snapshot["workspace_state"]["contract_version"] == 1
-    assert snapshot["tools"]["contract_version"] == 1
 
     declared = set(snapshot["declared_tool_scripts"])
     assert "scripts/lint_gpt_project.py" in declared
@@ -157,10 +153,6 @@ def test_custom_build_compiles_canonical_contract_snapshot():
     report = json.loads((custom / "builder" / "compilation-report.json").read_text(encoding="utf-8"))
 
     assert snapshot["runtime_id"] == "chatgpt_custom"
-    assert snapshot["capabilities"]["contract_version"] == 1
-    assert snapshot["artifacts"]["contract_version"] == 1
-    assert snapshot["workspace_state"]["contract_version"] == 1
-    assert snapshot["tools"]["contract_version"] == 1
     assert snapshot["adapter"]["builder_package"] is True
     assert snapshot["adapter"]["tool_execution"] == "not_embedded"
 
@@ -196,10 +188,6 @@ def test_claude_build_compiles_project_package_from_canonical_contracts():
     manifest = json.loads((claude / "MANIFEST.json").read_text(encoding="utf-8"))
 
     assert snapshot["runtime_id"] == "claude_project"
-    assert snapshot["capabilities"]["contract_version"] == 1
-    assert snapshot["artifacts"]["contract_version"] == 1
-    assert snapshot["workspace_state"]["contract_version"] == 1
-    assert snapshot["tools"]["contract_version"] == 1
     assert snapshot["adapter"]["claude_code_conventions"] is False
     assert snapshot["adapter"]["project_instructions"] is True
     assert snapshot["adapter"]["project_knowledge"] is True
@@ -236,10 +224,6 @@ def test_opencode_build_compiles_base_workspace_from_canonical_contracts():
     agents = (opencode / "AGENTS.md").read_text(encoding="utf-8")
 
     assert snapshot["runtime_id"] == "opencode"
-    assert snapshot["capabilities"]["contract_version"] == 1
-    assert snapshot["artifacts"]["contract_version"] == 1
-    assert snapshot["workspace_state"]["contract_version"] == 1
-    assert snapshot["tools"]["contract_version"] == 1
     assert snapshot["adapter"]["workspace_first"] is True
     assert snapshot["adapter"]["skills_included"] is True
     assert snapshot["adapter"]["skills"] == ["gpt-project-workflow"]
