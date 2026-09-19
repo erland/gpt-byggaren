@@ -335,3 +335,8 @@ Projektet har nu ett standardiserat evalpaket för bootstrap, multi-turn retenti
 ## GitHub-standard
 
 Nya GPT-projekt ska normalt innehålla `README.md`, `.github/workflows/ci.yml` och `.github/workflows/release.yml`. GitHub-stöd är standard men kan väljas bort för uttryckligen lokala eller GitHub-fria projekt. Releaseversion ska härledas från GitHub Release-taggen.
+
+
+## Legacy migration
+
+Äldre GPT Byggaren-projekt ska kunna migreras till de plattformsneutrala kontrakten utan att domänbeteendet skrivs om. Migrationen ska först inventera och rapportera säkra respektive osäkra förändringar. Scripts får inte automatiskt bli runtime-tools enbart på grund av sin placering. Se `docs/legacy-migration-analysis.md`.
