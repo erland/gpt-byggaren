@@ -37,8 +37,12 @@ När första genomförandesteget görs ska planen följa med i projekt-ZIP:en so
 
 Utvecklingsplanen ska härledas från analysens `runtime.candidates`.
 
+Innan planen skapas ska analysen valideras mot `schemas/analysis-recommendation.schema.json`. Skapa inte en utvecklingsplan från ett partiellt runtime-resultat.
+
 För varje kandidat med `activate_by_default: true` ska planen innehålla ett konkret runtime-/adaptersteg eller tydligt kombinera flera likvärdiga adapters i samma steg när det är praktiskt.
 
 En kandidat med `suitability: reduced` får aktiveras endast om analysen uttryckligen motiverar det. En kandidat med `not_recommended` ska normalt inte byggas.
+
+Projektets `build_system.targets` ska innehålla varje default-aktiverad runtime. Om en aktiverad runtime saknas från build-targets är planen ogiltig och ska korrigeras före fortsatt genomförande.
 
 Runtime parity och release readiness ska omfatta samtliga aktiverade runtimes.
