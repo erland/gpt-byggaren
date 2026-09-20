@@ -56,4 +56,6 @@ Vid nyprojekt ska analysen minst bedöma projektets registrerade peer runtimes:
 - Claude Projects,
 - OpenCode.
 
+Analysen är inte komplett förrän samtliga registrerade runtimes finns som explicita kandidater. Saknad kandidat är ett valideringsfel, inte ett implicit `not_recommended`. Varje kandidat ska dessutom ha ett explicit `activate_by_default: true|false`.
+
 Bedömningen ska inte förvälja ChatGPT-distributionerna. Varje runtime ska få suitability, rationale och eventuell default-aktivering utifrån canonical kontrakt och faktiska plattformsbegränsningar.
