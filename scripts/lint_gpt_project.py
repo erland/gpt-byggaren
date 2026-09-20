@@ -149,6 +149,63 @@ def lint(root: Path) -> dict:
             except Exception as exc:
                 findings.append(finding("GP162", "error", f"Invalid tool contract: {exc}", "gpt-project.yaml"))
 
+    # New-project runtime completeness. Policy text alone is not sufficient: a faster
+    # reasoning mode must not be able to silently collapse peer evaluation to Chat + Custom GPT.
+    analysis_runtime = cfg.get("analysis", {}).get("runtime")
+    if isinstance(analysis_runtime, dict) and analysis_runtime.get("strategy") == "peer_candidates":
+        candidates = analysis_runtime.get("candidates") or []
+        candidate_ids = [item.get("runtime_id") for item in candidates if isinstance(item, dict)]
+        if len(candidate_ids) != len(set(candidate_ids)):
+            findings.append(finding("GP170", "error", "Duplicate runtime candidates in analysis", "gpt-project.yaml"))
+
+        registered_ids = cfg.get("runtime_parity", {}).get("registered_runtimes") or []
+        if not registered_ids:
+            registered_ids = [
+                item.get("runtime_id")
+                for item in (cfg.get("build_system", {}).get("runtime_targets") or {}).values()
+                if isinstance(item, dict) and item.get("runtime_id")
+            ]
+        missing = sorted(set(registered_ids) - set(candidate_ids))
+        if missing:
+            findings.append(finding(
+                "GP171", "error",
+                "Analysis is missing registered runtime candidates: " + ", ".join(missing),
+                "gpt-project.yaml"
+            ))
+
+        for item in candidates:
+            if isinstance(item, dict) and "activate_by_default" not in item:
+                findings.append(finding(
+                    "GP172", "error",
+                    f"Runtime candidate {item.get('runtime_id', '<unknown>')} is missing activate_by_default",
+                    "gpt-project.yaml"
+                ))
+
+        runtime_targets = cfg.get("build_system", {}).get("runtime_targets") or {}
+        target_for_runtime = {
+            item.get("runtime_id"): target
+            for target, item in runtime_targets.items()
+            if isinstance(item, dict) and item.get("runtime_id")
+        }
+        selected_targets = set(cfg.get("build_system", {}).get("targets") or [])
+        for item in candidates:
+            if not isinstance(item, dict) or not item.get("activate_by_default"):
+                continue
+            runtime_id = item.get("runtime_id")
+            target = target_for_runtime.get(runtime_id)
+            if not target:
+                findings.append(finding(
+                    "GP173", "error",
+                    f"Default-active runtime {runtime_id} has no build target",
+                    "gpt-project.yaml"
+                ))
+            elif target not in selected_targets:
+                findings.append(finding(
+                    "GP174", "error",
+                    f"Default-active runtime {runtime_id} is omitted from build_system.targets",
+                    "gpt-project.yaml"
+                ))
+
     # Small-model/runtime-complexity contract. This is opt-in per project but GPT Byggaren
     # should generate it for new projects. Critical behavior must be directly present in the
     # canonical instruction; supporting files may deepen behavior but not be required to recover it.

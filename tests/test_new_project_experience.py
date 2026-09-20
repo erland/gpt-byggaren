@@ -23,6 +23,18 @@ def test_analysis_recommendation_supports_peer_runtime_candidates():
                     "activate_by_default": True,
                 },
                 {
+                    "runtime_id": "chatgpt_custom",
+                    "suitability": "equivalent",
+                    "rationale": "Custom GPT kan bära kärnflödet.",
+                    "activate_by_default": True,
+                },
+                {
+                    "runtime_id": "claude_project",
+                    "suitability": "equivalent",
+                    "rationale": "Claude Projects kan bära samma canonical kontrakt.",
+                    "activate_by_default": True,
+                },
+                {
                     "runtime_id": "opencode",
                     "suitability": "reduced",
                     "rationale": "Agentiskt workspace är möjligt men inte nödvändigt.",
@@ -36,6 +48,51 @@ def test_analysis_recommendation_supports_peer_runtime_candidates():
 
     jsonschema.Draft202012Validator(schema).validate(recommendation)
     assert "primary" not in recommendation["runtime"]
+    assert {c["runtime_id"] for c in recommendation["runtime"]["candidates"]} == {
+        "chatgpt_chat", "chatgpt_custom", "claude_project", "opencode"
+    }
+
+
+def test_analysis_recommendation_rejects_missing_registered_runtime():
+    schema = json.loads(
+        (ROOT / "schemas" / "analysis-recommendation.schema.json").read_text(encoding="utf-8")
+    )
+    recommendation = {
+        "recommended_profile": "standard",
+        "runtime": {
+            "strategy": "peer_candidates",
+            "candidates": [
+                {"runtime_id": "chatgpt_chat", "suitability": "equivalent", "rationale": "ok", "activate_by_default": True},
+                {"runtime_id": "chatgpt_custom", "suitability": "equivalent", "rationale": "ok", "activate_by_default": True},
+            ],
+        },
+        "capabilities": {},
+        "project_features": {},
+    }
+    errors = list(jsonschema.Draft202012Validator(schema).iter_errors(recommendation))
+    assert errors
+
+
+def test_analysis_recommendation_requires_explicit_default_decision():
+    schema = json.loads(
+        (ROOT / "schemas" / "analysis-recommendation.schema.json").read_text(encoding="utf-8")
+    )
+    recommendation = {
+        "recommended_profile": "standard",
+        "runtime": {
+            "strategy": "peer_candidates",
+            "candidates": [
+                {"runtime_id": "chatgpt_chat", "suitability": "equivalent", "rationale": "ok", "activate_by_default": True},
+                {"runtime_id": "chatgpt_custom", "suitability": "equivalent", "rationale": "ok", "activate_by_default": True},
+                {"runtime_id": "claude_project", "suitability": "equivalent", "rationale": "ok", "activate_by_default": True},
+                {"runtime_id": "opencode", "suitability": "reduced", "rationale": "ok"},
+            ],
+        },
+        "capabilities": {},
+        "project_features": {},
+    }
+    errors = list(jsonschema.Draft202012Validator(schema).iter_errors(recommendation))
+    assert errors
 
 
 def test_reference_profiles_use_peer_candidate_strategy():
