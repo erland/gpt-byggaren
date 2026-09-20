@@ -132,3 +132,65 @@ def test_linter_requires_github_workflows_when_enabled(tmp_path):
     codes = {f["code"] for f in report["findings"]}
     assert "GP400" in codes
     assert "GP410" in codes
+
+
+def test_linter_rejects_incomplete_peer_runtime_analysis(tmp_path):
+    import yaml
+    _write_minimal_project(tmp_path, "# GPT\n", {"enabled": False})
+    cfg = yaml.safe_load((tmp_path / "gpt-project.yaml").read_text(encoding="utf-8"))
+    cfg["analysis"] = {
+        "runtime": {
+            "strategy": "peer_candidates",
+            "candidates": [
+                {"runtime_id": "chatgpt_chat", "suitability": "equivalent", "rationale": "ok", "activate_by_default": True},
+                {"runtime_id": "chatgpt_custom", "suitability": "equivalent", "rationale": "ok", "activate_by_default": True},
+            ],
+        }
+    }
+    cfg["build_system"] = {
+        "targets": ["project", "chat", "custom-gpt"],
+        "runtime_targets": {
+            "chat": {"runtime_id": "chatgpt_chat"},
+            "custom-gpt": {"runtime_id": "chatgpt_custom"},
+            "claude": {"runtime_id": "claude_project"},
+            "opencode": {"runtime_id": "opencode"},
+        },
+    }
+    (tmp_path / "gpt-project.yaml").write_text(
+        yaml.safe_dump(cfg, allow_unicode=True, sort_keys=False), encoding="utf-8"
+    )
+    r, report = _run_linter(tmp_path)
+    assert r.returncode == 1
+    assert any(f["code"] == "GP171" for f in report["findings"])
+
+
+def test_linter_rejects_default_runtime_omitted_from_build_targets(tmp_path):
+    import yaml
+    _write_minimal_project(tmp_path, "# GPT\n", {"enabled": False})
+    cfg = yaml.safe_load((tmp_path / "gpt-project.yaml").read_text(encoding="utf-8"))
+    cfg["analysis"] = {
+        "runtime": {
+            "strategy": "peer_candidates",
+            "candidates": [
+                {"runtime_id": "chatgpt_chat", "suitability": "equivalent", "rationale": "ok", "activate_by_default": True},
+                {"runtime_id": "chatgpt_custom", "suitability": "equivalent", "rationale": "ok", "activate_by_default": True},
+                {"runtime_id": "claude_project", "suitability": "equivalent", "rationale": "ok", "activate_by_default": True},
+                {"runtime_id": "opencode", "suitability": "reduced", "rationale": "ok", "activate_by_default": False},
+            ],
+        }
+    }
+    cfg["build_system"] = {
+        "targets": ["project", "chat", "custom-gpt"],
+        "runtime_targets": {
+            "chat": {"runtime_id": "chatgpt_chat"},
+            "custom-gpt": {"runtime_id": "chatgpt_custom"},
+            "claude": {"runtime_id": "claude_project"},
+            "opencode": {"runtime_id": "opencode"},
+        },
+    }
+    (tmp_path / "gpt-project.yaml").write_text(
+        yaml.safe_dump(cfg, allow_unicode=True, sort_keys=False), encoding="utf-8"
+    )
+    r, report = _run_linter(tmp_path)
+    assert r.returncode == 1
+    assert any(f["code"] == "GP174" and "claude_project" in f["message"] for f in report["findings"])
