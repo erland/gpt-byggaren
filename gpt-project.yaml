@@ -158,19 +158,6 @@ runtime:
     enabled: true
     role: peer_distribution
     mode: openai_plugin
-    schema: schemas/plugin-runtime.schema.json
-    policy: src/runtime-policy/plugin-runtime-policy.md
-    model: docs/plugin-runtime.md
-    layout:
-      manifest: plugin.json
-      skills: skills
-      references: references
-      assets: assets
-      scripts: scripts
-    validation:
-      require_manifest: true
-      require_skill: true
-      require_skill_frontmatter: true
   custom_gpt:
     enabled: true
     role: peer_distribution
