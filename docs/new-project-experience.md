@@ -16,6 +16,8 @@ En användare ska kunna starta ett nytt GPT-projekt genom att beskriva verksamhe
 
 ## Runtime-resultat
 
+Nya projekt använder en komplett peer-kandidatlista. Alla registrerade runtimes måste bedömas explicit; en runtime får inte hoppas över som en genväg.
+
 Nya projekt använder:
 
 ```yaml
@@ -26,6 +28,18 @@ runtime:
       suitability: equivalent
       activate_by_default: true
       rationale: ...
+    - runtime_id: chatgpt_custom
+      suitability: equivalent
+      activate_by_default: true
+      rationale: ...
+    - runtime_id: claude_project
+      suitability: equivalent
+      activate_by_default: true
+      rationale: ...
+    - runtime_id: opencode
+      suitability: reduced
+      activate_by_default: false
+      rationale: ...
 ```
 
 `suitability` är:
@@ -33,6 +47,8 @@ runtime:
 - `equivalent`
 - `reduced`
 - `not_recommended`
+
+Varje kandidat måste ange `activate_by_default` explicit. För GPT Byggarens nu registrerade runtimes innebär detta att analysen minst innehåller ChatGPT Chat, Custom GPT, Claude Projects och OpenCode.
 
 Ingen runtime ska göras primär enbart på grund av historisk GPT Byggaren-arkitektur.
 
