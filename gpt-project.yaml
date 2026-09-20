@@ -158,6 +158,7 @@ runtime:
     enabled: true
     role: peer_distribution
     mode: openai_plugin
+    policy: src/runtime-policy/plugin-runtime-policy.md
   custom_gpt:
     enabled: true
     role: peer_distribution
