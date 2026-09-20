@@ -29,13 +29,14 @@
         },
         "candidates": {
           "type": "array",
-          "minItems": 1,
+          "minItems": 4,
           "items": {
             "type": "object",
             "required": [
               "runtime_id",
               "suitability",
-              "rationale"
+              "rationale",
+              "activate_by_default"
             ],
             "properties": {
               "runtime_id": {
@@ -58,7 +59,61 @@
               }
             },
             "additionalProperties": false
-          }
+          },
+          "allOf": [
+            {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "runtime_id": {
+                    "const": "chatgpt_chat"
+                  }
+                },
+                "required": [
+                  "runtime_id"
+                ]
+              }
+            },
+            {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "runtime_id": {
+                    "const": "chatgpt_custom"
+                  }
+                },
+                "required": [
+                  "runtime_id"
+                ]
+              }
+            },
+            {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "runtime_id": {
+                    "const": "claude_project"
+                  }
+                },
+                "required": [
+                  "runtime_id"
+                ]
+              }
+            },
+            {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "runtime_id": {
+                    "const": "opencode"
+                  }
+                },
+                "required": [
+                  "runtime_id"
+                ]
+              }
+            }
+          ]
         },
         "primary": {
           "type": "string"
