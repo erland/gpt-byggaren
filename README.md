@@ -39,30 +39,28 @@ Utöver runtime-distributionerna finns **projekt-ZIP:en**, som innehåller hela 
 
 ## Kom igång som användare
 
-Det enklaste sättet är att använda en byggd release av GPT Byggaren.
+Det enklaste sättet är att använda en byggd release av GPT Byggaren. Välj den runtime som passar arbetssättet; de bygger på samma canonical beteende men installeras olika.
 
-### Alternativ 1 – Chat ZIP
+### ChatGPT Chat / Chat ZIP
 
-1. Hämta den senaste Chat ZIP-distributionen från GitHub Releases.
+1. Hämta Chat ZIP-distributionen från GitHub Releases.
 2. Bifoga ZIP-filen i en ny ChatGPT-konversation.
 3. Be ChatGPT använda ZIP-filen som GPT Byggaren-kontext.
-4. Beskriv GPT:n du vill skapa, till exempel:
+4. Beskriv GPT:n du vill skapa.
 
-```text
-Jag vill bygga en GPT som hjälper mig analysera remisser och bedöma hur de påverkar min organisation.
-```
+### Custom GPT
 
-Därefter kan du normalt fortsätta med enkla instruktioner som:
+Custom GPT-distributionen innehåller material för ChatGPT Builder: kompilerade instruktioner, conversation starters, capabilities och Knowledge-paket.
 
-```text
-Gör nästa steg och ge mig en uppdaterad zip.
-```
+### Claude Projects
 
-### Alternativ 2 – Custom GPT
+Claude-distributionen innehåller Project Instructions, Knowledge-material och runtime-contract för att sätta upp GPT Byggaren som ett Claude Project.
 
-Custom GPT-distributionen innehåller det material som behövs för att konfigurera GPT Byggaren i ChatGPT Builder, inklusive kompilerade instruktioner, conversation starters, capabilities och Knowledge-paket.
+### OpenCode
 
-Se paketets README och kompatibilitetsrapport för exakt innehåll och eventuella plattformsbegränsningar.
+OpenCode-distributionen är ett agentiskt workspace med `AGENTS.md`, projektlokala Skills och explicita custom tools. Den passar särskilt när GPT Byggaren ska arbeta stegvis mot ett persistent projekt/workspace.
+
+Oavsett runtime ska nyprojektsanalysen bedöma **alla registrerade peer runtimes** för GPT:n som byggs. Den ska inte automatiskt begränsa det nya projektet till samma runtime som GPT Byggaren själv råkar köras i.
 
 Mer detaljerad användarguide finns i [`docs/getting-started.md`](docs/getting-started.md).
 
