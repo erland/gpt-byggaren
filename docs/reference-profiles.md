@@ -15,11 +15,11 @@ Passar när:
 - uppgiften är relativt enkel,
 - Knowledge är litet eller saknas,
 - inga lokala scripts behövs,
-- Custom GPT kan vara likvärdig med Chat runtime.
+- flera runtimes kan vara funktionellt likvärdiga.
 
 Typiska val:
 
-- Custom GPT och/eller Chat,
+- en eller flera peer runtimes som analysen bedömer lämpliga,
 - få filer,
 - grundläggande tester,
 - liten evaluppsättning.
@@ -31,7 +31,7 @@ Passar när:
 - GPT:n har tydligt arbetsflöde,
 - viss Knowledge finns,
 - strukturerade outputs eller templates kan behövas,
-- både Chat ZIP och Custom GPT är realistiska mål.
+- flera runtime-adapters kan vara realistiska mål.
 
 Typiska val:
 
@@ -40,22 +40,22 @@ Typiska val:
 - runtime smoke tests,
 - centrala beteendeevalueringar.
 
-### Advanced dual distribution (`zip_first_advanced` legacy id)
+### Advanced multi-runtime (`zip_first_advanced` legacy id)
 
 Passar när:
 
 - GPT:n behöver många runtimefiler,
 - scripts eller schemas är centrala,
 - den manipulerar projekt-ZIP/repositories,
-- Custom GPT-plattformen riskerar att reducera funktionaliteten.
+- vissa plattformar kan behöva reducerad funktionalitet.
 
 Typiska val:
 
-- Chat ZIP och Custom GPT som två distributionsmål från samma canonical kontrakt,
+- peer runtimes väljs från samma canonical kontrakt,
 - scripts + schemas,
 - rik strukturerad Knowledge,
 - omfattande tester och regression,
-- Custom GPT som parallell distribution med dokumenterade plattformsbegränsningar vid behov.
+- ChatGPT Chat, Custom GPT, Claude Projects och OpenCode bedöms var för sig och aktiveras när de passar.
 
 ### Workflow / research heavy
 
@@ -68,7 +68,7 @@ Passar när:
 
 Typiska val:
 
-- Chat ZIP och Custom GPT som två distributionsmål från samma canonical kontrakt,
+- flera peer runtimes från samma canonical kontrakt när de passar,
 - strukturerad Knowledge,
 - templates,
 - workflow-evals,
@@ -86,7 +86,7 @@ GPT Byggaren väger bland annat:
 - strukturerad Knowledge,
 - käll/evidenskrav,
 - projekt-ZIP-manipulation,
-- Custom GPT-begränsningar.
+- plattformsspecifika runtimebegränsningar.
 
 ## Profiler är startpunkter
 
