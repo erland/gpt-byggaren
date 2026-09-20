@@ -16,7 +16,14 @@ Välj närmaste profil från användningsfallet och dokumentera avvikelser.
 - schemas
 - fil- och ZIP-hantering
 - käll/evidenskrav
-- Custom GPT-begränsningar
+- runtime-/adapterbegränsningar över samtliga registrerade peer runtimes
 
 ## Fråga inte
 Be normalt inte användaren välja profil.
+
+
+## Runtime-neutralitet
+
+Profilen beskriver projektets komplexitet och kvalitetsbehov, inte ett fast distributionspar.
+
+Efter profilval ska ChatGPT Chat, ChatGPT Custom, Claude Projects och OpenCode bedömas separat från canonical kontrakt. Profilen får inte i sig göra Chat/Custom till default.

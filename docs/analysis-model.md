@@ -257,11 +257,11 @@ Typiska kännetecken:
 - strukturerad instruktion,
 - flera Knowledge-filer,
 - testsupport,
-- två distributioner,
+- en eller flera runtime-distributioner härledda från behovet,
 - GitHub Actions,
 - begränsad runtime-logik.
 
-### Profil 3 – ZIP-first avancerad
+### Profil 3 – Avancerad multi-runtime (`zip_first_advanced` legacy id)
 
 Typiska kännetecken:
 
@@ -271,7 +271,7 @@ Typiska kännetecken:
 - templates,
 - strukturerad Knowledge,
 - projekt-ZIP som aktiv arbetsprodukt,
-- Custom GPT som reducerad distribution.
+- vissa runtimes kan behöva reducerad funktionalitet.
 
 ### Profil 4 – Workflow/research-heavy
 
@@ -290,29 +290,23 @@ Profilerna är vägledning, inte låsta mallar.
 
 ## Runtimebeslut
 
-### När Chat ZIP kan bära capabilities som Custom GPT inte kan
+Runtimebeslut ska göras efter canonical kontrakt och över samtliga registrerade peer runtimes.
 
-- GPT:n behöver många runtimefiler,
-- scripts är viktiga,
-- projekt-ZIP ska manipuleras,
-- Custom GPT-gränser sannolikt blir ett hinder,
-- funktionalitet måste vara rikare än Custom GPT tillåter.
+För varje runtime ska GPT Byggaren ange:
 
-### Rekommendera Custom GPT som likvärdig runtime när
+- `runtime_id`,
+- `suitability`: `equivalent`, `reduced` eller `not_recommended`,
+- `rationale`,
+- `activate_by_default`.
 
-- instruktion och Knowledge ryms naturligt,
-- inga ZIP-specifika scripts behövs,
-- funktionaliteten kan representeras utan större kompromisser.
+Minst följande runtimes ska bedömas när de är registrerade i GPT Byggaren:
 
-### När Custom GPT kan behöva reducerad capability-täckning
+- ChatGPT Chat,
+- ChatGPT Custom,
+- Claude Projects,
+- OpenCode.
 
-- kärnfunktionaliteten kan bevaras,
-- men delar av ZIP-runtime behöver reduceras.
-
-### Rekommendera att inte bygga Custom GPT när
-
-- funktionen skulle bli missvisande eller alltför reducerad,
-- runtimekrav inte kan representeras meningsfullt.
+Chat ZIP och Custom GPT får inte behandlas som ett implicit standardpar. OpenCode bör exempelvis väga positivt när persistent workspace, scripts och stegvis projektarbete är centralt. Claude Projects bör bedömas utifrån project instructions/knowledge och eventuella tool/state-begränsningar.
 
 ## Capabilitybeslut
 
@@ -360,6 +354,14 @@ runtime:
       activate_by_default: true
       rationale: ...
     - runtime_id: chatgpt_custom
+      suitability: equivalent
+      activate_by_default: true
+      rationale: ...
+    - runtime_id: claude_project
+      suitability: reduced
+      activate_by_default: false
+      rationale: ...
+    - runtime_id: opencode
       suitability: equivalent
       activate_by_default: true
       rationale: ...
