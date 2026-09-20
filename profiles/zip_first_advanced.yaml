@@ -1,7 +1,6 @@
 id: zip_first_advanced
-title: Advanced dual distribution
-description: Avancerad GPT där både Chat ZIP och Custom GPT byggs från samma canonical
-  capability-kontrakt. Skillnader dokumenteras per capability.
+title: Advanced multi-runtime
+description: Avancerad GPT med rik runtime, scripts och strukturerat workspace. Aktiverade runtimes härleds från canonical kontrakt och kan omfatta ChatGPT, Claude och agentiska runtimes.
 runtime_selection:
   strategy: peer_candidates
   infer_from_canonical_contracts: true
