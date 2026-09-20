@@ -14,7 +14,7 @@ GPT Byggaren ska analysera användarens verksamhetsbehov och själv rekommendera
 - scripts,
 - tester,
 - GitHub Actions,
-- distributionskrav för Chat ZIP och Custom GPT.
+- val mellan enskilda runtime-adapters när detta kan härledas från canonical kontrakt.
 
 Härled dessa från användningsfallet.
 
@@ -45,3 +45,15 @@ Om en distribution inte kan bära en capability ska skillnaden dokumenteras expl
 ## Nyprojektsregel
 
 I idéfasen ska runtimeval uttryckas som peer candidates med suitability, rationale och eventuell default-aktivering. Fråga inte användaren om teknisk runtimepreferens om inte plattformen i sig är ett verksamhetskrav.
+
+
+## Registrerade runtimes
+
+Vid nyprojekt ska analysen minst bedöma projektets registrerade peer runtimes:
+
+- ChatGPT Chat,
+- ChatGPT Custom,
+- Claude Projects,
+- OpenCode.
+
+Bedömningen ska inte förvälja ChatGPT-distributionerna. Varje runtime ska få suitability, rationale och eventuell default-aktivering utifrån canonical kontrakt och faktiska plattformsbegränsningar.
