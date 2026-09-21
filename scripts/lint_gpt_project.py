@@ -102,6 +102,29 @@ def lint(root: Path) -> dict:
             except Exception as exc:
                 findings.append(finding("GP131", "error", f"Invalid capability contract: {exc}", "gpt-project.yaml"))
 
+    skills = cfg.get("skills")
+    if isinstance(skills, dict):
+        schema_ref = skills.get("schema", "schemas/skill-contract.schema.json")
+        schema_path = root / schema_ref
+        if not schema_path.exists():
+            findings.append(finding("GP125", "error", "Skill contract schema is missing", schema_ref))
+        else:
+            try:
+                import jsonschema
+                schema = json.loads(schema_path.read_text(encoding="utf-8"))
+                jsonschema.Draft202012Validator(schema).validate(skills)
+                for skill in skills.get("definitions", []):
+                    for ref_key in ("references", "assets", "scripts"):
+                        for ref in skill.get(ref_key, []) or []:
+                            if not exists_ref(root, ref):
+                                findings.append(finding(
+                                    "GP126", "error",
+                                    f"Canonical skill {skill.get('id', '<unknown>')} references missing {ref_key[:-1]}",
+                                    ref
+                                ))
+            except Exception as exc:
+                findings.append(finding("GP127", "error", f"Invalid skill contract: {exc}", "gpt-project.yaml"))
+
     artifacts = cfg.get("artifacts")
     if isinstance(artifacts, dict) and "outputs" in artifacts:
         schema_ref = artifacts.get("schema", "schemas/artifact-contract.schema.json")
