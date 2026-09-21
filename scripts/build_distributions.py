@@ -655,6 +655,7 @@ def compile_skill_markdown(
     *,
     compatibility: str | None = None,
     canonical_instruction: str | None = None,
+    include_canonical_behavior: bool = False,
 ) -> str:
     """Compile one canonical skill definition into deterministic SKILL.md text."""
     frontmatter = [
@@ -677,7 +678,7 @@ def compile_skill_markdown(
 
     body = frontmatter
 
-    if skill.get("_inferred_default") and canonical_instruction:
+    if (skill.get("_inferred_default") or include_canonical_behavior) and canonical_instruction:
         body.extend([
             "## Canonical behavior",
             "",
@@ -805,7 +806,11 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
         compiled_skill.update(resources)
         skill_dir.mkdir(parents=True, exist_ok=True)
         (skill_dir / "SKILL.md").write_text(
-            compile_skill_markdown(compiled_skill, canonical_instruction=canonical_instruction),
+            compile_skill_markdown(
+                compiled_skill,
+                canonical_instruction=canonical_instruction,
+                include_canonical_behavior=True,
+            ),
             encoding="utf-8",
         )
         built_skills.append(skill_id)
