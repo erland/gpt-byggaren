@@ -54,8 +54,20 @@ Vid nyprojekt ska analysen minst bedöma projektets registrerade peer runtimes:
 - ChatGPT Chat,
 - ChatGPT Custom,
 - Claude Projects,
-- OpenCode.
+- OpenCode,
+- OpenAI Plugin.
 
 Analysen är inte komplett förrän samtliga registrerade runtimes finns som explicita kandidater. Saknad kandidat är ett valideringsfel, inte ett implicit `not_recommended`. Varje kandidat ska dessutom ha ett explicit `activate_by_default: true|false`.
 
 Bedömningen ska inte förvälja ChatGPT-distributionerna. Varje runtime ska få suitability, rationale och eventuell default-aktivering utifrån canonical kontrakt och faktiska plattformsbegränsningar.
+
+
+## Plugin suitability
+
+Bedöm `openai_plugin` som en peer candidate, inte som en automatisk ersättare för andra runtimes.
+
+Plugin är särskilt relevant när kärnbeteendet naturligt kan uttryckas som återanvändbara skills med referenser/assets och när portabel installation i en plugin-capable host är önskvärd.
+
+Markera suitability som `reduced` när projektet kräver persistent workspace/state eller körbara lokala tools som Plugin v1 inte själv realiserar. Markera inte sådana capabilities som equivalent enbart för att scripts kan paketeras som skill-resurser.
+
+`activate_by_default` ska härledas från faktisk funktionstäckning och distributionsbehov, på samma sätt som för övriga runtimes.
