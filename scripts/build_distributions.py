@@ -551,6 +551,59 @@ def canonical_skill_definitions(cfg: dict) -> list[dict]:
     }]
 
 
+def _project_relative_files(root: Path, directory: Path, *, exclude_names: set[str] | None = None) -> list[str]:
+    """Return deterministic project-relative file paths from a canonical directory."""
+    exclude_names = set(exclude_names or set())
+    if not directory.exists():
+        return []
+    return [
+        p.relative_to(root).as_posix()
+        for p in sorted(directory.rglob("*"))
+        if p.is_file() and p.name not in exclude_names
+    ]
+
+
+def _declared_runtime_script_refs(cfg: dict) -> list[str]:
+    """Return only scripts explicitly declared as runtime tools."""
+    refs = []
+    for tool in normalize_tool_contract(cfg).get("tools", []):
+        if tool.get("type") != "script":
+            continue
+        ref = tool.get("script")
+        if ref:
+            refs.append(str(ref))
+    return sorted(set(refs))
+
+
+def resolve_plugin_skill_resources(root: Path, cfg: dict, skill: dict) -> dict[str, list[str]]:
+    """Resolve canonical resources into the Plugin v1 references/assets/scripts model.
+
+    Explicit skill metadata wins per resource class. When a class is not declared,
+    Plugin v1 uses a conservative project-level fallback:
+    canonical Knowledge becomes references, templates become assets, and only
+    explicitly declared runtime tool scripts become scripts.
+    """
+    knowledge_root = root / cfg.get("knowledge_architecture", {}).get("canonical_root", "knowledge")
+    templates_root = root / cfg.get("structure", {}).get("templates", {}).get("path", "templates")
+
+    fallback = {
+        "references": _project_relative_files(root, knowledge_root, exclude_names={"KNOWLEDGE.md"}),
+        "assets": _project_relative_files(root, templates_root, exclude_names={"README.md"}),
+        "scripts": _declared_runtime_script_refs(cfg),
+    }
+
+    resolved: dict[str, list[str]] = {}
+    for key in ("references", "assets", "scripts"):
+        declared = skill.get(key)
+        values = list(declared) if isinstance(declared, list) and declared else list(fallback[key])
+        unique = sorted(dict.fromkeys(str(value) for value in values))
+        for ref in unique:
+            if not (root / ref).is_file():
+                raise SystemExit(f"Plugin skill {skill.get('id', '<unknown>')} {key[:-1]} missing: {ref}")
+        resolved[key] = unique
+    return resolved
+
+
 def compile_skill_markdown(
     skill: dict,
     *,
