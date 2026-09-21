@@ -26,14 +26,14 @@
     "layout": {
       "type": "object",
       "required": [
-        "manifest",
+        "manifest_file",
         "skills",
         "references",
         "assets",
         "scripts"
       ],
       "properties": {
-        "manifest": {
+        "manifest_file": {
           "const": "plugin.json"
         },
         "skills": {
