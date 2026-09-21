@@ -19,6 +19,9 @@ SUPPORTED_TARGETS = {
     "opencode": "opencode",
     "open-code": "opencode",
     "open_code": "opencode",
+    "plugin": "plugin",
+    "openai-plugin": "plugin",
+    "openai_plugin": "plugin",
 }
 
 
@@ -83,7 +86,13 @@ def run(root: Path, target: str, execute: bool) -> dict[str, Any]:
     if not target_result.get("can_enable_automatically"):
         return summarize(report, target, False, True)
 
-    applied = apply_changes(root, cfg, report, enable_opencode=(target == "opencode"))
+    applied = apply_changes(
+        root,
+        cfg,
+        report,
+        enable_opencode=(target == "opencode"),
+        enable_plugin=(target == "plugin"),
+    )
     return summarize(report, target, applied, True)
 
 

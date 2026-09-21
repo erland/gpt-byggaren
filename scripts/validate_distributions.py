@@ -140,7 +140,8 @@ def validate_opencode(root: Path, cfg: dict) -> list[str]:
     skills_cfg = runtime_cfg.get("skills", {})
     if skills_cfg.get("enabled"):
         root_path = build / skills_cfg.get("directory", ".opencode/skills")
-        for skill in skills_cfg.get("definitions", []):
+        canonical_skills = cfg.get("skills", {}).get("definitions") or skills_cfg.get("definitions", [])
+        for skill in canonical_skills:
             skill_file = root_path / skill["id"] / "SKILL.md"
             if not skill_file.exists():
                 errors.append(f"Missing OpenCode skill: {skill_file.relative_to(build)}")
@@ -150,6 +151,112 @@ def validate_opencode(root: Path, cfg: dict) -> list[str]:
                     errors.append(f"OpenCode skill name mismatch: {skill['id']}")
                 if f"description: {skill['description']}" not in text:
                     errors.append(f"OpenCode skill description mismatch: {skill['id']}")
+    return errors
+
+
+def _parse_skill_frontmatter(text: str) -> dict:
+    if not text.startswith("---\n"):
+        return {}
+    end = text.find("\n---\n", 4)
+    if end < 0:
+        return {}
+    block = text[4:end]
+    data = {}
+    for line in block.splitlines():
+        if not line.strip() or line.startswith(" ") or ":" not in line:
+            continue
+        key, value = line.split(":", 1)
+        data[key.strip()] = value.strip()
+    return data
+
+
+def validate_plugin(root: Path, cfg: dict) -> list[str]:
+    errors = []
+    build = root / "build" / "plugin"
+    if not build.exists():
+        return ["Plugin build directory missing"]
+
+    runtime_cfg = cfg["runtime"]["plugin"]
+    required = [
+        build / "README.md",
+        build / "VERSION",
+        build / "MANIFEST.json",
+        build / "runtime-contract.json",
+        build / runtime_cfg["layout"]["manifest_file"],
+    ]
+    for p in required:
+        if not p.exists():
+            errors.append(f"Missing required file: {p.relative_to(build)}")
+
+    plugin_json = build / runtime_cfg["layout"]["manifest_file"]
+    if plugin_json.exists():
+        try:
+            manifest = json.loads(plugin_json.read_text(encoding="utf-8"))
+            for key in ("name", "version", "description"):
+                if not manifest.get(key):
+                    errors.append(f"Plugin manifest missing required field: {key}")
+        except Exception as exc:
+            errors.append(f"Invalid plugin.json: {exc}")
+
+    manifest_path = build / "MANIFEST.json"
+    if manifest_path.exists():
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            if manifest.get("adapter_id") != "openai_plugin":
+                errors.append("Plugin MANIFEST adapter_id mismatch")
+            if manifest.get("plugin_manifest") != runtime_cfg["layout"]["manifest_file"]:
+                errors.append("Plugin MANIFEST plugin_manifest mismatch")
+            if manifest.get("contract_snapshot") != "runtime-contract.json":
+                errors.append("Plugin MANIFEST contract_snapshot mismatch")
+        except Exception as exc:
+            errors.append(f"Invalid plugin MANIFEST.json: {exc}")
+
+    skill_defs = cfg.get("skills", {}).get("definitions") or []
+    skills_root = build / runtime_cfg["layout"]["skills"]
+    if runtime_cfg.get("validation", {}).get("require_skill", True) and not skill_defs:
+        errors.append("Plugin runtime requires at least one canonical skill")
+
+    for skill in skill_defs:
+        skill_dir = skills_root / skill["id"]
+        skill_file = skill_dir / "SKILL.md"
+        if not skill_file.exists():
+            errors.append(f"Missing plugin skill: {skill_file.relative_to(build)}")
+            continue
+
+        text = skill_file.read_text(encoding="utf-8")
+        frontmatter = _parse_skill_frontmatter(text)
+        if runtime_cfg.get("validation", {}).get("require_skill_frontmatter", True):
+            if frontmatter.get("name") != skill["name"]:
+                errors.append(f"Plugin skill name mismatch: {skill['id']}")
+            if frontmatter.get("description") != skill["description"]:
+                errors.append(f"Plugin skill description mismatch: {skill['id']}")
+
+        for key in ("references", "assets", "scripts"):
+            for ref in skill.get(key, []) or []:
+                expected = skill_dir / key / Path(ref).name
+                if not expected.exists():
+                    errors.append(
+                        f"Missing plugin skill {key[:-1]}: {expected.relative_to(build)}"
+                    )
+
+    forbidden_parts = {
+        ".git",
+        ".github",
+        "tests",
+        "evals",
+        "research",
+        "build",
+        "dist",
+        "__pycache__",
+        ".pytest_cache",
+        ".mypy_cache",
+        ".ruff_cache",
+    }
+    for p in build.rglob("*"):
+        rel = p.relative_to(build)
+        if any(part in forbidden_parts for part in rel.parts):
+            errors.append(f"Forbidden plugin runtime path: {rel}")
+
     return errors
 
 
@@ -194,6 +301,8 @@ def main() -> int:
         errors.extend(validate_claude(root, cfg))
     if cfg.get("runtime", {}).get("opencode", {}).get("enabled"):
         errors.extend(validate_opencode(root, cfg))
+    if cfg.get("runtime", {}).get("plugin", {}).get("enabled"):
+        errors.extend(validate_plugin(root, cfg))
 
     if errors:
         print("VALIDATION: FAIL")

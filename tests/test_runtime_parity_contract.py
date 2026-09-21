@@ -149,3 +149,34 @@ def test_parity_semantic_validation_requires_every_runtime_per_requirement():
 
     assert len(errors) == 1
     assert "opencode" in errors[0]
+
+
+def test_openai_plugin_is_registered_for_runtime_parity():
+    import yaml
+    cfg = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
+
+    assert "openai_plugin" in cfg["runtime_parity"]["registered_runtimes"]
+    runtime_ids = {
+        target["runtime_id"]
+        for target in cfg["build_system"]["runtime_targets"].values()
+    }
+    assert "openai_plugin" in runtime_ids
+
+
+def test_plugin_runtime_snapshot_exposes_v1_parity_limitations():
+    import importlib.util
+    import yaml
+
+    spec_build = importlib.util.spec_from_file_location(
+        "build_distributions", ROOT / "scripts" / "build_distributions.py"
+    )
+    build_distributions = importlib.util.module_from_spec(spec_build)
+    spec_build.loader.exec_module(build_distributions)
+
+    cfg = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
+    snapshot = build_distributions.plugin_runtime_contract(cfg, ["gpt-project-workflow"])
+    notes = snapshot["adapter"]["parity_notes"]
+
+    assert snapshot["runtime_id"] == "openai_plugin"
+    assert set(notes) == {"behavior", "artifact", "workspace_state", "tool", "capability"}
+    assert snapshot["adapter"]["mcp_generated"] is False

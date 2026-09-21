@@ -21,14 +21,14 @@ def write_cfg(project: Path, cfg: dict):
     )
 
 
-def run_workflow(project: Path, *, execute: bool):
+def run_workflow(project: Path, *, execute: bool, target: str = "opencode"):
     args = [
         sys.executable,
         str(SCRIPT),
         "--project-root",
         str(project),
         "--target-runtime",
-        "opencode",
+        target,
         "--json",
     ]
     if execute:
@@ -125,7 +125,56 @@ def test_existing_project_migration_ux_is_registered_in_canonical_project():
     assert ux["apply_safe_changes_when_explicitly_requested"] is True
     assert ux["ask_only_for_unresolved_business_or_semantic_choices"] is True
     assert "opencode" in ux["supported_targets"]
+    assert "plugin" in ux["supported_targets"]
 
     instruction = (ROOT / "src" / "instructions" / "system.md").read_text(encoding="utf-8")
     assert "Migrering av befintliga projekt" in instruction
     assert "Exponera inte CLI-flaggor som ett krav för användaren" in instruction
+
+
+
+def test_existing_project_migration_can_enable_plugin():
+    with tempfile.TemporaryDirectory() as td:
+        project = Path(td)
+        canonical = project / "src" / "instructions"
+        canonical.mkdir(parents=True)
+        (canonical / "system.md").write_text("# Canonical\n", encoding="utf-8")
+
+        write_cfg(project, {
+            "project": {"id": "plugin-ready"},
+            "instructions": {"canonical": "src/instructions/system.md"},
+            "capabilities": {
+                "contract_version": 1,
+                "recommendation_mode": "explicit",
+                "requirements": {"web": {"level": "optional"}},
+            },
+            "workspace_state": {
+                "contract_version": 1,
+                "workspace": {
+                    "requirement": "optional",
+                    "persistence": "optional",
+                    "portable": True,
+                    "separate_from_assistant": True,
+                },
+                "state": {
+                    "requirement": "optional",
+                    "persistence": "optional",
+                    "authority": "conversation",
+                },
+            },
+            "tools": {
+                "contract_version": 1,
+                "tools": [],
+            },
+        })
+
+        result, data = run_workflow(project, execute=True, target="plugin")
+        migrated = yaml.safe_load((project / "gpt-project.yaml").read_text(encoding="utf-8"))
+
+        assert result.returncode == 0
+        assert data["status"] == "completed"
+        assert data["compatibility"] == "ready"
+        assert data["target_runtime"] == "plugin"
+        assert migrated["runtime"]["plugin"]["enabled"] is True
+        assert (project / "schemas" / "plugin-runtime.schema.json").exists()
+        assert (project / "templates" / "README.plugin.md.tpl").exists()

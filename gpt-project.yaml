@@ -154,6 +154,25 @@ runtime:
     validation:
       require_agents_md: true
       require_runtime_contract: true
+  plugin:
+    enabled: true
+    role: peer_distribution
+    mode: openai_plugin
+    schema: schemas/plugin-runtime.schema.json
+    policy: src/runtime-policy/plugin-runtime-policy.md
+    model: docs/plugin-runtime.md
+    layout:
+      manifest_file: plugin.json
+      skills: skills
+      references: references
+      assets: assets
+      scripts: scripts
+    templates:
+      readme: templates/README.plugin.md.tpl
+    validation:
+      require_manifest: true
+      require_skill: true
+      require_skill_frontmatter: true
   custom_gpt:
     enabled: true
     role: peer_distribution
@@ -195,6 +214,18 @@ runtime:
       block_on_instruction_limit: true
       block_on_knowledge_limit: true
       block_on_misleading_core_functionality: true
+skills:
+  contract_version: 1
+  schema: schemas/skill-contract.schema.json
+  mode: inferred
+  definitions:
+  - id: gpt-project-workflow
+    name: gpt-project-workflow
+    description: Planera, återuppta och fortsätt ett GPT Byggaren-projekt utifrån faktisk projektstatus.
+    references:
+    - docs/dynamic-planning.md
+    - docs/resume-flow.md
+    - docs/next-step-recommendation.md
 capabilities:
   contract_version: 1
   schema: schemas/capability-contract.schema.json
@@ -331,6 +362,7 @@ build:
   build_custom_gpt_zip: true
   build_claude_zip: true
   build_opencode_zip: true
+  build_plugin_zip: true
   direct_downloads_without_github: true
 release:
   github:
@@ -351,6 +383,7 @@ release:
     - custom_gpt_zip_when_enabled
     - claude_zip_when_enabled
     - opencode_zip_when_enabled
+    - plugin_zip_when_enabled
     - checksums
     - delivery_manifest
     policy: src/runtime-policy/github-release-policy.md
@@ -411,6 +444,7 @@ artifacts:
     custom_gpt_zip: runtime_package
     claude_zip: runtime_package
     opencode_zip: runtime_package
+    plugin_zip: runtime_package
     validation_report: validation_report
     parity_report: parity_report
     checksums: checksums
@@ -565,6 +599,7 @@ runtime_parity:
   - chatgpt_custom
   - claude_project
   - opencode
+  - openai_plugin
   compared_categories:
   - behavior
   - capability
@@ -612,6 +647,7 @@ build_system:
   - custom-gpt
   - claude
   - opencode
+  - plugin
   runtime_targets:
     chat:
       runtime_id: chatgpt_chat
@@ -637,6 +673,12 @@ build_system:
       builder: opencode
       artifact_type: opencode_zip
       filename_pattern: <project-id>-opencode-<version>.zip
+    plugin:
+      runtime_id: openai_plugin
+      runtime_key: plugin
+      builder: plugin
+      artifact_type: plugin_zip
+      filename_pattern: <project-id>-plugin-<version>.zip
   output_root: dist
   working_root: build
   deterministic_zip: true
@@ -661,6 +703,7 @@ direct_build:
   - custom_gpt_zip_when_enabled
   - claude_zip_when_enabled
   - opencode_zip_when_enabled
+  - plugin_zip_when_enabled
   - checksums
   - delivery_manifest
   validate_before_delivery: true
@@ -828,6 +871,7 @@ existing_project_migration:
   ask_only_for_unresolved_business_or_semantic_choices: true
   supported_targets:
   - opencode
+  - plugin
 legacy_migration:
   model: docs/legacy-migration-analysis.md
   script: scripts/migrate_legacy_project.py

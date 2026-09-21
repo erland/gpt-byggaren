@@ -40,6 +40,12 @@ def test_analysis_recommendation_supports_peer_runtime_candidates():
                     "rationale": "Agentiskt workspace är möjligt men inte nödvändigt.",
                     "activate_by_default": False,
                 },
+                {
+                    "runtime_id": "openai_plugin",
+                    "suitability": "equivalent",
+                    "rationale": "Skills-first distribution passar arbetsflödet.",
+                    "activate_by_default": True,
+                },
             ],
         },
         "capabilities": {},
@@ -49,7 +55,7 @@ def test_analysis_recommendation_supports_peer_runtime_candidates():
     jsonschema.Draft202012Validator(schema).validate(recommendation)
     assert "primary" not in recommendation["runtime"]
     assert {c["runtime_id"] for c in recommendation["runtime"]["candidates"]} == {
-        "chatgpt_chat", "chatgpt_custom", "claude_project", "opencode"
+        "chatgpt_chat", "chatgpt_custom", "claude_project", "opencode", "openai_plugin"
     }
 
 
@@ -86,6 +92,7 @@ def test_analysis_recommendation_requires_explicit_default_decision():
                 {"runtime_id": "chatgpt_custom", "suitability": "equivalent", "rationale": "ok", "activate_by_default": True},
                 {"runtime_id": "claude_project", "suitability": "equivalent", "rationale": "ok", "activate_by_default": True},
                 {"runtime_id": "opencode", "suitability": "reduced", "rationale": "ok"},
+                {"runtime_id": "openai_plugin", "suitability": "equivalent", "rationale": "ok", "activate_by_default": True},
             ],
         },
         "capabilities": {},
@@ -123,6 +130,7 @@ def test_active_new_project_guidance_does_not_assume_chat_custom_pair():
     assert "ChatGPT Chat" in analysis
     assert "Claude Projects" in analysis
     assert "OpenCode" in analysis
+    assert "OpenAI Plugin" in analysis
     assert "activate_by_default: true" in planning
     assert "Chat ZIP och Custom GPT är de enda distributionsmålen" in planning
     assert "Profilen får inte i sig göra Chat/Custom till default" in profile_policy
@@ -135,3 +143,21 @@ def test_readme_describes_all_registered_runtime_families():
     assert "Claude Projects" in readme
     assert "OpenCode" in readme
     assert "Chat ZIP + Custom GPT är inte ett obligatoriskt standardpar" in readme
+
+
+
+def test_canonical_instruction_knows_all_registered_runtime_families():
+    instruction = (ROOT / "src" / "instructions" / "system.md").read_text(encoding="utf-8")
+
+    for runtime_name in (
+        "ChatGPT Chat",
+        "ChatGPT Custom",
+        "Claude Projects",
+        "OpenCode",
+        "OpenAI Plugin",
+    ):
+        assert runtime_name in instruction
+
+    assert "skills-first peer runtime" in instruction
+    assert "runtime parity" in instruction
+    assert "genererad MCP-server" in instruction

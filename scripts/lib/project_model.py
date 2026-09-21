@@ -128,6 +128,7 @@ LEGACY_ARTIFACT_MAP = {
     "custom_gpt_zip": "runtime_package",
     "claude_zip": "runtime_package",
     "opencode_zip": "runtime_package",
+    "plugin_zip": "runtime_package",
     "validation_report": "validation_report",
     "parity_report": "parity_report",
     "checksums": "checksums",

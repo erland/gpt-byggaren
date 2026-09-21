@@ -523,53 +523,325 @@ def build_claude(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     return out
 
 
+def canonical_skill_definitions(cfg: dict) -> list[dict]:
+    """Return platform-neutral skill definitions with conservative legacy fallback."""
+    canonical = cfg.get("skills")
+    if isinstance(canonical, dict):
+        definitions = canonical.get("definitions")
+        if isinstance(definitions, list) and definitions:
+            return definitions
+
+    legacy = cfg.get("runtime", {}).get("opencode", {}).get("skills", {})
+    definitions = legacy.get("definitions") if isinstance(legacy, dict) else None
+    if isinstance(definitions, list) and definitions:
+        return definitions
+
+    project = cfg.get("project", {})
+    project_id = str(project.get("id") or "assistant")
+    name = str(project.get("name") or project_id)
+    description = str(project.get("description") or f"Use {name} according to its canonical instructions.").strip()
+    return [{
+        "id": project_id,
+        "name": project_id,
+        "description": description,
+        "references": [],
+        "assets": [],
+        "scripts": [],
+        "_inferred_default": True,
+    }]
+
+
+def plugin_manifest(cfg: dict, version: str) -> dict:
+    """Build deterministic Plugin v1 metadata from canonical project data only."""
+    project = cfg.get("project") or {}
+    manifest = {
+        "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+        "name": str(project.get("id") or "").strip(),
+        "version": str(version).strip(),
+        "description": str(project.get("description") or "").strip(),
+    }
+
+    author = project.get("author")
+    if isinstance(author, str) and author.strip():
+        manifest["author"] = {"name": author.strip()}
+    elif isinstance(author, dict):
+        name = str(author.get("name") or "").strip()
+        if name:
+            manifest["author"] = {"name": name}
+
+    # Only emit optional metadata when it is explicitly canonical.
+    for source_key, manifest_key in (
+        ("license", "license"),
+        ("homepage", "homepage"),
+        ("repository", "repository"),
+    ):
+        value = project.get(source_key)
+        if isinstance(value, str) and value.strip():
+            manifest[manifest_key] = value.strip()
+
+    missing = [key for key in ("name", "version", "description") if not manifest.get(key)]
+    if missing:
+        raise SystemExit("Plugin manifest requires canonical metadata: " + ", ".join(missing))
+
+    return manifest
+
+
+def write_plugin_manifest(target: Path, cfg: dict, version: str) -> Path:
+    """Write plugin.json deterministically and return its path."""
+    path = target / "plugin.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(plugin_manifest(cfg, version), ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    return path
+
+
+def _project_relative_files(root: Path, directory: Path, *, exclude_names: set[str] | None = None) -> list[str]:
+    """Return deterministic project-relative file paths from a canonical directory."""
+    exclude_names = set(exclude_names or set())
+    if not directory.exists():
+        return []
+    return [
+        p.relative_to(root).as_posix()
+        for p in sorted(directory.rglob("*"))
+        if p.is_file() and p.name not in exclude_names
+    ]
+
+
+def _declared_runtime_script_refs(cfg: dict) -> list[str]:
+    """Return only scripts explicitly declared as runtime tools."""
+    refs = []
+    for tool in normalize_tool_contract(cfg).get("tools", []):
+        if tool.get("type") != "script":
+            continue
+        ref = tool.get("script")
+        if ref:
+            refs.append(str(ref))
+    return sorted(set(refs))
+
+
+def resolve_plugin_skill_resources(root: Path, cfg: dict, skill: dict) -> dict[str, list[str]]:
+    """Resolve canonical resources into the Plugin v1 references/assets/scripts model.
+
+    Explicit skill metadata wins per resource class. When a class is not declared,
+    Plugin v1 uses a conservative project-level fallback:
+    canonical Knowledge becomes references, templates become assets, and only
+    explicitly declared runtime tool scripts become scripts.
+    """
+    knowledge_root = root / cfg.get("knowledge_architecture", {}).get("canonical_root", "knowledge")
+    templates_root = root / cfg.get("structure", {}).get("templates", {}).get("path", "templates")
+
+    fallback = {
+        "references": _project_relative_files(root, knowledge_root, exclude_names={"KNOWLEDGE.md"}),
+        "assets": _project_relative_files(root, templates_root, exclude_names={"README.md"}),
+        "scripts": _declared_runtime_script_refs(cfg),
+    }
+
+    resolved: dict[str, list[str]] = {}
+    for key in ("references", "assets", "scripts"):
+        declared = skill.get(key)
+        values = list(declared) if isinstance(declared, list) and declared else list(fallback[key])
+        unique = sorted(dict.fromkeys(str(value) for value in values))
+        for ref in unique:
+            if not (root / ref).is_file():
+                raise SystemExit(f"Plugin skill {skill.get('id', '<unknown>')} {key[:-1]} missing: {ref}")
+        resolved[key] = unique
+    return resolved
+
+
+def compile_skill_markdown(
+    skill: dict,
+    *,
+    compatibility: str | None = None,
+    canonical_instruction: str | None = None,
+    include_canonical_behavior: bool = False,
+) -> str:
+    """Compile one canonical skill definition into deterministic SKILL.md text."""
+    frontmatter = [
+        "---",
+        f"name: {skill['name']}",
+        f"description: {skill['description']}",
+    ]
+    if compatibility:
+        frontmatter.append(f"compatibility: {compatibility}")
+    frontmatter.extend([
+        "metadata:",
+        "  source: generated-from-canonical-project",
+        "---",
+        "",
+        "## Purpose",
+        "",
+        str(skill["description"]).strip(),
+        "",
+    ])
+
+    body = frontmatter
+
+    if (skill.get("_inferred_default") or include_canonical_behavior) and canonical_instruction:
+        body.extend([
+            "## Canonical behavior",
+            "",
+            canonical_instruction.strip(),
+            "",
+        ])
+
+    references = list(skill.get("references", []) or [])
+    if references:
+        body.extend(["## References", ""])
+        for ref in references:
+            body.append(f"- Read `references/{Path(ref).name}` when that material is relevant.")
+        body.append("")
+
+    assets = list(skill.get("assets", []) or [])
+    if assets:
+        body.extend(["## Assets", ""])
+        for asset in assets:
+            body.append(f"- Use `assets/{Path(asset).name}` when the task requires that resource.")
+        body.append("")
+
+    scripts = list(skill.get("scripts", []) or [])
+    if scripts:
+        body.extend(["## Scripts", ""])
+        for script in scripts:
+            body.append(f"- Use `scripts/{Path(script).name}` only when runtime execution is available and appropriate.")
+        body.append("")
+
+    return "\n".join(body).rstrip() + "\n"
+
+
 def build_opencode_skills(root: Path, cfg: dict, out: Path) -> list[str]:
-    """Generate OpenCode skills from declared workflow/reference sources."""
+    """Generate OpenCode skills from the canonical skill contract."""
     runtime_cfg = cfg["runtime"]["opencode"]
     skills_cfg = runtime_cfg.get("skills", {})
     if not skills_cfg.get("enabled"):
         return []
 
     skill_root = out / skills_cfg.get("directory", ".opencode/skills")
+    canonical_instruction = (root / cfg["instructions"]["canonical"]).read_text(encoding="utf-8")
     built: list[str] = []
-    for skill in skills_cfg.get("definitions", []):
+
+    for skill in canonical_skill_definitions(cfg):
         skill_id = skill["id"]
         skill_dir = skill_root / skill_id
-        references_dir = skill_dir / "references"
-        references_dir.mkdir(parents=True, exist_ok=True)
 
-        reference_lines = []
-        for ref in skill.get("references", []):
-            src = root / ref
-            if not src.exists():
-                raise SystemExit(f"OpenCode skill reference missing: {ref}")
-            dst = references_dir / src.name
-            copy_file(src, dst)
-            reference_lines.append(f"- Read `references/{src.name}` when that part of the workflow is relevant.")
+        for ref_key, target_name in (
+            ("references", "references"),
+            ("assets", "assets"),
+            ("scripts", "scripts"),
+        ):
+            for ref in skill.get(ref_key, []) or []:
+                src = root / ref
+                if not src.exists():
+                    raise SystemExit(f"Canonical skill {ref_key[:-1]} missing: {ref}")
+                copy_file(src, skill_dir / target_name / src.name)
 
-        body = (
-            "---\n"
-            f"name: {skill['name']}\n"
-            f"description: {skill['description']}\n"
-            "compatibility: opencode\n"
-            "metadata:\n"
-            "  source: generated-from-canonical-project\n"
-            "---\n\n"
-            "## Purpose\n\n"
-            f"{skill['description']}\n\n"
-            "## Workflow\n\n"
-            "1. Read the workspace state before choosing work.\n"
-            "2. Prefer blockers, failed validation, hygiene, and missing dependencies before the next planned step.\n"
-            "3. Treat the development plan as guiding rather than mechanical.\n"
-            "4. After a change, validate, update project state, and rebuild the complete project package when applicable.\n"
-            "5. Do not ask the user to repeat project history already present in workspace/state.\n\n"
-            "## References\n\n"
-            + "\n".join(reference_lines)
-            + "\n"
+        body = compile_skill_markdown(
+            skill,
+            compatibility="opencode",
+            canonical_instruction=canonical_instruction,
         )
         (skill_dir / "SKILL.md").write_text(body, encoding="utf-8")
         built.append(skill_id)
+
     return built
+
+
+def plugin_runtime_contract(cfg: dict, built_skills: list[str] | None = None) -> dict:
+    """Compile canonical assistant contracts into an OpenAI Plugin snapshot."""
+    built_skills = list(built_skills or [])
+    return {
+        "schema_version": 1,
+        "runtime_id": "openai_plugin",
+        "capabilities": normalize_capability_contract(cfg),
+        "artifacts": normalize_artifact_contract(cfg),
+        "workspace_state": normalize_workspace_state_contract(cfg),
+        "tools": normalize_tool_contract(cfg),
+        "adapter": {
+            "mode": "openai_plugin",
+            "skills_first": True,
+            "skills": built_skills,
+            "mcp_generated": False,
+            "ui_generated": False,
+            "hooks_generated": False,
+            "parity_notes": {
+                "behavior": "Canonical behavior is projected through skills.",
+                "artifact": "Plugin package is generated as a runtime distribution.",
+                "workspace_state": "Persistent workspace/state depends on the host runtime and is not created by Plugin v1.",
+                "tool": "Canonical local script tools are packaged only as skill resources; Plugin v1 does not generate MCP execution.",
+                "capability": "External tool execution and advanced integrations depend on the host runtime in Plugin v1.",
+            },
+        },
+    }
+
+
+def _copy_skill_resources(root: Path, skill_dir: Path, resources: dict[str, list[str]]) -> None:
+    """Copy resolved skill resources and reject basename collisions."""
+    for key in ("references", "assets", "scripts"):
+        seen_names: set[str] = set()
+        for ref in resources.get(key, []):
+            src = root / ref
+            name = src.name
+            if name in seen_names:
+                raise SystemExit(f"Plugin skill resource collision in {key}: {name}")
+            seen_names.add(name)
+            copy_file(src, skill_dir / key / name)
+
+
+def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
+    """Build a portable skills-first OpenAI Plugin v1 distribution."""
+    out = build_root / "plugin"
+    ensure_clean_dir(out)
+    write_plugin_manifest(out, cfg, version)
+
+    canonical_instruction = (root / cfg["instructions"]["canonical"]).read_text(encoding="utf-8")
+    built_skills: list[str] = []
+    for skill in canonical_skill_definitions(cfg):
+        skill_id = skill["id"]
+        skill_dir = out / "skills" / skill_id
+        resources = resolve_plugin_skill_resources(root, cfg, skill)
+        _copy_skill_resources(root, skill_dir, resources)
+
+        compiled_skill = dict(skill)
+        compiled_skill.update(resources)
+        skill_dir.mkdir(parents=True, exist_ok=True)
+        (skill_dir / "SKILL.md").write_text(
+            compile_skill_markdown(
+                compiled_skill,
+                canonical_instruction=canonical_instruction,
+                include_canonical_behavior=True,
+            ),
+            encoding="utf-8",
+        )
+        built_skills.append(skill_id)
+
+    if not built_skills:
+        raise SystemExit("Plugin build requires at least one skill")
+
+    readme_tpl = (root / cfg["runtime"]["plugin"]["templates"]["readme"]).read_text(encoding="utf-8")
+    (out / "README.md").write_text(
+        render_template(readme_tpl, {
+            "GPT_NAME": cfg["project"]["name"],
+            "VERSION": version,
+            "SKILLS": "\n".join(f"- `{skill_id}`" for skill_id in built_skills),
+        }),
+        encoding="utf-8",
+    )
+    (out / "VERSION").write_text(version + "\n", encoding="utf-8")
+    (out / "runtime-contract.json").write_text(
+        json.dumps(plugin_runtime_contract(cfg, built_skills), ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+    write_manifest(out, cfg["project"]["id"] + "-plugin", version, "plugin.json")
+    manifest_path = out / "MANIFEST.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["adapter_id"] = "openai_plugin"
+    manifest["plugin_manifest"] = "plugin.json"
+    manifest["skills"] = built_skills
+    manifest["contract_snapshot"] = "runtime-contract.json"
+    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return out
 
 
 def _opencode_tool_name(tool_id: str) -> str:
@@ -590,7 +862,7 @@ def _opencode_tool_wrapper(tool: dict, script_ref: str) -> str:
         arg_schema += ',\n    version: tool.schema.string().optional(),\n    targets: tool.schema.string().optional()'
         command_lines = '''
     const version = args.version ?? "0.0.0-dev"
-    const targets = args.targets ?? "project,chat,custom-gpt,claude,opencode"
+    const targets = args.targets ?? "project,chat,custom-gpt,claude,opencode,plugin"
     const cmd = ["python3", script, "--project-root", projectRoot, "--version", version, "--targets", targets]'''
     elif tool_id == "recommend-next-step":
         command_lines = '''
@@ -756,6 +1028,7 @@ RUNTIME_BUILDERS = {
     "custom_gpt": build_custom,
     "claude": build_claude,
     "opencode": build_opencode,
+    "plugin": build_plugin,
 }
 
 

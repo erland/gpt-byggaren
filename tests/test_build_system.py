@@ -269,3 +269,9 @@ def test_opencode_build_compiles_base_workspace_from_canonical_contracts():
     assert (opencode / "scripts" / "lint_gpt_project.py").exists()
     assert (opencode / "scripts" / "lib" / "project_model.py").exists()
     assert not (opencode / "scripts" / "validate_release_candidate.py").exists()
+
+
+
+def test_opencode_build_tool_default_targets_include_plugin():
+    text = (ROOT / "scripts" / "build_distributions.py").read_text(encoding="utf-8")
+    assert 'project,chat,custom-gpt,claude,opencode,plugin' in text

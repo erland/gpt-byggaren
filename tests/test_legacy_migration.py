@@ -324,3 +324,67 @@ def test_opencode_can_be_enabled_on_already_migrated_project_without_other_chang
 
         assert report["apply"]["result"] == "changed"
         assert migrated["runtime"]["opencode"]["enabled"] is True
+
+
+
+def test_plugin_ready_project_can_be_enabled_and_receives_adapter_assets():
+    with tempfile.TemporaryDirectory() as td:
+        project = Path(td)
+        canonical = project / "src" / "instructions"
+        canonical.mkdir(parents=True)
+        original = "# Canonical behavior\nDo not rewrite me.\n"
+        (canonical / "system.md").write_text(original, encoding="utf-8")
+
+        write_cfg(project, {
+            "project": {"id": "ready-plugin", "name": "Ready Plugin", "description": "A portable assistant."},
+            "instructions": {"canonical": "src/instructions/system.md"},
+            "capabilities": {"web": "optional"},
+        })
+
+        preview = run_migration(project)
+        assert preview["plugin"]["status"] == "ready"
+        assert preview["plugin"]["can_enable_automatically"] is True
+
+        applied = run_migration(project, "--apply", "--enable-plugin")
+        migrated = yaml.safe_load((project / "gpt-project.yaml").read_text(encoding="utf-8"))
+
+        assert applied["apply"]["result"] == "changed"
+        assert migrated["runtime"]["plugin"]["enabled"] is True
+        assert migrated["runtime"]["plugin"]["mode"] == "openai_plugin"
+        assert (project / "schemas" / "plugin-runtime.schema.json").exists()
+        assert (project / "schemas" / "skill-contract.schema.json").exists()
+        assert (project / "src" / "runtime-policy" / "plugin-runtime-policy.md").exists()
+        assert (project / "docs" / "plugin-runtime.md").exists()
+        assert (project / "templates" / "README.plugin.md.tpl").exists()
+        assert (canonical / "system.md").read_text(encoding="utf-8") == original
+
+
+def test_plugin_enablement_is_reduced_when_required_tools_need_execution():
+    with tempfile.TemporaryDirectory() as td:
+        project = Path(td)
+        canonical = project / "src" / "instructions"
+        canonical.mkdir(parents=True)
+        (canonical / "system.md").write_text("# Canonical\n", encoding="utf-8")
+
+        write_cfg(project, {
+            "project": {"id": "tool-plugin"},
+            "instructions": {"canonical": "src/instructions/system.md"},
+            "tools": {
+                "contract_version": 1,
+                "tools": [{
+                    "id": "required-script",
+                    "type": "script",
+                    "requirement": "required",
+                    "script": "scripts/run.py",
+                }],
+            },
+        })
+
+        preview = run_migration(project)
+        assert preview["plugin"]["status"] == "reduced"
+        assert preview["plugin"]["can_enable_automatically"] is False
+
+        applied = run_migration(project, "--apply", "--enable-plugin")
+        migrated = yaml.safe_load((project / "gpt-project.yaml").read_text(encoding="utf-8"))
+        assert applied["apply"]["result"] == "blocked"
+        assert "runtime" not in migrated or "plugin" not in migrated.get("runtime", {})
