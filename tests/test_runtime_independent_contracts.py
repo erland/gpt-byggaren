@@ -57,6 +57,7 @@ def test_all_runtime_snapshots_project_the_same_canonical_contracts():
         "chatgpt_custom": build_distributions.custom_runtime_contract(cfg),
         "claude_project": build_distributions.claude_runtime_contract(cfg),
         "opencode": build_distributions.opencode_runtime_contract(cfg, [], []),
+        "openai_plugin": build_distributions.plugin_runtime_contract(cfg, []),
     }
 
     assert set(snapshots) == set(cfg["runtime_parity"]["registered_runtimes"])
