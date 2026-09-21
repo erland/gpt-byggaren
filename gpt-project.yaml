@@ -167,6 +167,8 @@ runtime:
       references: references
       assets: assets
       scripts: scripts
+    templates:
+      readme: templates/README.plugin.md.tpl
     validation:
       require_manifest: true
       require_skill: true
