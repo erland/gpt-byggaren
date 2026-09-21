@@ -555,6 +555,7 @@ def plugin_manifest(cfg: dict, version: str) -> dict:
     """Build deterministic Plugin v1 metadata from canonical project data only."""
     project = cfg.get("project") or {}
     manifest = {
+        "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
         "name": str(project.get("id") or "").strip(),
         "version": str(version).strip(),
         "description": str(project.get("description") or "").strip(),
@@ -745,6 +746,72 @@ def build_opencode_skills(root: Path, cfg: dict, out: Path) -> list[str]:
     return built
 
 
+def _copy_skill_resources(root: Path, skill_dir: Path, resources: dict[str, list[str]]) -> None:
+    """Copy resolved skill resources and reject basename collisions."""
+    for key in ("references", "assets", "scripts"):
+        seen_names: set[str] = set()
+        for ref in resources.get(key, []):
+            src = root / ref
+            name = src.name
+            if name in seen_names:
+                raise SystemExit(f"Plugin skill resource collision in {key}: {name}")
+            seen_names.add(name)
+            copy_file(src, skill_dir / key / name)
+
+
+def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
+    """Build a portable skills-first OpenAI Plugin v1 distribution."""
+    out = build_root / "plugin"
+    ensure_clean_dir(out)
+    write_plugin_manifest(out, cfg, version)
+
+    canonical_instruction = (root / cfg["instructions"]["canonical"]).read_text(encoding="utf-8")
+    built_skills: list[str] = []
+    for skill in canonical_skill_definitions(cfg):
+        skill_id = skill["id"]
+        skill_dir = out / "skills" / skill_id
+        resources = resolve_plugin_skill_resources(root, cfg, skill)
+        _copy_skill_resources(root, skill_dir, resources)
+
+        compiled_skill = dict(skill)
+        compiled_skill.update(resources)
+        skill_dir.mkdir(parents=True, exist_ok=True)
+        (skill_dir / "SKILL.md").write_text(
+            compile_skill_markdown(compiled_skill, canonical_instruction=canonical_instruction),
+            encoding="utf-8",
+        )
+        built_skills.append(skill_id)
+
+    if not built_skills:
+        raise SystemExit("Plugin build requires at least one skill")
+
+    readme_lines = [
+        f"# {cfg['project']['name']} — OpenAI Plugin",
+        "",
+        f"Version: {version}",
+        "",
+        "This is a generated skills-first plugin distribution.",
+        "",
+        "## Skills",
+        "",
+        *[f"- \`{skill_id}\`" for skill_id in built_skills],
+        "",
+        "Plugin v1 intentionally excludes generated MCP servers, UI components, hooks, and marketplace metadata.",
+        "",
+    ]
+    (out / "README.md").write_text("\n".join(readme_lines), encoding="utf-8")
+    (out / "VERSION").write_text(version + "\n", encoding="utf-8")
+
+    write_manifest(out, cfg["project"]["id"] + "-plugin", version, "plugin.json")
+    manifest_path = out / "MANIFEST.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["adapter_id"] = "openai_plugin"
+    manifest["plugin_manifest"] = "plugin.json"
+    manifest["skills"] = built_skills
+    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return out
+
+
 def _opencode_tool_name(tool_id: str) -> str:
     return "gpt_" + tool_id.replace("-", "_")
 
@@ -929,6 +996,7 @@ RUNTIME_BUILDERS = {
     "custom_gpt": build_custom,
     "claude": build_claude,
     "opencode": build_opencode,
+    "plugin": build_plugin,
 }
 
 
