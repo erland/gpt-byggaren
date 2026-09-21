@@ -58,6 +58,8 @@ def test_build_plugin_has_required_structure_and_skill_resources():
         assert manifest["adapter_id"] == "openai_plugin"
         assert manifest["plugin_manifest"] == "plugin.json"
         assert manifest["contract_snapshot"] == "runtime-contract.json"
+        manifest_files = {item["path"] for item in manifest["files"]}
+        assert "runtime-contract.json" in manifest_files
 
         snapshot = json.loads((out / "runtime-contract.json").read_text(encoding="utf-8"))
         assert snapshot["runtime_id"] == "openai_plugin"
