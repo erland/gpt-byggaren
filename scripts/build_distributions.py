@@ -763,6 +763,13 @@ def plugin_runtime_contract(cfg: dict, built_skills: list[str] | None = None) ->
             "mcp_generated": False,
             "ui_generated": False,
             "hooks_generated": False,
+            "parity_notes": {
+                "behavior": "Canonical behavior is projected through skills.",
+                "artifact": "Plugin package is generated as a runtime distribution.",
+                "workspace_state": "Persistent workspace/state depends on the host runtime and is not created by Plugin v1.",
+                "tool": "Canonical local script tools are packaged only as skill resources; Plugin v1 does not generate MCP execution.",
+                "capability": "External tool execution and advanced integrations depend on the host runtime in Plugin v1.",
+            },
         },
     }
 
