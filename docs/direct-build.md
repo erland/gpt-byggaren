@@ -150,6 +150,16 @@ Den ska bara levereras om:
 - plattformsvalideringen inte är blockerad,
 - den funktionella pariteten är tillräcklig för att distributionen ska vara meningsfull.
 
+## Plugin ZIP
+
+När Plugin-runtimen är aktiverad produceras:
+
+```text
+<project-id>-plugin-<version>.zip
+```
+
+Den innehåller den skills-first runtime som definieras i `docs/plugin-runtime.md`. Direktleveransen använder samma deklarativa target-register som CI och release, så Plugin behöver ingen separat specialväg.
+
 ## Valideringskrav
 
 Direktleverans ska inte ske om:
