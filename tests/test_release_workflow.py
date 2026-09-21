@@ -18,3 +18,20 @@ def test_release_workflow_uses_declarative_output_verifier():
     assert "mapfile -t FILES" in text
     assert "gpt-byggaren-chat-" not in text
     assert "gpt-byggaren-opencode-" not in text
+
+
+
+def test_release_workflow_covers_plugin_declaratively():
+    import yaml
+
+    text = (ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
+    cfg = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
+
+    assert cfg["runtime"]["plugin"]["enabled"] is True
+    assert "plugin" in cfg["build_system"]["targets"]
+    assert cfg["build_system"]["runtime_targets"]["plugin"]["artifact_type"] == "plugin_zip"
+
+    assert "--print-files" in text
+    assert "gh release upload" in text
+    assert "FILES[@]" in text
+    assert "gpt-byggaren-plugin-" not in text
