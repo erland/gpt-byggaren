@@ -7,7 +7,8 @@
     "decisions",
     "warnings",
     "changes",
-    "opencode"
+    "opencode",
+    "plugin"
   ],
   "properties": {
     "migration": {
@@ -110,6 +111,39 @@
       "additionalProperties": false
     },
     "opencode": {
+      "type": "object",
+      "required": [
+        "status",
+        "reasons",
+        "can_enable_automatically"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "ready",
+            "reduced",
+            "blocked"
+          ]
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "can_enable_automatically": {
+          "type": "boolean"
+        },
+        "required_actions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "plugin": {
       "type": "object",
       "required": [
         "status",
