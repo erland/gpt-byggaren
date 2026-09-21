@@ -806,21 +806,15 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     if not built_skills:
         raise SystemExit("Plugin build requires at least one skill")
 
-    readme_lines = [
-        f"# {cfg['project']['name']} — OpenAI Plugin",
-        "",
-        f"Version: {version}",
-        "",
-        "This is a generated skills-first plugin distribution.",
-        "",
-        "## Skills",
-        "",
-        *[f"- \`{skill_id}\`" for skill_id in built_skills],
-        "",
-        "Plugin v1 intentionally excludes generated MCP servers, UI components, hooks, and marketplace metadata.",
-        "",
-    ]
-    (out / "README.md").write_text("\n".join(readme_lines), encoding="utf-8")
+    readme_tpl = (root / cfg["runtime"]["plugin"]["templates"]["readme"]).read_text(encoding="utf-8")
+    (out / "README.md").write_text(
+        render_template(readme_tpl, {
+            "GPT_NAME": cfg["project"]["name"],
+            "VERSION": version,
+            "SKILLS": "\n".join(f"- `{skill_id}`" for skill_id in built_skills),
+        }),
+        encoding="utf-8",
+    )
     (out / "VERSION").write_text(version + "\n", encoding="utf-8")
 
     write_manifest(out, cfg["project"]["id"] + "-plugin", version, "plugin.json")
