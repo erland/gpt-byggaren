@@ -871,6 +871,7 @@ existing_project_migration:
   ask_only_for_unresolved_business_or_semantic_choices: true
   supported_targets:
   - opencode
+  - plugin
 legacy_migration:
   model: docs/legacy-migration-analysis.md
   script: scripts/migrate_legacy_project.py
