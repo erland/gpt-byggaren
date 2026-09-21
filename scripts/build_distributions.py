@@ -551,6 +551,51 @@ def canonical_skill_definitions(cfg: dict) -> list[dict]:
     }]
 
 
+def plugin_manifest(cfg: dict, version: str) -> dict:
+    """Build deterministic Plugin v1 metadata from canonical project data only."""
+    project = cfg.get("project") or {}
+    manifest = {
+        "name": str(project.get("id") or "").strip(),
+        "version": str(version).strip(),
+        "description": str(project.get("description") or "").strip(),
+    }
+
+    author = project.get("author")
+    if isinstance(author, str) and author.strip():
+        manifest["author"] = {"name": author.strip()}
+    elif isinstance(author, dict):
+        name = str(author.get("name") or "").strip()
+        if name:
+            manifest["author"] = {"name": name}
+
+    # Only emit optional metadata when it is explicitly canonical.
+    for source_key, manifest_key in (
+        ("license", "license"),
+        ("homepage", "homepage"),
+        ("repository", "repository"),
+    ):
+        value = project.get(source_key)
+        if isinstance(value, str) and value.strip():
+            manifest[manifest_key] = value.strip()
+
+    missing = [key for key in ("name", "version", "description") if not manifest.get(key)]
+    if missing:
+        raise SystemExit("Plugin manifest requires canonical metadata: " + ", ".join(missing))
+
+    return manifest
+
+
+def write_plugin_manifest(target: Path, cfg: dict, version: str) -> Path:
+    """Write plugin.json deterministically and return its path."""
+    path = target / "plugin.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(plugin_manifest(cfg, version), ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    return path
+
+
 def _project_relative_files(root: Path, directory: Path, *, exclude_names: set[str] | None = None) -> list[str]:
     """Return deterministic project-relative file paths from a canonical directory."""
     exclude_names = set(exclude_names or set())
