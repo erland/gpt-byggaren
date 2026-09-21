@@ -27,6 +27,14 @@ OPENCODE_ASSETS = (
     "templates/README.opencode.md.tpl",
 )
 
+PLUGIN_ASSETS = (
+    "schemas/plugin-runtime.schema.json",
+    "schemas/skill-contract.schema.json",
+    "src/runtime-policy/plugin-runtime-policy.md",
+    "docs/plugin-runtime.md",
+    "templates/README.plugin.md.tpl",
+)
+
 
 def load_cfg(root: Path) -> dict[str, Any] | None:
     path = root / "gpt-project.yaml"
@@ -183,6 +191,92 @@ def assess_opencode(root: Path, cfg: dict[str, Any] | None, changes: dict[str, A
     }
 
 
+def assess_plugin(root: Path, cfg: dict[str, Any] | None, changes: dict[str, Any], decisions: list[dict[str, Any]]) -> dict[str, Any]:
+    if cfg is None:
+        return {
+            "status": "blocked",
+            "reasons": ["Missing gpt-project.yaml."],
+            "can_enable_automatically": False,
+            "required_actions": ["Identify canonical project structure before enabling Plugin."],
+        }
+
+    reasons: list[str] = []
+    actions: list[str] = []
+
+    instructions = cfg.get("instructions") or {}
+    canonical = instructions.get("canonical")
+    if not canonical or not (root / canonical).exists():
+        reasons.append("Canonical instruction is missing or unresolved.")
+        actions.append("Identify a canonical instruction file.")
+
+    tool_manual = any(
+        d.get("area") == "tools" and d.get("confidence") == "manual_review"
+        for d in decisions
+    )
+    if tool_manual:
+        reasons.append("Potential runtime scripts require manual tool inventory.")
+        actions.append("Classify scripts before treating them as Plugin runtime resources.")
+
+    workspace = changes.get("workspace_state") or cfg.get("workspace_state") or normalize_workspace_state_contract(cfg)
+    state = (workspace or {}).get("state", {})
+    if state.get("requirement") == "required":
+        reasons.append("Required persistent state depends on the host runtime in Plugin v1.")
+        actions.append("Verify that the intended plugin host provides the required persistent state.")
+
+    tools = changes.get("tools") or cfg.get("tools") or normalize_tool_contract(cfg)
+    required_exec_tools = [
+        t for t in (tools.get("tools") or [])
+        if t.get("requirement") == "required"
+        and t.get("type") in {"script", "local_command", "mcp", "api_action"}
+    ]
+    if required_exec_tools:
+        reasons.append("Required executable tools are not automatically realized by Plugin v1.")
+        actions.append("Provide a supported host integration or keep Plugin suitability reduced.")
+
+    if not canonical or not (root / canonical).exists():
+        status = "blocked"
+        can_enable = False
+    elif tool_manual or required_exec_tools or state.get("requirement") == "required":
+        status = "reduced"
+        can_enable = False
+    else:
+        status = "ready"
+        can_enable = True
+
+    return {
+        "status": status,
+        "reasons": reasons,
+        "can_enable_automatically": can_enable,
+        "required_actions": actions,
+    }
+
+
+def plugin_runtime_config() -> dict[str, Any]:
+    return {
+        "enabled": True,
+        "role": "peer_distribution",
+        "mode": "openai_plugin",
+        "schema": "schemas/plugin-runtime.schema.json",
+        "policy": "src/runtime-policy/plugin-runtime-policy.md",
+        "model": "docs/plugin-runtime.md",
+        "layout": {
+            "manifest_file": "plugin.json",
+            "skills": "skills",
+            "references": "references",
+            "assets": "assets",
+            "scripts": "scripts",
+        },
+        "templates": {
+            "readme": "templates/README.plugin.md.tpl",
+        },
+        "validation": {
+            "require_manifest": True,
+            "require_skill": True,
+            "require_skill_frontmatter": True,
+        },
+    }
+
+
 def opencode_runtime_config() -> dict[str, Any]:
     return {
         "enabled": True,
@@ -229,6 +323,7 @@ def build_report(root: Path, cfg: dict[str, Any] | None) -> dict[str, Any]:
             "warnings": ["No gpt-project.yaml found. No automatic changes are allowed."],
             "changes": {},
             "opencode": assess_opencode(root, cfg, {}, []),
+            "plugin": assess_plugin(root, cfg, {}, []),
         }
 
     decisions: list[dict[str, Any]] = []
@@ -322,15 +417,16 @@ def build_report(root: Path, cfg: dict[str, Any] | None) -> dict[str, Any]:
         "warnings": warnings,
         "changes": changes,
         "opencode": assess_opencode(root, cfg, changes, decisions),
+        "plugin": assess_plugin(root, cfg, changes, decisions),
     }
 
 
-def install_opencode_assets(root: Path) -> list[str]:
+def _install_assets(root: Path, assets: tuple[str, ...], label: str) -> list[str]:
     copied: list[str] = []
-    for rel in OPENCODE_ASSETS:
+    for rel in assets:
         src = BUILDER_ROOT / rel
         if not src.exists():
-            raise FileNotFoundError(f"GPT Byggaren OpenCode adapter asset is missing: {rel}")
+            raise FileNotFoundError(f"GPT Byggaren {label} adapter asset is missing: {rel}")
         dst = root / rel
         if dst.exists():
             continue
@@ -340,7 +436,21 @@ def install_opencode_assets(root: Path) -> list[str]:
     return copied
 
 
-def apply_changes(root: Path, cfg: dict[str, Any], report: dict[str, Any], enable_opencode: bool = False) -> bool:
+def install_plugin_assets(root: Path) -> list[str]:
+    return _install_assets(root, PLUGIN_ASSETS, "Plugin")
+
+
+def install_opencode_assets(root: Path) -> list[str]:
+    return _install_assets(root, OPENCODE_ASSETS, "OpenCode")
+
+
+def apply_changes(
+    root: Path,
+    cfg: dict[str, Any],
+    report: dict[str, Any],
+    enable_opencode: bool = False,
+    enable_plugin: bool = False,
+) -> bool:
     changes = report.get("changes") or {}
     updated = copy.deepcopy(cfg)
     changed = False
@@ -376,6 +486,14 @@ def apply_changes(root: Path, cfg: dict[str, Any], report: dict[str, Any], enabl
         if install_opencode_assets(root):
             changed = True
 
+    if enable_plugin and report.get("plugin", {}).get("can_enable_automatically"):
+        runtime = updated.setdefault("runtime", {})
+        if "plugin" not in runtime:
+            runtime["plugin"] = plugin_runtime_config()
+            changed = True
+        if install_plugin_assets(root):
+            changed = True
+
     if not changed:
         return False
 
@@ -391,6 +509,7 @@ def main() -> int:
     ap.add_argument("--project-root", default=".")
     ap.add_argument("--apply", action="store_true")
     ap.add_argument("--enable-opencode", action="store_true")
+    ap.add_argument("--enable-plugin", action="store_true")
     ap.add_argument("--json", action="store_true", dest="json_output")
     ap.add_argument("--report-file")
     args = ap.parse_args()
@@ -404,13 +523,24 @@ def main() -> int:
         if cfg is None:
             report["apply"] = {"result": "blocked", "reason": "Missing gpt-project.yaml"}
         else:
+            blocked_targets = []
             if args.enable_opencode and not report.get("opencode", {}).get("can_enable_automatically"):
+                blocked_targets.append("OpenCode")
+            if args.enable_plugin and not report.get("plugin", {}).get("can_enable_automatically"):
+                blocked_targets.append("Plugin")
+            if blocked_targets:
                 report["apply"] = {
                     "result": "blocked",
-                    "reason": "OpenCode compatibility is not ready for automatic enablement.",
+                    "reason": "Compatibility is not ready for automatic enablement: " + ", ".join(blocked_targets),
                 }
             else:
-                applied = apply_changes(root, cfg, report, enable_opencode=args.enable_opencode)
+                applied = apply_changes(
+                    root,
+                    cfg,
+                    report,
+                    enable_opencode=args.enable_opencode,
+                    enable_plugin=args.enable_plugin,
+                )
                 report["apply"] = {"result": "changed" if applied else "no_changes"}
 
     if args.report_file:
@@ -430,6 +560,7 @@ def main() -> int:
         for warning in report["warnings"]:
             print(f"WARNING: {warning}")
         print(f"OpenCode: {report['opencode']['status']}")
+        print(f"Plugin: {report['plugin']['status']}")
         if args.apply:
             print(f"Apply: {'changed' if applied else report.get('apply', {}).get('result', 'no_changes')}")
 
