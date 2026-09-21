@@ -260,3 +260,8 @@ Plugin v1 är mindre lämplig som ensam runtime när projektet kräver:
 - lifecycle hooks.
 
 I sådana fall ska Plugin antingen kombineras med en host som tillhandahåller funktionerna eller markeras som `reduced` i runtime parity.
+
+
+## Dogfood
+
+GPT Byggaren bygger och testar sin egen Plugin-distribution. Resultatet och den avsiktligt reducerade pariteten för workspace/state och executable tools dokumenteras i [plugin-dogfood.md](plugin-dogfood.md).
