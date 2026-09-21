@@ -828,6 +828,10 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
         encoding="utf-8",
     )
     (out / "VERSION").write_text(version + "\n", encoding="utf-8")
+    (out / "runtime-contract.json").write_text(
+        json.dumps(plugin_runtime_contract(cfg, built_skills), ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
 
     write_manifest(out, cfg["project"]["id"] + "-plugin", version, "plugin.json")
     manifest_path = out / "MANIFEST.json"
@@ -837,10 +841,6 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     manifest["skills"] = built_skills
     manifest["contract_snapshot"] = "runtime-contract.json"
     manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    (out / "runtime-contract.json").write_text(
-        json.dumps(plugin_runtime_contract(cfg, built_skills), ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
     return out
 
 
