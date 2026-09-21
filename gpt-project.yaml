@@ -201,6 +201,18 @@ runtime:
       block_on_instruction_limit: true
       block_on_knowledge_limit: true
       block_on_misleading_core_functionality: true
+skills:
+  contract_version: 1
+  schema: schemas/skill-contract.schema.json
+  mode: inferred
+  definitions:
+  - id: gpt-project-workflow
+    name: gpt-project-workflow
+    description: Planera, återuppta och fortsätt ett GPT Byggaren-projekt utifrån faktisk projektstatus.
+    references:
+    - docs/dynamic-planning.md
+    - docs/resume-flow.md
+    - docs/next-step-recommendation.md
 capabilities:
   contract_version: 1
   schema: schemas/capability-contract.schema.json
