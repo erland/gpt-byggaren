@@ -140,7 +140,8 @@ def validate_opencode(root: Path, cfg: dict) -> list[str]:
     skills_cfg = runtime_cfg.get("skills", {})
     if skills_cfg.get("enabled"):
         root_path = build / skills_cfg.get("directory", ".opencode/skills")
-        for skill in skills_cfg.get("definitions", []):
+        canonical_skills = cfg.get("skills", {}).get("definitions") or skills_cfg.get("definitions", [])
+        for skill in canonical_skills:
             skill_file = root_path / skill["id"] / "SKILL.md"
             if not skill_file.exists():
                 errors.append(f"Missing OpenCode skill: {skill_file.relative_to(build)}")
