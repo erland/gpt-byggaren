@@ -84,6 +84,18 @@ Endast scripts som faktiskt behövs i plugin-runtime ska följa med.
 
 Att ett script finns i projektet innebär inte automatiskt att det ska distribueras.
 
+## Resource resolution i v1
+
+Explicit metadata på en canonical skill har företräde för respektive resursklass.
+
+Om en resursklass saknar explicit innehåll används följande konservativa fallback i Plugin v1:
+
+- canonical Knowledge → `references/`
+- canonical templates → `assets/`
+- endast scripts som uttryckligen deklarerats som runtime tools → `scripts/`
+
+Fallbacken ska vara deterministisk och får inte dra in tests, evals, research eller godtyckliga utvecklingsscript.
+
 ## Skillnad mot övriga runtimes
 
 ### Chat ZIP
