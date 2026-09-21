@@ -523,52 +523,127 @@ def build_claude(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     return out
 
 
+def canonical_skill_definitions(cfg: dict) -> list[dict]:
+    """Return platform-neutral skill definitions with conservative legacy fallback."""
+    canonical = cfg.get("skills")
+    if isinstance(canonical, dict):
+        definitions = canonical.get("definitions")
+        if isinstance(definitions, list) and definitions:
+            return definitions
+
+    legacy = cfg.get("runtime", {}).get("opencode", {}).get("skills", {})
+    definitions = legacy.get("definitions") if isinstance(legacy, dict) else None
+    if isinstance(definitions, list) and definitions:
+        return definitions
+
+    project = cfg.get("project", {})
+    project_id = str(project.get("id") or "assistant")
+    name = str(project.get("name") or project_id)
+    description = str(project.get("description") or f"Use {name} according to its canonical instructions.").strip()
+    return [{
+        "id": project_id,
+        "name": project_id,
+        "description": description,
+        "references": [],
+        "assets": [],
+        "scripts": [],
+        "_inferred_default": True,
+    }]
+
+
+def compile_skill_markdown(
+    skill: dict,
+    *,
+    compatibility: str | None = None,
+    canonical_instruction: str | None = None,
+) -> str:
+    """Compile one canonical skill definition into deterministic SKILL.md text."""
+    frontmatter = [
+        "---",
+        f"name: {skill['name']}",
+        f"description: {skill['description']}",
+    ]
+    if compatibility:
+        frontmatter.append(f"compatibility: {compatibility}")
+    frontmatter.extend([
+        "metadata:",
+        "  source: generated-from-canonical-project",
+        "---",
+        "",
+        "## Purpose",
+        "",
+        str(skill["description"]).strip(),
+        "",
+    ])
+
+    body = frontmatter
+
+    if skill.get("_inferred_default") and canonical_instruction:
+        body.extend([
+            "## Canonical behavior",
+            "",
+            canonical_instruction.strip(),
+            "",
+        ])
+
+    references = list(skill.get("references", []) or [])
+    if references:
+        body.extend(["## References", ""])
+        for ref in references:
+            body.append(f"- Read `references/{Path(ref).name}` when that material is relevant.")
+        body.append("")
+
+    assets = list(skill.get("assets", []) or [])
+    if assets:
+        body.extend(["## Assets", ""])
+        for asset in assets:
+            body.append(f"- Use `assets/{Path(asset).name}` when the task requires that resource.")
+        body.append("")
+
+    scripts = list(skill.get("scripts", []) or [])
+    if scripts:
+        body.extend(["## Scripts", ""])
+        for script in scripts:
+            body.append(f"- Use `scripts/{Path(script).name}` only when runtime execution is available and appropriate.")
+        body.append("")
+
+    return "\n".join(body).rstrip() + "\n"
+
+
 def build_opencode_skills(root: Path, cfg: dict, out: Path) -> list[str]:
-    """Generate OpenCode skills from declared workflow/reference sources."""
+    """Generate OpenCode skills from the canonical skill contract."""
     runtime_cfg = cfg["runtime"]["opencode"]
     skills_cfg = runtime_cfg.get("skills", {})
     if not skills_cfg.get("enabled"):
         return []
 
     skill_root = out / skills_cfg.get("directory", ".opencode/skills")
+    canonical_instruction = (root / cfg["instructions"]["canonical"]).read_text(encoding="utf-8")
     built: list[str] = []
-    for skill in skills_cfg.get("definitions", []):
+
+    for skill in canonical_skill_definitions(cfg):
         skill_id = skill["id"]
         skill_dir = skill_root / skill_id
-        references_dir = skill_dir / "references"
-        references_dir.mkdir(parents=True, exist_ok=True)
 
-        reference_lines = []
-        for ref in skill.get("references", []):
-            src = root / ref
-            if not src.exists():
-                raise SystemExit(f"OpenCode skill reference missing: {ref}")
-            dst = references_dir / src.name
-            copy_file(src, dst)
-            reference_lines.append(f"- Read `references/{src.name}` when that part of the workflow is relevant.")
+        for ref_key, target_name in (
+            ("references", "references"),
+            ("assets", "assets"),
+            ("scripts", "scripts"),
+        ):
+            for ref in skill.get(ref_key, []) or []:
+                src = root / ref
+                if not src.exists():
+                    raise SystemExit(f"Canonical skill {ref_key[:-1]} missing: {ref}")
+                copy_file(src, skill_dir / target_name / src.name)
 
-        body = (
-            "---\n"
-            f"name: {skill['name']}\n"
-            f"description: {skill['description']}\n"
-            "compatibility: opencode\n"
-            "metadata:\n"
-            "  source: generated-from-canonical-project\n"
-            "---\n\n"
-            "## Purpose\n\n"
-            f"{skill['description']}\n\n"
-            "## Workflow\n\n"
-            "1. Read the workspace state before choosing work.\n"
-            "2. Prefer blockers, failed validation, hygiene, and missing dependencies before the next planned step.\n"
-            "3. Treat the development plan as guiding rather than mechanical.\n"
-            "4. After a change, validate, update project state, and rebuild the complete project package when applicable.\n"
-            "5. Do not ask the user to repeat project history already present in workspace/state.\n\n"
-            "## References\n\n"
-            + "\n".join(reference_lines)
-            + "\n"
+        body = compile_skill_markdown(
+            skill,
+            compatibility="opencode",
+            canonical_instruction=canonical_instruction,
         )
         (skill_dir / "SKILL.md").write_text(body, encoding="utf-8")
         built.append(skill_id)
+
     return built
 
 
