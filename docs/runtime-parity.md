@@ -187,3 +187,18 @@ Paritetsmodellen är generaliserad när:
 - releasebedömning sker per runtime,
 - gamla två-runtime-rapporter kan normaliseras,
 - inga ännu ej implementerade runtimes deklareras som stödda.
+
+
+## OpenAI Plugin v1
+
+`openai_plugin` är en registrerad peer runtime och ska bedömas mot samma canonical kontrakt som övriga runtimes.
+
+För Plugin v1 gäller särskilt:
+
+- behavior kan projiceras genom skills,
+- runtimepaketet kan genereras som artifact,
+- persistent workspace/state beror på host-runtime,
+- lokala canonical script tools paketeras som resurser men får inte automatiskt räknas som exekverbara tools,
+- MCP, UI och hooks genereras inte i v1.
+
+Dessa skillnader ska uttryckas som `reduced` eller `missing` i en konkret parityrapport när de är relevanta för projektets requirements; de får inte döljas genom att markera plugin som generellt equivalent.
