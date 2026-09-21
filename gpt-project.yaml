@@ -597,6 +597,7 @@ runtime_parity:
   - chatgpt_custom
   - claude_project
   - opencode
+  - openai_plugin
   compared_categories:
   - behavior
   - capability
