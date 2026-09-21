@@ -17,7 +17,7 @@ Ett normalt arbetsflöde är:
 5. När utvecklingen startar skapas en komplett projekt-ZIP.
 6. Projektet vidareutvecklas stegvis utifrån faktisk projektstatus.
 7. Efter relevanta steg körs lint, tester, validering och project hygiene.
-8. När projektet är redo byggs de runtime-distributioner som analysen har aktiverat, exempelvis ChatGPT Chat, Custom GPT, Claude Projects och OpenCode.
+8. När projektet är redo byggs de runtime-distributioner som analysen har aktiverat, exempelvis ChatGPT Chat, Custom GPT, Claude Projects, OpenCode och OpenAI Plugin.
 9. Projektet kan byggas lokalt eller via GitHub Actions och GitHub Releases.
 
 Utvecklingsplanen är vägledande, inte mekanisk. GPT Byggaren kan lägga in korrigeringssteg, hoppa över onödiga steg eller omplanera när projektets faktiska tillstånd motiverar det.
@@ -32,6 +32,7 @@ Registrerade mål är:
 - **Custom GPT** – paket för ChatGPT Builder med plattformens instruktion- och Knowledge-begränsningar.
 - **Claude Projects** – portabel Project Instructions + Knowledge-distribution för Claude Projects.
 - **OpenCode** – agentisk workspace-runtime med `AGENTS.md`, Skills och explicita custom tools.
+- **OpenAI Plugin** – skills-first runtime med `plugin.json`, `SKILL.md`, references, assets och runtime-relevanta scripts.
 
 Vilka av dessa som aktiveras bestäms av användningsfallet. Ingen runtime är automatiskt primär och Chat ZIP + Custom GPT är inte ett obligatoriskt standardpar.
 
@@ -59,6 +60,16 @@ Claude-distributionen innehåller Project Instructions, Knowledge-material och r
 ### OpenCode
 
 OpenCode-distributionen är ett agentiskt workspace med `AGENTS.md`, projektlokala Skills och explicita custom tools. Den passar särskilt när GPT Byggaren ska arbeta stegvis mot ett persistent projekt/workspace.
+
+### OpenAI Plugin
+
+Plugin-distributionen är en portabel skills-first runtime. Den innehåller `plugin.json`, en eller flera skills under `skills/`, relevanta references/assets/scripts samt runtime-kontrakt och manifest.
+
+Byggd artefakt heter normalt:
+
+`<project-id>-plugin-<version>.zip`
+
+Plugin v1 genererar inte MCP-servrar, UI-komponenter eller hooks. Om ett projekt kräver persistent workspace/state eller körbara lokala tools måste host-runtimen bära den funktionen, annars ska Plugin bedömas som reducerad.
 
 Oavsett runtime ska nyprojektsanalysen bedöma **alla registrerade peer runtimes** för GPT:n som byggs. Den ska inte automatiskt begränsa det nya projektet till samma runtime som GPT Byggaren själv råkar köras i.
 
@@ -193,6 +204,7 @@ För att hålla README:n användbar ligger detaljerna i separata dokument.
 - [`docs/custom-gpt-compilation.md`](docs/custom-gpt-compilation.md)
 - [`docs/claude-portable-runtime.md`](docs/claude-portable-runtime.md)
 - [`docs/opencode-runtime.md`](docs/opencode-runtime.md)
+- [`docs/plugin-runtime.md`](docs/plugin-runtime.md)
 - [`docs/runtime-parity.md`](docs/runtime-parity.md)
 - [`docs/platform-validation.md`](docs/platform-validation.md)
 - [`docs/build-system.md`](docs/build-system.md)
