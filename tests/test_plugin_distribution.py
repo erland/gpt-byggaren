@@ -28,7 +28,7 @@ def test_plugin_manifest_uses_canonical_project_metadata():
     assert manifest["$schema"] == "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json"
     assert manifest["name"] == cfg["project"]["id"]
     assert manifest["version"] == "1.2.3"
-    assert manifest["description"] == cfg["project"]["description"]
+    assert manifest["description"] == cfg["project"]["description"].strip()
 
 
 def test_build_plugin_has_required_structure_and_skill_resources():
@@ -71,7 +71,8 @@ def test_plugin_zip_is_deterministic():
     def build_zip(base: Path) -> Path:
         out = build_distributions.build_plugin(ROOT, cfg, base / "build", version)
         zip_path = base / "plugin.zip"
-        build_distributions.stable_write_zip(out, zip_path)
+        files = sorted(p for p in out.rglob("*") if p.is_file())
+        build_distributions.stable_write_zip(zip_path, out, files)
         return zip_path
 
     with tempfile.TemporaryDirectory() as td:
