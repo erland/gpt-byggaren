@@ -143,3 +143,21 @@ def test_readme_describes_all_registered_runtime_families():
     assert "Claude Projects" in readme
     assert "OpenCode" in readme
     assert "Chat ZIP + Custom GPT är inte ett obligatoriskt standardpar" in readme
+
+
+
+def test_canonical_instruction_knows_all_registered_runtime_families():
+    instruction = (ROOT / "src" / "instructions" / "system.md").read_text(encoding="utf-8")
+
+    for runtime_name in (
+        "ChatGPT Chat",
+        "ChatGPT Custom",
+        "Claude Projects",
+        "OpenCode",
+        "OpenAI Plugin",
+    ):
+        assert runtime_name in instruction
+
+    assert "skills-first peer runtime" in instruction
+    assert "runtime parity" in instruction
+    assert "genererad MCP-server" in instruction
