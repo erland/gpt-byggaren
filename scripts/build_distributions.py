@@ -746,6 +746,27 @@ def build_opencode_skills(root: Path, cfg: dict, out: Path) -> list[str]:
     return built
 
 
+def plugin_runtime_contract(cfg: dict, built_skills: list[str] | None = None) -> dict:
+    """Compile canonical assistant contracts into an OpenAI Plugin snapshot."""
+    built_skills = list(built_skills or [])
+    return {
+        "schema_version": 1,
+        "runtime_id": "openai_plugin",
+        "capabilities": normalize_capability_contract(cfg),
+        "artifacts": normalize_artifact_contract(cfg),
+        "workspace_state": normalize_workspace_state_contract(cfg),
+        "tools": normalize_tool_contract(cfg),
+        "adapter": {
+            "mode": "openai_plugin",
+            "skills_first": True,
+            "skills": built_skills,
+            "mcp_generated": False,
+            "ui_generated": False,
+            "hooks_generated": False,
+        },
+    }
+
+
 def _copy_skill_resources(root: Path, skill_dir: Path, resources: dict[str, list[str]]) -> None:
     """Copy resolved skill resources and reject basename collisions."""
     for key in ("references", "assets", "scripts"):
@@ -808,6 +829,7 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     manifest["adapter_id"] = "openai_plugin"
     manifest["plugin_manifest"] = "plugin.json"
     manifest["skills"] = built_skills
+    manifest["contract_snapshot"] = "runtime-contract.json"
     manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return out
 
