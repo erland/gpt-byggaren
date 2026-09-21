@@ -40,6 +40,7 @@ skills/
 README.md
 VERSION
 MANIFEST.json
+runtime-contract.json
 ```
 
 Varje `SKILL.md` ska minst ha frontmatter med:
@@ -191,3 +192,71 @@ Möjliga senare utökningar är:
 - publiceringsflöden
 
 Dessa ska behandlas som separata funktioner och inte vara ett krav för skills-first Plugin v1.
+
+
+## Bygga Plugin-distributionen
+
+Bygg alla aktiverade distributioner:
+
+```bash
+python scripts/build_distributions.py \
+  --project-root . \
+  --version 0.0.0-dev
+```
+
+Eller bygg endast Plugin:
+
+```bash
+python scripts/build_distributions.py \
+  --project-root . \
+  --version 0.0.0-dev \
+  --targets plugin
+```
+
+Validera därefter distributionerna:
+
+```bash
+python scripts/validate_distributions.py --project-root .
+```
+
+Verifiera att den deklarerade Plugin-artefakten finns:
+
+```bash
+python scripts/verify_distribution_outputs.py \
+  --project-root . \
+  --version 0.0.0-dev
+```
+
+Den färdiga ZIP-filen ligger normalt i:
+
+```text
+dist/<project-id>-plugin-<version>.zip
+```
+
+## Installationsprincip
+
+Plugin-ZIP:en är distributionsartefakten. Packa inte om den eller redigera genererade runtimefiler manuellt som en ny canonical källa.
+
+Installationen sker i en host som stöder den aktuella plugin-/skills-modellen. Exakta UI-steg kan förändras över tid och bör därför följas från den aktuella hostens dokumentation.
+
+Efter installation ska hosten kunna upptäcka de skills som finns under `skills/`. `README.md` i ZIP:en beskriver paketets innehåll och `runtime-contract.json` visar vilken canonical funktionalitet som projicerats.
+
+## När Plugin passar
+
+Plugin är särskilt lämplig när:
+
+- kärnbeteendet kan uttryckas som återanvändbara skills,
+- Knowledge naturligt kan distribueras som references,
+- mallar eller leveransunderlag passar som assets,
+- runtimeberoenden är få,
+- portabel installation är viktig.
+
+Plugin v1 är mindre lämplig som ensam runtime när projektet kräver:
+
+- egen persistent workspace/state som måste garanteras av paketet,
+- lokala kommandon eller scripts som måste kunna exekveras,
+- genererad MCP-server,
+- ChatGPT UI-komponenter,
+- lifecycle hooks.
+
+I sådana fall ska Plugin antingen kombineras med en host som tillhandahåller funktionerna eller markeras som `reduced` i runtime parity.
