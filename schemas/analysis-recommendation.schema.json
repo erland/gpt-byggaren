@@ -29,7 +29,7 @@
         },
         "candidates": {
           "type": "array",
-          "minItems": 4,
+          "minItems": 5,
           "items": {
             "type": "object",
             "required": [
@@ -106,6 +106,19 @@
                 "properties": {
                   "runtime_id": {
                     "const": "opencode"
+                  }
+                },
+                "required": [
+                  "runtime_id"
+                ]
+              }
+            },
+            {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "runtime_id": {
+                    "const": "openai_plugin"
                   }
                 },
                 "required": [
