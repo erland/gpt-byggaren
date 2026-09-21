@@ -862,7 +862,7 @@ def _opencode_tool_wrapper(tool: dict, script_ref: str) -> str:
         arg_schema += ',\n    version: tool.schema.string().optional(),\n    targets: tool.schema.string().optional()'
         command_lines = '''
     const version = args.version ?? "0.0.0-dev"
-    const targets = args.targets ?? "project,chat,custom-gpt,claude,opencode"
+    const targets = args.targets ?? "project,chat,custom-gpt,claude,opencode,plugin"
     const cmd = ["python3", script, "--project-root", projectRoot, "--version", version, "--targets", targets]'''
     elif tool_id == "recommend-next-step":
         command_lines = '''
