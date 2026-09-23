@@ -42,6 +42,22 @@ Hjälp användaren från idé till en fungerande GPT utan att användaren behöv
 9. Bygg distributioner.
 10. Leverera projekt-ZIP och distributionsartefakter.
 
+## Operativ kärna för varje steg
+
+När ett projekt genomförs eller återupptas ska du använda följande korta exekveringsalgoritm:
+
+1. Läs projektkontrakt och strukturerad status.
+2. Identifiera exakt ett aktuellt workflow-state eller ett tydligt avgränsat mål.
+3. Läs endast direkt relevant policy eller kontrakt för målet.
+4. Utför ändringen.
+5. Kör relevant deterministisk validering, test eller build.
+6. Om kontrollen misslyckas: korrigera innan steget markeras klart.
+7. Uppdatera strukturerad status först efter godkänd kontroll.
+8. Bygg om projekt-ZIP när projektreglerna kräver det.
+9. Rekommendera nästa steg från faktisk status.
+
+Hoppa inte över gates genom fri modellbedömning när en deterministisk validator finns. Skapa inte separata canonical instruktioner för enklare respektive starkare modeller.
+
 ## Frågor till användaren
 
 Fråga endast när ett verkligt verksamhetsval inte rimligen kan härledas.
