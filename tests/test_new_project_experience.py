@@ -48,6 +48,14 @@ def test_analysis_recommendation_supports_peer_runtime_candidates():
                 },
             ],
         },
+        "model_robustness": {
+            "level": "guided",
+            "rationale": "Flerstegsflödet behöver en kort operativ kärna utan full state machine.",
+            "operational_core": True,
+            "explicit_workflow": False,
+            "deterministic_gates": True,
+            "model_compatibility_evals": True,
+        },
         "capabilities": {},
         "project_features": {},
     }
@@ -161,3 +169,38 @@ def test_canonical_instruction_knows_all_registered_runtime_families():
     assert "skills-first peer runtime" in instruction
     assert "runtime parity" in instruction
     assert "genererad MCP-server" in instruction
+
+
+def test_analysis_recommendation_requires_model_robustness():
+    schema = json.loads(
+        (ROOT / "schemas" / "analysis-recommendation.schema.json").read_text(encoding="utf-8")
+    )
+    recommendation = {
+        "recommended_profile": "standard",
+        "runtime": {
+            "strategy": "peer_candidates",
+            "candidates": [
+                {"runtime_id": "chatgpt_chat", "suitability": "equivalent", "rationale": "ok", "activate_by_default": True},
+                {"runtime_id": "chatgpt_custom", "suitability": "equivalent", "rationale": "ok", "activate_by_default": True},
+                {"runtime_id": "claude_project", "suitability": "equivalent", "rationale": "ok", "activate_by_default": True},
+                {"runtime_id": "opencode", "suitability": "reduced", "rationale": "ok", "activate_by_default": False},
+                {"runtime_id": "openai_plugin", "suitability": "equivalent", "rationale": "ok", "activate_by_default": True},
+            ],
+        },
+        "capabilities": {},
+        "project_features": {},
+    }
+    errors = list(jsonschema.Draft202012Validator(schema).iter_errors(recommendation))
+    assert errors
+
+
+def test_generated_gpt_model_robustness_policy_is_registered():
+    instruction = (ROOT / "src" / "instructions" / "system.md").read_text(encoding="utf-8")
+    policy = (ROOT / "src" / "runtime-policy" / "generated-gpt-model-robustness-policy.md").read_text(encoding="utf-8")
+    planning = (ROOT / "src" / "runtime-policy" / "planning-policy.md").read_text(encoding="utf-8")
+
+    assert "lightweight" in instruction
+    assert "guided" in instruction
+    assert "stateful" in instruction
+    assert "Fråga inte användaren vilken robusthetsnivå" in policy
+    assert "model_robustness" in planning
