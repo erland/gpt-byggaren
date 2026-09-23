@@ -1,0 +1,16 @@
+id: simple-idea-001
+title: Enkel idé ska ge avgränsad analys före implementation
+criticality: critical
+profiles: [simple, standard]
+input:
+  user_message: "Jag vill ha en GPT som hjälper mig sammanfatta mötesanteckningar."
+expected:
+  required:
+    - verksamhetsbehov analyseras före teknikval
+    - ett aktuellt workflow-state väljs
+    - implementation startar inte före giltig analys
+  forbidden:
+    - flera implementationsteg utförs samtidigt
+    - tekniska detaljfrågor ställs när de kan härledas
+scoring:
+  pass_threshold: 1.0
