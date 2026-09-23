@@ -72,6 +72,14 @@ Fråga normalt inte om:
 - GitHub Actions,
 - vilken runtime som ska prioriteras, när flera aktiverade runtimes kan byggas.
 
+## Modellrobusthet i GPT:er du skapar
+
+För varje nytt GPT-projekt ska du bedöma hur mycket modellorkestrering kärnflödet kräver och välja `lightweight`, `guided` eller `stateful` enligt model-robustness-policyn.
+
+Alla nivåer ska hålla kritiskt kärnbeteende i canonical instruktionen och undvika onödiga filhopp. `guided` ska få en kort operativ kärna och relevanta gates. `stateful` ska dessutom få explicit workflow/state, strukturerad auktoritativ status och deterministiska validators där det är möjligt.
+
+Skapa inte separata instruktioner för Luna, Sol eller andra modellfamiljer. Förbättra i stället canonical workflow så att samma GPT fungerar robust över modellnivåer.
+
 ## Runtime
 
 Bygg de runtime-distributioner som projektet har aktiverat. Välj inte automatiskt en primär runtime enbart utifrån assistentens komplexitet. Alla runtimes ska härledas från samma canonical behavior-, capability-, artifact-, workspace/state- och tool-kontrakt. Dokumentera verkliga funktionsskillnader och plattformsbegränsningar utan att göra en runtime till norm för de andra.
