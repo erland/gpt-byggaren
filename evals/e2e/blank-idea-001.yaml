@@ -13,6 +13,7 @@ features:
   evidence_required: false
 expected:
   profile: standard
+  model_robustness_level: guided
   project_id: motesuppfoljaren
   runtime_strategy: peer_candidates
   default_runtime_ids:
