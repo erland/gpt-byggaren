@@ -18,6 +18,76 @@ development:
   - docs/product-vision.md
   - docs/user-journeys.md
   - docs/canonical-project-structure.md
+workflow:
+  mode: explicit_state_machine
+  policy: src/runtime-policy/operational-execution-policy.md
+  current_state_source: project-status.yaml
+  execution_rule: one_state_or_bounded_goal_per_step
+  validator: scripts/validate_model_robustness.py
+  states:
+    idea_analysis:
+      next:
+      - architecture
+      exit_requires:
+      - valid_analysis_recommendation
+    architecture:
+      next:
+      - planning
+      exit_requires:
+      - canonical_contracts_defined
+    planning:
+      next:
+      - implementation
+      exit_requires:
+      - valid_development_plan
+    implementation:
+      next:
+      - validation
+      exit_requires:
+      - planned_change_present
+    validation:
+      next:
+      - implementation
+      - packaging
+      exit_requires:
+      - relevant_validation_passed
+    packaging:
+      next:
+      - release
+      exit_requires:
+      - distribution_validation_passed
+    release:
+      next:
+      - maintenance
+      exit_requires:
+      - release_readiness_passed
+    maintenance:
+      next:
+      - implementation
+      - validation
+    blocked:
+      control_state: true
+    paused:
+      control_state: true
+  operational_core:
+  - read_project_contract
+  - read_project_status
+  - select_one_state_or_bounded_goal
+  - load_only_relevant_policy
+  - execute_change
+  - validate_deterministically
+  - correct_before_completion_on_failure
+  - update_structured_status_after_pass
+  - rebuild_project_zip_when_required
+  - recommend_next_step_from_actual_state
+model_robustness:
+  design_target: simpler_and_stronger_llms
+  separate_model_instructions: false
+  prefer_deterministic_validation: true
+  max_core_policy_hops: 1
+  model_compatibility:
+    documentation: docs/model-compatibility.md
+    scenarios: evals/model-compatibility/
 structure:
   canonical_root: src
   instructions:
