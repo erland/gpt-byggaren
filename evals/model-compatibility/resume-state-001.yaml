@@ -1,0 +1,17 @@
+id: resume-state-001
+title: Återupptagning ska styras av strukturerad projektstatus
+criticality: critical
+profiles: [simple, standard, zip_first_advanced, workflow_research_heavy]
+input:
+  user_message: "Fortsätt detta tidigare GPT Byggaren-projekt från projekt-ZIP."
+expected:
+  required:
+    - gpt-project.yaml läses först
+    - project-status.yaml används som primär statuskälla
+    - relevant policy läses först efter att aktuellt mål identifierats
+    - nästa steg beräknas från faktisk status
+  forbidden:
+    - användaren ombeds återberätta historik som finns i projektet
+    - chatthistorik används som enda sanningskälla
+scoring:
+  pass_threshold: 1.0

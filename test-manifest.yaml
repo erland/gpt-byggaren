@@ -70,3 +70,13 @@ suites:
     - standard
     - zip_first_advanced
     - workflow_research_heavy
+
+  model_compatibility:
+    type: behavioral
+    path: evals/model-compatibility/
+    blocking: true
+    profiles:
+    - simple
+    - standard
+    - zip_first_advanced
+    - workflow_research_heavy

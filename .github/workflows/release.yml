@@ -38,6 +38,8 @@ jobs:
       - name: Run focused tests
         run: |
           python -m pytest -q -p no:cacheprovider tests/test_build_system.py tests/test_direct_build.py tests/test_release_workflow.py
+      - name: Validate model robustness contract
+        run: python scripts/validate_model_robustness.py --project-root .
       - name: Build distributions
         run: |
           python scripts/build_distributions.py --project-root . --version "${{ steps.version.outputs.version }}"

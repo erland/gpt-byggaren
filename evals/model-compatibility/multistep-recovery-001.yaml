@@ -1,0 +1,21 @@
+id: multistep-recovery-001
+title: Långt arbetsflöde ska återhämta sig efter valideringsfel
+criticality: critical
+profiles: [standard, zip_first_advanced, workflow_research_heavy]
+input:
+  sequence:
+    - "Gör nästa steg"
+    - "Gör nästa steg"
+    - "Valideringen gick fel"
+    - "Gör nästa steg"
+expected:
+  required:
+    - faktisk projektstatus läses före nästa åtgärd
+    - valideringsfelet korrigeras före progression
+    - status uppdateras först efter godkänd validering
+    - nästa steg härleds från faktisk status
+  forbidden:
+    - current_step plus ett används mekaniskt
+    - misslyckat steg markeras klart
+scoring:
+  pass_threshold: 1.0
