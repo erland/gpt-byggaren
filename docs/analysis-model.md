@@ -288,6 +288,30 @@ Typiska kännetecken:
 
 Profilerna är vägledning, inte låsta mallar.
 
+## Modellrobusthetsbeslut
+
+Analysen ska också klassificera mål-GPT:ns behov av robust exekvering över olika LLM-nivåer.
+
+Tre nivåer används:
+
+- `lightweight` – korta eller fristående uppgifter; core contract och instruction-adherence räcker normalt,
+- `guided` – tydligt flerstegsflöde; lägg till kort operativ kärna, gates och model-compatibility-evals,
+- `stateful` – resumable/långlivat arbete; lägg dessutom till explicit workflow/state och deterministiska validators där möjligt.
+
+Nivån är modellneutral. Den ska inte uttryckas som stöd för en viss modellfamilj, utan som hur mycket implicit orkestrering projektet lämnar åt LLM:n.
+
+Exempel:
+
+```yaml
+model_robustness:
+  level: guided
+  rationale: Flerstegsflödet behöver en kort operativ kärna men inget långlivat state.
+  operational_core: true
+  explicit_workflow: false
+  deterministic_gates: true
+  model_compatibility_evals: true
+```
+
 ## Runtimebeslut
 
 Runtimebeslut ska göras efter canonical kontrakt och över samtliga registrerade peer runtimes.
