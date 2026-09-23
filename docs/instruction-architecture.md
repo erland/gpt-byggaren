@@ -105,6 +105,14 @@ Undvik att lägga:
 
 i huvudinstruktionen om de bättre hör hemma i Knowledge eller runtimefiler.
 
+## Adaptiv modellrobusthet
+
+Instruktionsarkitekturen för nya GPT-projekt ska följa analysens `model_robustness`.
+
+Alla projekt behåller ett litet `instructions.core_contract`. För `guided` ska den operativa kärnan ligga direkt i canonical instruktionen så att modellen inte behöver rekonstruera arbetsflödet från flera filer. För `stateful` ska explicit workflow/state och gates dessutom deklareras i projektkontraktet och maskinellt avgörbara regler flyttas till validators när det är praktiskt.
+
+Detta får inte leda till separata canonical instruktioner per modellfamilj.
+
 ## ZIP-runtime
 
 Chat ZIP får använda:
