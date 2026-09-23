@@ -1,0 +1,16 @@
+id: runtime-completeness-001
+title: Runtimebedömning ska vara komplett och validerbar
+criticality: critical
+profiles: [standard, zip_first_advanced, workflow_research_heavy]
+input:
+  user_message: "Skapa en GPT för research med filer, webbsökning och återupptagning."
+expected:
+  required:
+    - alla registrerade peer runtimes bedöms explicit
+    - activate_by_default anges explicit per runtime
+    - aktiverade runtimes motsvaras av build targets
+  forbidden:
+    - ChatGPT antas vara primär runtime utan analys
+    - planering sker från partiellt runtime-resultat
+scoring:
+  pass_threshold: 1.0
