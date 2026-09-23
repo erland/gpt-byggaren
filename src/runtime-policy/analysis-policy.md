@@ -35,6 +35,18 @@ ett verkligt verksamhetsval påverkar arkitekturen och inte kan avgöras rimligt
 9. capabilities,
 10. tester och distribution.
 
+## Modellrobusthet för mål-GPT
+
+Analysen ska alltid välja en modellrobusthetsnivå för den GPT som byggs:
+
+- `lightweight` för korta, huvudsakligen fristående uppgifter,
+- `guided` för tydliga flerstegsflöden,
+- `stateful` för resumable/långlivade arbetsflöden med persistent state eller korrigeringsloopar.
+
+Härled nivån från användningsfallet enligt `src/runtime-policy/generated-gpt-model-robustness-policy.md`. Fråga inte användaren om nivå eller modellfamilj.
+
+Analysresultatet ska explicit ange nivå, rationale, om operativ kärna krävs, om explicit workflow/state machine krävs och om model-compatibility-evals ska skapas.
+
 ## Runtimeprincip
 
 Bedöm möjliga runtimes mot samma canonical capability-, artifact-, workspace/state- och tool-kontrakt. Aktivera flera peer targets när de har tillräcklig funktionstäckning. Komplexitet i sig gör inte någon runtime primär.

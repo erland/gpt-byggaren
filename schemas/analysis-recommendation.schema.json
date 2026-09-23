@@ -6,7 +6,8 @@
     "recommended_profile",
     "runtime",
     "capabilities",
-    "project_features"
+    "project_features",
+    "model_robustness"
   ],
   "properties": {
     "recommended_profile": {
@@ -201,6 +202,42 @@
           ]
         }
       }
+    },
+    "model_robustness": {
+      "type": "object",
+      "required": [
+        "level",
+        "rationale",
+        "operational_core",
+        "explicit_workflow",
+        "model_compatibility_evals"
+      ],
+      "properties": {
+        "level": {
+          "enum": [
+            "lightweight",
+            "guided",
+            "stateful"
+          ]
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "operational_core": {
+          "type": "boolean"
+        },
+        "explicit_workflow": {
+          "type": "boolean"
+        },
+        "deterministic_gates": {
+          "type": "boolean"
+        },
+        "model_compatibility_evals": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
     }
   }
 }

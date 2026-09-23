@@ -30,6 +30,35 @@ def stable_zip(zip_path, root):
             info.external_attr = 0o644 << 16
             zf.writestr(info, p.read_bytes())
 
+def infer_model_robustness(features):
+    if features.get("research_heavy") or features.get("project_zip_manipulation"):
+        return {
+            "level": "stateful",
+            "rationale": "Långlivat eller research-/projektorienterat arbetsflöde kräver explicit state och gates.",
+            "operational_core": True,
+            "explicit_workflow": True,
+            "deterministic_gates": True,
+            "model_compatibility_evals": True,
+        }
+    if features.get("moderate_workflow") or features.get("repeatable_outputs"):
+        return {
+            "level": "guided",
+            "rationale": "Tydligt flerstegsflöde gynnas av en kort operativ kärna och validerbara gates utan full state machine.",
+            "operational_core": True,
+            "explicit_workflow": False,
+            "deterministic_gates": True,
+            "model_compatibility_evals": True,
+        }
+    return {
+        "level": "lightweight",
+        "rationale": "Kort, huvudsakligen fristående arbetsflöde behöver endast ett tydligt core contract.",
+        "operational_core": False,
+        "explicit_workflow": False,
+        "deterministic_gates": False,
+        "model_compatibility_evals": False,
+    }
+
+
 def create_plan(name, profile):
     steps = [
         {"id": 1, "title": "Definiera syfte och användarflöde"},
@@ -47,10 +76,12 @@ def create_plan(name, profile):
 def scaffold_project(root, scenario, profile):
     pid = scenario["expected"]["project_id"]
     name = "Mötesuppföljaren"
+    robustness = infer_model_robustness(scenario["features"])
 
     for d in [
         "docs", "src/instructions", "src/runtime-policy",
         "knowledge", "schemas", "scripts", "tests", "evals", "evals/instruction-adherence",
+        "evals/model-compatibility",
         "templates", ".github/workflows"
     ]:
         (root / d).mkdir(parents=True, exist_ok=True)
@@ -61,11 +92,20 @@ def scaffold_project(root, scenario, profile):
         "\n".join(f"{s['id']}. {s['title']}" for s in plan["steps"]) + "\n",
         encoding="utf-8"
     )
-    (root / "src" / "instructions" / "system.md").write_text(
+    instruction = (
         "# Mötesuppföljaren\n\n"
-        "Hjälp projektledaren analysera mötesanteckningar och identifiera beslut, risker och aktiviteter.\n",
-        encoding="utf-8"
+        "Hjälp projektledaren analysera mötesanteckningar och identifiera beslut, risker och aktiviteter.\n"
     )
+    if robustness["operational_core"]:
+        instruction += (
+            "\n## Operativ kärna\n\n"
+            "1. Identifiera exakt ett aktuellt mål.\n"
+            "2. Utför endast det målet.\n"
+            "3. Kontrollera resultatet mot definierade krav.\n"
+            "4. Korrigera fel innan nästa steg.\n"
+            "5. Fortsätt först när aktuell gate är uppfylld.\n"
+        )
+    (root / "src" / "instructions" / "system.md").write_text(instruction, encoding="utf-8")
     (root / "PROJECT.md").write_text(
         "# Mötesuppföljaren\n\nSkapad från ett blank-idea E2E-scenario.\n",
         encoding="utf-8"
@@ -131,6 +171,7 @@ def scaffold_project(root, scenario, profile):
         "analysis": {
             "profile": profile,
             "source": "blank-idea-001",
+            "model_robustness": robustness,
             "runtime": {
                 "strategy": "peer_candidates",
                 "candidates": [
@@ -141,6 +182,7 @@ def scaffold_project(root, scenario, profile):
                 ]
             }
         },
+        "model_robustness": robustness,
         "instructions": {
             "canonical": "src/instructions/system.md",
             "core_contract": {
@@ -230,6 +272,18 @@ def scaffold_project(root, scenario, profile):
                 "opencode": {"runtime_id": "opencode", "runtime_key": "opencode"}
             }
         },
+        "workflow": ({
+            "mode": "explicit_state_machine",
+            "state_authority": "project-status.yaml",
+            "states": {
+                "prepare": {"next": ["execute"]},
+                "execute": {"next": ["validate"]},
+                "validate": {"next": ["execute", "complete"]},
+                "complete": {"terminal": True},
+            },
+        } if robustness["explicit_workflow"] else {
+            "mode": "guided" if robustness["operational_core"] else "lightweight"
+        }),
         "development": {
             "plan": "docs/development-plan.md",
             "status": "project-status.yaml"
@@ -305,6 +359,49 @@ def scaffold_project(root, scenario, profile):
             yaml.safe_dump(case, allow_unicode=True, sort_keys=False),
             encoding="utf-8"
         )
+
+    if robustness["model_compatibility_evals"]:
+        model_cases = [
+            {
+                "id": "guided-multiturn-001",
+                "title": "Operational core survives multiple turns",
+                "criticality": "critical",
+                "input": {"scenario": "Continue the workflow after several related turns."},
+                "expected": {
+                    "required": ["one bounded goal at a time", "gate checked before progression"],
+                    "forbidden": ["silent multi-step jump"]
+                },
+                "scoring": {"pass_threshold": 1.0}
+            },
+            {
+                "id": "guided-recovery-001",
+                "title": "Validation failure is corrected before progression",
+                "criticality": "critical",
+                "input": {"scenario": "A validation check fails during the workflow."},
+                "expected": {
+                    "required": ["correct failure before next step"],
+                    "forbidden": ["failed step marked complete"]
+                },
+                "scoring": {"pass_threshold": 1.0}
+            }
+        ]
+        if robustness["explicit_workflow"]:
+            model_cases.append({
+                "id": "stateful-resume-001",
+                "title": "Resume uses structured state",
+                "criticality": "critical",
+                "input": {"scenario": "Resume in a new session."},
+                "expected": {
+                    "required": ["structured state is authoritative"],
+                    "forbidden": ["chat history is sole state source"]
+                },
+                "scoring": {"pass_threshold": 1.0}
+            })
+        for case in model_cases:
+            (root / "evals" / "model-compatibility" / f"{case['id']}.yaml").write_text(
+                yaml.safe_dump(case, allow_unicode=True, sort_keys=False),
+                encoding="utf-8"
+            )
     return cfg, plan
 
 def build_artifacts(project_root, out_root, scenario, version="0.0.0-e2e"):
@@ -407,6 +504,16 @@ def run(root, scenario_path):
             "github_release": (generated_project / ".github" / "workflows" / "release.yml").exists(),
             "release_uses_tag_version": "github.event.release.tag_name" in (generated_project / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8"),
             "instruction_adherence_evals": len(list((generated_project / "evals" / "instruction-adherence").glob("*.yaml"))) >= 4,
+            "model_robustness_level": cfg.get("model_robustness", {}).get("level") == scenario["expected"]["model_robustness_level"],
+            "operational_core": (
+                "## Operativ kärna" in (generated_project / "src" / "instructions" / "system.md").read_text(encoding="utf-8")
+            ) == cfg.get("model_robustness", {}).get("operational_core"),
+            "model_compatibility_evals": (
+                len(list((generated_project / "evals" / "model-compatibility").glob("*.yaml"))) >= 2
+            ) == cfg.get("model_robustness", {}).get("model_compatibility_evals"),
+            "workflow_shape": (
+                cfg.get("workflow", {}).get("mode") == "explicit_state_machine"
+            ) == cfg.get("model_robustness", {}).get("explicit_workflow"),
             "project_zip": any("-project.zip" in p.name for p in artifacts),
             "chat_zip": any("-chat-" in p.name for p in artifacts),
             "custom_gpt_zip": any("-custom-gpt-" in p.name for p in artifacts),

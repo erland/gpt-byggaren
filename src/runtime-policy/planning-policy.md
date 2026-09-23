@@ -26,6 +26,16 @@ GPT Byggaren ska skapa en projektspecifik utvecklingsplan från analysresultatet
 - anta att Chat ZIP och Custom GPT är de enda distributionsmålen,
 - utelämna Claude/OpenCode eller andra registrerade runtimes när analysresultatet har aktiverat dem.
 
+## Modellrobust planering
+
+Planen ska härledas från analysens `model_robustness`.
+
+- `lightweight`: säkerställ core contract och instruction-adherence-evals utan extra workflowlager.
+- `guided`: lägg till operativ kärna i canonical instruktion, relevanta gates och model-compatibility-evals.
+- `stateful`: lägg dessutom till explicit workflow/state, auktoritativ strukturerad status och deterministiska validators där regler kan avgöras maskinellt.
+
+Skapa inte samma state machine för alla projekt. Välj minsta robusthetsstruktur som uppfyller analysbeslutet.
+
 ## Leverans
 
 När målbilden är stabil ska planen ges som nedladdningsbar Markdown.
