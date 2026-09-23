@@ -217,6 +217,7 @@ För att hålla README:n användbar ligger detaljerna i separata dokument.
 
 - [`docs/test-model.md`](docs/test-model.md)
 - [`docs/instruction-adherence-testing.md`](docs/instruction-adherence-testing.md)
+- [`docs/model-compatibility.md`](docs/model-compatibility.md) – robust exekvering även med enklare LLM-modeller.
 - [`docs/gpt-linter.md`](docs/gpt-linter.md)
 - [`docs/project-hygiene.md`](docs/project-hygiene.md)
 - [`docs/final-project-hygiene.md`](docs/final-project-hygiene.md)
