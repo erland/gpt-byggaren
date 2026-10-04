@@ -90,6 +90,17 @@ kodexekvering kan skillen använda resursen direkt, på samma sätt som andra bi
 runtimefiler. Ett MCP-wrapper krävs alltså inte bara för att ett script ska kunna följa
 med eller användas.
 
+När pluginen innehåller scripts genererar GPT Byggaren dessutom ett explicit
+`runtime_requirements.code_execution`-kontrakt i `runtime-contract.json`. Kravnivån
+härleds från de canonical script-tools som följer med: obligatoriska scripts gör
+code execution `required`, annars `recommended`. Språk härleds från scriptfilerna
+(t.ex. `python` för `.py`) och fallback sätts till `block` när ett obligatoriskt
+script har blockerande fallback.
+
+Genererad `SKILL.md` instruerar samtidigt hosten att använda den kompatibla
+code-execution-miljön och köra det paketerade scriptet i stället för att simulera ett
+deterministiskt resultat. Om miljön saknas ska den deklarerade fallbacken följas.
+
 Detta ska skiljas från ett **MCP-tool**. MCP används när projektet behöver ett explicit,
 stabilt och host-oberoende tool-gränssnitt eller när exekveringen ska ske i en separat
 server/runtime. Att Plugin v1 inte genererar MCP innebär därför inte i sig att en
