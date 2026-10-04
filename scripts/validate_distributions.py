@@ -239,6 +239,22 @@ def validate_plugin(root: Path, cfg: dict) -> list[str]:
                         f"Missing plugin skill {key[:-1]}: {expected.relative_to(build)}"
                     )
 
+        scripts_dir = skill_dir / "scripts"
+        packaged_scripts = [
+            p for p in scripts_dir.glob("*")
+            if p.is_file()
+        ] if scripts_dir.exists() else []
+        shared_lib = root / "scripts" / "lib"
+        if packaged_scripts and shared_lib.exists():
+            for source in shared_lib.rglob("*"):
+                if not source.is_file() or source.suffix in {".pyc", ".pyo"}:
+                    continue
+                expected = scripts_dir / "lib" / source.relative_to(shared_lib)
+                if not expected.exists():
+                    errors.append(
+                        f"Missing plugin shared script dependency: {expected.relative_to(build)}"
+                    )
+
     forbidden_parts = {
         ".git",
         ".github",

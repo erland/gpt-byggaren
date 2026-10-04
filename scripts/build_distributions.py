@@ -832,7 +832,7 @@ def plugin_runtime_contract(cfg: dict, built_skills: list[str] | None = None) ->
 
 
 def _copy_skill_resources(root: Path, skill_dir: Path, resources: dict[str, list[str]]) -> None:
-    """Copy resolved skill resources and reject basename collisions."""
+    """Copy resolved skill resources, including shared runtime script dependencies."""
     for key in ("references", "assets", "scripts"):
         seen_names: set[str] = set()
         for ref in resources.get(key, []):
@@ -842,6 +842,14 @@ def _copy_skill_resources(root: Path, skill_dir: Path, resources: dict[str, list
                 raise SystemExit(f"Plugin skill resource collision in {key}: {name}")
             seen_names.add(name)
             copy_file(src, skill_dir / key / name)
+
+    # Canonical runtime scripts may depend on shared helpers under scripts/lib.
+    # Keep those helpers next to the packaged script resources so imports such as
+    # "from lib.project_model import ..." resolve inside the plugin runtime.
+    if resources.get("scripts"):
+        shared_lib = root / "scripts" / "lib"
+        if shared_lib.exists():
+            copy_tree_filtered(shared_lib, skill_dir / "scripts" / "lib")
 
 
 def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
