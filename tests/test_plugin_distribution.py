@@ -60,6 +60,16 @@ def test_build_plugin_has_required_structure_and_skill_resources():
                 for ref in resources[key]:
                     assert (skill_dir / key / Path(ref).name).is_file()
 
+            if resources["scripts"] and (ROOT / "scripts" / "lib").exists():
+                shared_lib_files = [
+                    p.relative_to(ROOT / "scripts" / "lib")
+                    for p in (ROOT / "scripts" / "lib").rglob("*")
+                    if p.is_file() and p.suffix not in {".pyc", ".pyo"}
+                ]
+                assert shared_lib_files
+                for rel in shared_lib_files:
+                    assert (skill_dir / "scripts" / "lib" / rel).is_file()
+
         manifest = json.loads((out / "MANIFEST.json").read_text(encoding="utf-8"))
         assert manifest["adapter_id"] == "openai_plugin"
         assert manifest["plugin_manifest"] == "plugin.json"
@@ -113,4 +123,5 @@ def test_plugin_zip_is_deterministic():
             assert "plugin.json" in names
             assert "runtime-contract.json" in names
             assert any(name.endswith("/SKILL.md") for name in names)
+            assert any(name.endswith("/scripts/lib/project_model.py") for name in names)
             assert names == sorted(names)
