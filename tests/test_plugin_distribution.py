@@ -64,6 +64,11 @@ def test_build_plugin_has_required_structure_and_skill_resources():
         snapshot = json.loads((out / "runtime-contract.json").read_text(encoding="utf-8"))
         assert snapshot["runtime_id"] == "openai_plugin"
         assert snapshot["adapter"]["skills_first"] is True
+        script_resources = snapshot["adapter"]["script_resources"]
+        assert script_resources["packaged"]
+        assert script_resources["execution"] == "host_code_execution_when_available"
+        assert script_resources["mcp_required_for_resource_use"] is False
+        assert "guaranteed explicit tool interface" in script_resources["mcp_role"]
 
 
 def test_plugin_zip_is_deterministic():
