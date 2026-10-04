@@ -47,6 +47,11 @@ def test_gpt_builder_dogfoods_plugin_with_explicit_reduced_parity():
         assert "may run directly" in notes["tool"]
         assert "guaranteed MCP tool interface" in notes["tool"]
 
+        requirements = snapshot["adapter"]["runtime_requirements"]["code_execution"]
+        assert requirements["level"] == "required"
+        assert requirements["languages"] == ["python"]
+        assert requirements["fallback"] == "block"
+
         script_resources = snapshot["adapter"]["script_resources"]
         assert script_resources["packaged"]
         assert script_resources["mcp_required_for_resource_use"] is False
