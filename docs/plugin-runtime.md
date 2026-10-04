@@ -85,6 +85,16 @@ Endast scripts som faktiskt behövs i plugin-runtime ska följa med.
 
 Att ett script finns i projektet innebär inte automatiskt att det ska distribueras.
 
+Ett script under en skill är en **script-resurs**. Om host-runtimen erbjuder kompatibel
+kodexekvering kan skillen använda resursen direkt, på samma sätt som andra bifogade
+runtimefiler. Ett MCP-wrapper krävs alltså inte bara för att ett script ska kunna följa
+med eller användas.
+
+Detta ska skiljas från ett **MCP-tool**. MCP används när projektet behöver ett explicit,
+stabilt och host-oberoende tool-gränssnitt eller när exekveringen ska ske i en separat
+server/runtime. Att Plugin v1 inte genererar MCP innebär därför inte i sig att en
+paketerad script-resurs är oanvändbar.
+
 ## Resource resolution i v1
 
 Explicit metadata på en canonical skill har företräde för respektive resursklass.
@@ -254,12 +264,17 @@ Plugin är särskilt lämplig när:
 Plugin v1 är mindre lämplig som ensam runtime när projektet kräver:
 
 - egen persistent workspace/state som måste garanteras av paketet,
-- lokala kommandon eller scripts som måste kunna exekveras,
+- garanterad script-/kommandoexekvering oberoende av host-runtimens code-execution-förmåga,
+- ett explicit tool-API som måste finnas även när hosten inte kan köra skillens script-resurser,
 - genererad MCP-server,
 - ChatGPT UI-komponenter,
 - lifecycle hooks.
 
 I sådana fall ska Plugin antingen kombineras med en host som tillhandahåller funktionerna eller markeras som `reduced` i runtime parity.
+
+En script-resurs ska däremot inte automatiskt klassificeras som `reduced` enbart för att
+den saknar MCP-wrapper. Pariteten beror på om den aktuella host-runtimen kan köra scriptet
+med de filesystem-, dependency- och code-execution-förmågor som scriptet faktiskt kräver.
 
 
 ## Dogfood
