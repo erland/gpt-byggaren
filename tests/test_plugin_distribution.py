@@ -49,6 +49,12 @@ def test_build_plugin_has_required_structure_and_skill_resources():
             assert f"name: {skill['name']}" in skill_text
             assert f"description: {skill['description']}" in skill_text
 
+            if "## Scripts" in skill_text:
+                assert "## Runtime requirements" in skill_text
+                assert "Code execution: required." in skill_text
+                assert "Required script runtime/language: python." in skill_text
+                assert "rather than simulating their deterministic result" in skill_text
+
             resources = build_distributions.resolve_plugin_skill_resources(ROOT, cfg, skill)
             for key in ("references", "assets", "scripts"):
                 for ref in resources[key]:
@@ -64,6 +70,11 @@ def test_build_plugin_has_required_structure_and_skill_resources():
         snapshot = json.loads((out / "runtime-contract.json").read_text(encoding="utf-8"))
         assert snapshot["runtime_id"] == "openai_plugin"
         assert snapshot["adapter"]["skills_first"] is True
+        requirements = snapshot["adapter"]["runtime_requirements"]["code_execution"]
+        assert requirements["level"] == "required"
+        assert requirements["languages"] == ["python"]
+        assert requirements["fallback"] == "block"
+
         script_resources = snapshot["adapter"]["script_resources"]
         assert script_resources["packaged"]
         assert script_resources["execution"] == "host_code_execution_when_available"
