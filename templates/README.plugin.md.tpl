@@ -38,6 +38,12 @@ Denna version är skills-first och genererar inte:
 
 Sådana funktioner ska endast införas när projektets use case faktiskt kräver dem.
 
+## Script-resurser och MCP
+
+Scripts under en skill är runtime-resurser. När host-runtimen erbjuder kompatibel code execution kan skillen använda dem direkt; de behöver inte automatiskt kapslas som MCP-tools.
+
+MCP är en separat integrationsform och behövs när projektet kräver ett explicit, garanterat tool-gränssnitt eller serverbaserad exekvering. Full funktionalitet för ett script beror fortfarande på att hosten erbjuder de dependencies, filesystem-rättigheter och workspace-funktioner som scriptet behöver.
+
 ## Portabilitet
 
 Skilldefinitioner, referenser, assets och scripts är härledda från samma canonical projektdata som övriga peer runtimes.
