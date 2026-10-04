@@ -44,7 +44,17 @@ def test_gpt_builder_dogfoods_plugin_with_explicit_reduced_parity():
         snapshot = json.loads((out / "runtime-contract.json").read_text(encoding="utf-8"))
         notes = snapshot["adapter"]["parity_notes"]
         assert "host runtime" in notes["workspace_state"]
-        assert "does not generate MCP execution" in notes["tool"]
+        assert "may run directly" in notes["tool"]
+        assert "guaranteed MCP tool interface" in notes["tool"]
+
+        requirements = snapshot["adapter"]["runtime_requirements"]["code_execution"]
+        assert requirements["level"] == "required"
+        assert requirements["languages"] == ["python"]
+        assert requirements["fallback"] == "block"
+
+        script_resources = snapshot["adapter"]["script_resources"]
+        assert script_resources["packaged"]
+        assert script_resources["mcp_required_for_resource_use"] is False
 
         assert snapshot["tools"]["tools"]
         assert any(

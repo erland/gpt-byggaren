@@ -198,7 +198,12 @@ För Plugin v1 gäller särskilt:
 - behavior kan projiceras genom skills,
 - runtimepaketet kan genereras som artifact,
 - persistent workspace/state beror på host-runtime,
-- lokala canonical script tools paketeras som resurser men får inte automatiskt räknas som exekverbara tools,
+- canonical scripts kan paketeras som skill-resurser och kan exekveras direkt när host-runtimen erbjuder kompatibel code execution,
+- avsaknad av MCP-wrapper gör inte i sig en script-resurs `reduced`,
+- ett explicit MCP-tool är en separat förmåga som behövs när projektet kräver ett garanterat tool-gränssnitt eller serverbaserad exekvering,
 - MCP, UI och hooks genereras inte i v1.
 
-Dessa skillnader ska uttryckas som `reduced` eller `missing` i en konkret parityrapport när de är relevanta för projektets requirements; de får inte döljas genom att markera plugin som generellt equivalent.
+Parity ska därför bedömas mot det faktiska kravet. Ett scriptkrav kan vara `equivalent` när
+hosten kan köra den paketerade resursen med nödvändiga dependencies och filesystem-rättigheter.
+Det ska vara `reduced` eller `missing` först när hosten inte kan uppfylla exekveringskravet,
+eller när canonical kontrakt uttryckligen kräver ett MCP-/API-liknande tool-gränssnitt.

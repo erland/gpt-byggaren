@@ -70,6 +70,45 @@
         }
       },
       "additionalProperties": false
+    },
+    "runtime_requirements": {
+      "type": "object",
+      "properties": {
+        "code_execution": {
+          "type": "object",
+          "required": [
+            "level",
+            "languages",
+            "fallback"
+          ],
+          "properties": {
+            "level": {
+              "enum": [
+                "required",
+                "recommended",
+                "optional",
+                "not_required"
+              ]
+            },
+            "languages": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "fallback": {
+              "enum": [
+                "block",
+                "degrade",
+                "not_applicable"
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": true
     }
   },
   "additionalProperties": true

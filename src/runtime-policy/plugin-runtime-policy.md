@@ -31,6 +31,14 @@ Scripts får endast inkluderas när de faktiskt behövs av plugin-runtime.
 
 Att ett script finns i canonical projektet innebär inte automatiskt att det ska distribueras med pluginet.
 
+När scripts distribueras ska plugin-adaptern deklarera sitt code-execution-behov explicit i
+runtime-kontraktet och genererad `SKILL.md` ska instruera hosten att använda kompatibel
+code execution när den finns. Obligatoriska script-tools ska göra code execution
+`required`; blockerande canonical fallback ska bevaras som `block`.
+
+En script-resurs och ett MCP-tool är olika integrationsformer. Avsaknad av MCP-wrapper får
+inte ensam användas som skäl för att markera script-resursen som reducerad.
+
 ## Skills
 
 Varje distribuerad skill ska ha ett giltigt `SKILL.md` med minst:

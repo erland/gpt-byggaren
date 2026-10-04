@@ -69,7 +69,7 @@ Byggd artefakt heter normalt:
 
 `<project-id>-plugin-<version>.zip`
 
-Plugin v1 genererar inte MCP-servrar, UI-komponenter eller hooks. Om ett projekt kräver persistent workspace/state eller körbara lokala tools måste host-runtimen bära den funktionen, annars ska Plugin bedömas som reducerad.
+Plugin v1 genererar inte MCP-servrar, UI-komponenter eller hooks. Paketerade script-resurser kan användas direkt när host-runtimen erbjuder kompatibel code execution; MCP behövs först när projektet kräver ett explicit, garanterat tool-gränssnitt eller separat serverexekvering. Persistent workspace/state och scripts med särskilda dependency-/filesystemkrav måste fortfarande stödjas av host-runtimen för full paritet.
 
 Oavsett runtime ska nyprojektsanalysen bedöma **alla registrerade peer runtimes** för GPT:n som byggs. Den ska inte automatiskt begränsa det nya projektet till samma runtime som GPT Byggaren själv råkar köras i.
 

@@ -650,12 +650,42 @@ def resolve_plugin_skill_resources(root: Path, cfg: dict, skill: dict) -> dict[s
     return resolved
 
 
+def plugin_script_runtime_requirements(cfg: dict) -> dict:
+    """Derive host requirements for packaged Plugin script resources."""
+    tools = [
+        tool for tool in normalize_tool_contract(cfg).get("tools", [])
+        if tool.get("type") == "script" and tool.get("script")
+    ]
+    if not tools:
+        return {
+            "code_execution": {"level": "not_required", "languages": [], "fallback": "not_applicable"}
+        }
+
+    required = any(tool.get("requirement") == "required" for tool in tools)
+    blocking = any(
+        tool.get("requirement") == "required" and tool.get("runtime_fallback") == "block"
+        for tool in tools
+    )
+    languages = sorted({
+        "python" if str(tool.get("script", "")).endswith(".py") else "other"
+        for tool in tools
+    })
+    return {
+        "code_execution": {
+            "level": "required" if required else "recommended",
+            "languages": languages,
+            "fallback": "block" if blocking else "degrade",
+        }
+    }
+
+
 def compile_skill_markdown(
     skill: dict,
     *,
     compatibility: str | None = None,
     canonical_instruction: str | None = None,
     include_canonical_behavior: bool = False,
+    runtime_requirements: dict | None = None,
 ) -> str:
     """Compile one canonical skill definition into deterministic SKILL.md text."""
     frontmatter = [
@@ -702,9 +732,28 @@ def compile_skill_markdown(
 
     scripts = list(skill.get("scripts", []) or [])
     if scripts:
-        body.extend(["## Scripts", ""])
+        requirements = runtime_requirements or {}
+        code_execution = requirements.get("code_execution") or {}
+        level = code_execution.get("level", "recommended")
+        languages = ", ".join(code_execution.get("languages") or []) or "compatible"
+        fallback = code_execution.get("fallback", "degrade")
+        body.extend([
+            "## Runtime requirements",
+            "",
+            f"- Code execution: {level}.",
+            f"- Required script runtime/language: {languages}.",
+            "- When compatible code execution is available, run the packaged script resources rather than simulating their deterministic result.",
+            f"- If compatible code execution is unavailable, apply fallback: {fallback}.",
+            "",
+            "## Scripts",
+            "",
+        ])
         for script in scripts:
-            body.append(f"- Use `scripts/{Path(script).name}` only when runtime execution is available and appropriate.")
+            body.append(
+                f"- Use `scripts/{Path(script).name}` as a script resource when the host provides "
+                "compatible code execution. An MCP wrapper is not required merely to package or use "
+                "the script resource."
+            )
         body.append("")
 
     return "\n".join(body).rstrip() + "\n"
@@ -764,11 +813,18 @@ def plugin_runtime_contract(cfg: dict, built_skills: list[str] | None = None) ->
             "mcp_generated": False,
             "ui_generated": False,
             "hooks_generated": False,
+            "runtime_requirements": plugin_script_runtime_requirements(cfg),
+            "script_resources": {
+                "packaged": _declared_runtime_script_refs(cfg),
+                "execution": "host_code_execution_when_available",
+                "mcp_required_for_resource_use": False,
+                "mcp_role": "Use MCP when a guaranteed explicit tool interface is required.",
+            },
             "parity_notes": {
                 "behavior": "Canonical behavior is projected through skills.",
                 "artifact": "Plugin package is generated as a runtime distribution.",
                 "workspace_state": "Persistent workspace/state depends on the host runtime and is not created by Plugin v1.",
-                "tool": "Canonical local script tools are packaged only as skill resources; Plugin v1 does not generate MCP execution.",
+                "tool": "Canonical scripts are packaged as skill resources and may run directly when the host provides compatible code execution. Plugin v1 does not generate a guaranteed MCP tool interface.",
                 "capability": "External tool execution and advanced integrations depend on the host runtime in Plugin v1.",
             },
         },
@@ -810,6 +866,7 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
                 compiled_skill,
                 canonical_instruction=canonical_instruction,
                 include_canonical_behavior=True,
+                runtime_requirements=plugin_script_runtime_requirements(cfg),
             ),
             encoding="utf-8",
         )
