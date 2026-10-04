@@ -704,7 +704,11 @@ def compile_skill_markdown(
     if scripts:
         body.extend(["## Scripts", ""])
         for script in scripts:
-            body.append(f"- Use `scripts/{Path(script).name}` only when runtime execution is available and appropriate.")
+            body.append(
+                f"- Use `scripts/{Path(script).name}` as a script resource when the host provides "
+                "compatible code execution. An MCP wrapper is not required merely to package or use "
+                "the script resource."
+            )
         body.append("")
 
     return "\n".join(body).rstrip() + "\n"
@@ -764,11 +768,17 @@ def plugin_runtime_contract(cfg: dict, built_skills: list[str] | None = None) ->
             "mcp_generated": False,
             "ui_generated": False,
             "hooks_generated": False,
+            "script_resources": {
+                "packaged": _declared_runtime_script_refs(cfg),
+                "execution": "host_code_execution_when_available",
+                "mcp_required_for_resource_use": False,
+                "mcp_role": "Use MCP when a guaranteed explicit tool interface is required.",
+            },
             "parity_notes": {
                 "behavior": "Canonical behavior is projected through skills.",
                 "artifact": "Plugin package is generated as a runtime distribution.",
                 "workspace_state": "Persistent workspace/state depends on the host runtime and is not created by Plugin v1.",
-                "tool": "Canonical local script tools are packaged only as skill resources; Plugin v1 does not generate MCP execution.",
+                "tool": "Canonical scripts are packaged as skill resources and may run directly when the host provides compatible code execution. Plugin v1 does not generate a guaranteed MCP tool interface.",
                 "capability": "External tool execution and advanced integrations depend on the host runtime in Plugin v1.",
             },
         },
