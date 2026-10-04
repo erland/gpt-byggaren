@@ -40,7 +40,10 @@ GPT Byggaren kräver bland annat:
 - filesystem read/write,
 - flera obligatoriska script-tools för lint, hygiene, nästa steg, build och distributionsvalidering.
 
-Plugin v1 paketerar skill-resurser och runtime-relevanta scripts, men genererar inte en MCP-server eller annan exekveringsintegration som garanterar att dessa tools faktiskt kan köras.
+Plugin v1 paketerar skill-resurser och runtime-relevanta scripts. Dessa script-resurser kan
+användas direkt när host-runtimen erbjuder kompatibel code execution, så avsaknad av MCP
+innebär inte automatiskt att scripts saknar exekveringsmöjlighet. Plugin v1 genererar däremot
+inte ett garanterat, explicit MCP-tool-gränssnitt.
 
 ## Paritetsbedömning
 
@@ -49,7 +52,7 @@ För GPT Byggaren själv är Plugin v1 därför en **reducerad peer runtime**:
 - **behavior:** kärninstruktionen kan projiceras genom skillen,
 - **artifact:** pluginpaketet kan byggas och distribueras,
 - **workspace/state:** reducerad eftersom host-runtimen måste tillhandahålla persistent workspace/state,
-- **tools:** reducerad eftersom scripts kan paketeras men Plugin v1 inte skapar exekveringsintegration,
+- **tools:** hostberoende; script-resurser kan vara fullt användbara med kompatibel code execution, men GPT Byggaren kräver flera scripts med filesystem/workspace-beroenden och Plugin v1 garanterar inte den exekveringsmiljön eller ett MCP-tool-gränssnitt,
 - **capabilities:** vissa capabilities beror på host-runtimen.
 
 Det är korrekt att bygga Plugin-artefakten som ett distributionsmål, men den får inte beskrivas som fullständigt equivalent för GPT Byggaren v1.
@@ -61,8 +64,9 @@ Framtida ändringar ska bevara följande:
 - GPT Byggaren ska fortsatt kunna bygga sin egen Plugin-ZIP.
 - Den genererade skillen ska innehålla canonical GPT Byggaren-beteende.
 - De deklarerade skill-referenserna ska följa med.
-- Runtime snapshot ska uttryckligen redovisa Plugin v1:s tool- och workspace/state-begränsningar.
-- Tester får inte anta att paketerade scripts automatiskt innebär exekverbara tools.
+- Runtime snapshot ska uttryckligen redovisa skillnaden mellan paketerade script-resurser, hostens code execution och ett garanterat MCP-tool-gränssnitt.
+- Tester får inte anta att avsaknad av MCP automatiskt gör paketerade scripts oanvändbara.
+- Tester får samtidigt inte anta att varje host kan köra scripts med projektets dependency-, filesystem- och workspacekrav.
 
 ## Slutsats
 
