@@ -512,8 +512,6 @@ def build_claude(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     instructions_ref = runtime_cfg["project"]["instructions"]
     instructions_path = out / instructions_ref
     copy_file(instr_src, instructions_path)
-    copy_portable_skill_modules(root, cfg, out / "skills")
-
     knowledge_root = root / cfg["knowledge_architecture"]["canonical_root"]
     knowledge_ref = runtime_cfg["project"]["knowledge"]
     knowledge_target = out / knowledge_ref
@@ -551,6 +549,43 @@ def build_claude(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
+    return out
+
+
+
+def build_claude_skills(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
+    """Build a Claude Skills distribution with the canonical portable resources."""
+    out = build_root / "claude-skills"
+    ensure_clean_dir(out)
+    canonical_instruction = (root / cfg["instructions"]["canonical"]).read_text(encoding="utf-8")
+    built_skills = []
+    for skill in canonical_skill_definitions(cfg):
+        skill_id = skill["id"]
+        skill_dir = out / "skills" / skill_id
+        resources = resolve_plugin_skill_resources(root, cfg, skill)
+        _copy_skill_resources(root, skill_dir, resources)
+        compiled = dict(skill)
+        compiled.update(resources)
+        skill_dir.mkdir(parents=True, exist_ok=True)
+        (skill_dir / "SKILL.md").write_text(
+            compile_skill_markdown(
+                compiled,
+                canonical_instruction=canonical_instruction,
+                include_canonical_behavior=True,
+                runtime_requirements=plugin_script_runtime_requirements(cfg),
+            ),
+            encoding="utf-8",
+        )
+        built_skills.append(skill_id)
+    (out / "README.md").write_text(
+        "# Claude Skills – " + cfg["project"]["name"] + "\\n\\n"
+        "Install the individual folders under skills/ as Claude Skills. "
+        "Scripts require a compatible execution environment; packaging alone "
+        "does not verify host execution.\\n",
+        encoding="utf-8",
+    )
+    (out / "VERSION").write_text(version + "\\n", encoding="utf-8")
+    write_manifest(out, cfg["project"]["id"] + "-claude-skills", version, "README.md")
     return out
 
 
@@ -1123,6 +1158,7 @@ RUNTIME_BUILDERS = {
     "chat": build_chat,
     "custom_gpt": build_custom,
     "claude": build_claude,
+    "claude_skills": build_claude_skills,
     "opencode": build_opencode,
     "plugin": build_plugin,
 }
