@@ -585,6 +585,11 @@ def build_claude_skills(root: Path, cfg: dict, build_root: Path, version: str) -
         encoding="utf-8",
     )
     (out / "VERSION").write_text(version + "\\n", encoding="utf-8")
+    (out / "runtime-contract.json").write_text(
+        json.dumps(claude_skills_runtime_contract(cfg, built_skills), ensure_ascii=False, indent=2) + "\
+",
+        encoding="utf-8",
+    )
     write_manifest(out, cfg["project"]["id"] + "-claude-skills", version, "README.md")
     return out
 
@@ -860,6 +865,13 @@ def build_opencode_skills(root: Path, cfg: dict, out: Path) -> list[str]:
         built.append(skill_id)
 
     return built
+
+
+def claude_skills_runtime_contract(cfg: dict, built_skills: list[str] | None = None) -> dict:
+    """Claude Skills contract: portable resources, host-dependent execution."""
+    snapshot = plugin_runtime_contract(cfg, built_skills)
+    snapshot["runtime_id"] = "claude_skills"
+    return snapshot
 
 
 def plugin_runtime_contract(cfg: dict, built_skills: list[str] | None = None) -> dict:
