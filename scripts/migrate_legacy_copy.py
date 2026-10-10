@@ -292,6 +292,62 @@ def assess_existing_project(project: Path) -> dict:
     }
 
 
+def create_legacy_plugin_migration_plan(project: Path) -> dict:
+    """Make an auditable mapping proposal; never silently enable a new runtime."""
+    cfg = load_cfg(project)
+    legacy = ((cfg or {}).get("runtime") or {}).get("openai_plugin")
+    if not isinstance(legacy, dict):
+        return {"result": "not_applicable"}
+    runtime = cfg.get("runtime") or {}
+    entrypoint = legacy.get("entrypoint")
+    entry_is_safe = (
+        isinstance(entrypoint, str) and bool(entrypoint.strip())
+        and not Path(entrypoint).is_absolute() and ".." not in Path(entrypoint).parts
+    )
+    dependencies = {
+        key: legacy.get(key) for key in (
+            "web_dependency", "filesystem_read", "filesystem_write",
+            "code_execution", "persistent_state"
+        ) if key in legacy
+    }
+    proposal = {
+        "result": "review_required",
+        "source_runtime": "runtime.openai_plugin",
+        "target_runtime": "runtime.plugin",
+        "proposed_config": {
+            "enabled": False,
+            "role": "peer_distribution",
+            "mode": "openai_plugin",
+            "layout": {"manifest_file": "plugin.json", "skills": "skills"},
+            "validation": {
+                "require_manifest": True,
+                "require_skill": True,
+                "require_skill_frontmatter": True,
+            },
+        },
+        "source_entrypoint": entrypoint,
+        "source_entrypoint_exists": bool(entry_is_safe and (project / entrypoint).is_file()),
+        "host_capability_dependencies": dependencies,
+        "requires_review": [
+            "Ensure canonical skills map to the original plugin behavior",
+            "Verify optional host tools and capability fallbacks",
+            "Verify Knowledge/resources, plugin template and manifest compatibility",
+            "Run actual Plugin ZIP build, validation and mobile import",
+        ],
+        "legacy_config_preserved": True,
+        "runtime_activated": False,
+        "release_ready": False,
+    }
+    if isinstance(runtime.get("plugin"), dict):
+        proposal["result"] = "existing_modern_plugin_requires_review"
+    target = project / "reconstructed-canonical" / "plugin-migration-plan.json"
+    target.parent.mkdir(exist_ok=True)
+    if target.exists():
+        raise FileExistsError(f"Refusing overwrite of {target}")
+    target.write_text(json.dumps(proposal, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return {"result": proposal["result"], "plan": target.relative_to(project).as_posix()}
+
+
 def migrate(source: Path, destination: Path) -> dict:
     source, destination = source.resolve(), destination.resolve()
     if not source.exists():
@@ -331,6 +387,7 @@ def migrate(source: Path, destination: Path) -> dict:
         retired = retire_custom_gpt(project)
         report["custom_gpt_retirement"] = retired
         report["existing_project_assessment"] = assess_existing_project(project)
+        report["legacy_plugin_plan"] = create_legacy_plugin_migration_plan(project)
         report["apply"] = {"result": "changed" if changed or retired["result"] == "changed" else "no_changes"}
     (destination / "MIGRATION-REPORT.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
