@@ -687,6 +687,7 @@ runtime_parity:
   registered_runtimes:
   - chatgpt_chat
   - claude_project
+  - claude_skills
   - opencode
   - openai_plugin
   compared_categories:
