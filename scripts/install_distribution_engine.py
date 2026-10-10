@@ -37,11 +37,21 @@ def install(source: Path, project: Path) -> list[str]:
     missing_builders = [t for t in REQUIRED_TARGETS if not targets[t].get("builder")]
     if missing_builders:
         raise ValueError("Missing builder declarations: " + ", ".join(sorted(missing_builders)))
-    for relative in ENGINE_FILES:
-        if not (source / relative).is_file():
+    declared_scripts = []
+    for tool in cfg.get("tools", {}).get("tools", []):
+        if tool.get("type") == "script" and tool.get("script"):
+            declared_scripts.append(tool["script"])
+    files_to_install = tuple(dict.fromkeys((*ENGINE_FILES, *declared_scripts)))
+    for relative in files_to_install:
+        relative_path = Path(relative)
+        if relative_path.is_absolute() or ".." in relative_path.parts:
+            raise ValueError("Unsafe declared script path: " + relative)
+        if not (source / relative).is_file() and not (project / relative).is_file():
             raise FileNotFoundError(source / relative)
     copied = []
-    for relative in ENGINE_FILES:
+    for relative in files_to_install:
+        if not (source / relative).is_file():
+            continue
         destination = project / relative
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source / relative, destination)
