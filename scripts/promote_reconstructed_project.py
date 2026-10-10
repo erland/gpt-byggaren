@@ -65,6 +65,61 @@ def promote(root: Path, review_file: Path) -> dict:
             "release_ready": False,
         },
     }
+    # Set up explicit, schema-compatible project state before writing the contract.
+    plan_path = root / "docs" / "development-plan.md"
+    status_path = root / "project-status.yaml"
+    for path in (plan_path, status_path, root / "STATUS.md", root / "PROJECT.md"):
+        if path.exists():
+            raise ValueError(f"Refusing to overwrite existing project artifact: {path.name}")
+    cfg["development"] = {
+        "plan": "docs/development-plan.md",
+        "status": "project-status.yaml",
+        "human_readable_status": "STATUS.md",
+        "status_schema": "schemas/project-status.schema.json",
+    }
+    plan_path.parent.mkdir(parents=True, exist_ok=True)
+    plan_path.write_text(
+        "# Development plan: reconstructed project\\n\\n"
+        "1. Verify canonical contracts, missing dependencies, and runtime parity before enabling any distribution.\\n",
+        encoding="utf-8",
+    )
+    status = {
+        "schema_version": 1,
+        "project": {"id": review["project_id"], "name": review["project_name"]},
+        "plan": {"path": "docs/development-plan.md", "total_steps": 1},
+        "progress": {"current_step": 1, "last_completed_step": 0, "completed_steps": []},
+        "state": {
+            "overall": "blocked",
+            "blocking_issues": [
+                "Complete canonical contracts and runtime parity validation are outstanding.",
+                "All distribution targets remain disabled until verified.",
+            ],
+            "warnings": ["Reconstructed instructions may differ from the original canonical source."],
+        },
+        "next_step": {
+            "recommended": 1,
+            "title": "Validate canonical contracts and runtime parity",
+            "reason": "The reconstruction is reviewed but is not a complete, buildable project.",
+        },
+        "resume": {
+            "supported": True,
+            "required_files": [
+                "gpt-project.yaml", "project-status.yaml", "docs/development-plan.md",
+                "reconstructed-canonical/project-draft.json",
+            ],
+            "human_readable_status": "STATUS.md",
+        },
+    }
+    status_path.write_text(yaml.safe_dump(status, allow_unicode=True, sort_keys=False), encoding="utf-8")
+    (root / "STATUS.md").write_text(
+        "# Status\\n\\nBlocked: canonical contracts and runtime parity must be validated before release.\\n",
+        encoding="utf-8",
+    )
+    (root / "PROJECT.md").write_text(
+        "# Reconstructed project\\n\\nSource: " + draft["source_instruction"] +
+        "\\n\\nStatus: review completed; runtime validation outstanding.\\n",
+        encoding="utf-8",
+    )
     (root / "gpt-project.yaml").write_text(
         yaml.safe_dump(cfg, allow_unicode=True, sort_keys=False), encoding="utf-8"
     )
