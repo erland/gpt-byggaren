@@ -97,7 +97,7 @@ def validate(project_root: Path) -> None:
     runtimes = config.get("runtime") or {}
     build = config.get("build") or {}
     if (runtimes.get("claude") or {}).get("enabled") is True and build.get("build_claude_skills_zip") is not True:
-        errors.append("MODEL-ROBUSTNESS-009: enabled runtime claude requires build.build_claude_skills_zip=true")
+        fail("MODEL-ROBUSTNESS-009: enabled runtime claude requires build.build_claude_skills_zip=true")
 
     for runtime_name, build_flag in RUNTIME_BUILD_FLAGS.items():
         runtime = runtimes.get(runtime_name) or {}
