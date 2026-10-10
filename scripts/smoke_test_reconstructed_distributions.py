@@ -18,7 +18,7 @@ REQUIRED = {
     "chat": ("START-HERE.md", "VERSION", "MANIFEST.json"),
     "claude": ("README.md", "VERSION", "MANIFEST.json", "project/runtime-contract.json"),
     "opencode": ("README.md", "VERSION", "MANIFEST.json", "opencode.json", ".opencode/runtime-contract.json"),
-    "plugin": ("plugin.json",),
+    "plugin": ("plugin.json", "README.md", "VERSION", "MANIFEST.json", "runtime-contract.json"),
 }
 
 
@@ -42,6 +42,8 @@ def evaluate(project: Path, packages: dict[str, Path]) -> dict:
             for required in REQUIRED[runtime]:
                 if required not in names:
                     issues.append(f"Missing runtime artifact: {required}")
+            if runtime == "plugin" and not any(n.startswith("skills/") and n.endswith("/SKILL.md") for n in names):
+                issues.append("Missing plugin skill")
             if runtime == "plugin" and any(Path(n).name == "mcp.json" for n in names):
                 issues.append("Forbidden mcp.json inside plugin")
             instruction = INSTRUCTIONS.get(runtime)
