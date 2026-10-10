@@ -64,5 +64,6 @@ def test_delivery_manifest_links_files_to_canonical_artifacts():
 
     assert mapped["project_zip"] == "project_package"
     assert mapped["chat_zip"] == "runtime_package"
-    assert mapped["custom_gpt_zip"] == "runtime_package"
+    assert "custom_gpt_zip" not in mapped
+    assert mapped["plugin_zip"] == "runtime_package"
     assert mapped["checksums"] == "checksums"
