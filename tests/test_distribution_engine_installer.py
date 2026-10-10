@@ -91,4 +91,4 @@ def test_installed_engine_builds_distinct_runtime_archives(tmp_path):
     for archive in archives:
         with zipfile.ZipFile(archive) as zf:
             layouts.append(frozenset(zf.namelist()))
-    assert len(set(layouts)) > 1
+    assert len(set(layouts)) == 5
