@@ -578,7 +578,7 @@ def build_claude_skills(root: Path, cfg: dict, build_root: Path, version: str) -
         )
         built_skills.append(skill_id)
     (out / "README.md").write_text(
-        "# Claude Skills – " + cfg["project"]["name"] + "\\n\\n"
+        "# Claude Skills – " + cfg["project"]["name"] + "\n\n"
         "Install the individual folders under skills/ as Claude Skills. "
         "Scripts require a compatible execution environment; packaging alone "
         "does not verify host execution.\\n",
@@ -586,8 +586,7 @@ def build_claude_skills(root: Path, cfg: dict, build_root: Path, version: str) -
     )
     (out / "VERSION").write_text(version + "\\n", encoding="utf-8")
     (out / "runtime-contract.json").write_text(
-        json.dumps(claude_skills_runtime_contract(cfg, built_skills), ensure_ascii=False, indent=2) + "\
-",
+        json.dumps(claude_skills_runtime_contract(cfg, built_skills), ensure_ascii=False, indent=2) + "\\n",
         encoding="utf-8",
     )
     write_manifest(out, cfg["project"]["id"] + "-claude-skills", version, "README.md")
