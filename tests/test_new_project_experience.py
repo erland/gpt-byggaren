@@ -150,7 +150,7 @@ def test_readme_describes_all_registered_runtime_families():
     assert "Custom GPT" in readme
     assert "Claude Projects" in readme
     assert "OpenCode" in readme
-    assert "Chat ZIP + Custom GPT är inte ett obligatoriskt standardpar" in readme
+    assert "Äldre Custom GPT-projekt kan användas som migrationsunderlag" in readme
 
 
 
