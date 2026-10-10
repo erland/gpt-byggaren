@@ -5,7 +5,7 @@ project:
   language: sv
   description: 'GPT Byggaren hjälper användare från idé till testad, paketerad och
     versionshanterad GPT med stöd för stegvis projektutveckling, Chat/ZIP-runtime,
-    Custom GPT-distribution och GitHub CI och release som standard.
+    OpenAI Plugin-distribution och GitHub CI och release som standard.
 
     '
 development:
@@ -182,7 +182,7 @@ runtime:
       require_skill: true
       require_skill_frontmatter: true
   custom_gpt:
-    enabled: true
+    enabled: false
     role: peer_distribution
     compilation_mode: adaptive
     allow_reduced_functionality: true
@@ -376,7 +376,7 @@ build:
   create_checksums: true
   build_project_zip: true
   build_chat_zip: true
-  build_custom_gpt_zip: true
+  build_custom_gpt_zip: false
   build_claude_zip: true
   build_opencode_zip: true
   build_plugin_zip: true
@@ -397,7 +397,6 @@ release:
     artifacts:
     - project_zip
     - chat_zip
-    - custom_gpt_zip_when_enabled
     - claude_zip_when_enabled
     - opencode_zip_when_enabled
     - plugin_zip_when_enabled
@@ -722,7 +721,6 @@ build_system:
   targets:
   - project
   - chat
-  - custom-gpt
   - claude
   - opencode
   - plugin
@@ -733,12 +731,6 @@ build_system:
       builder: chat
       artifact_type: chat_zip
       filename_pattern: <project-id>-chat-<version>.zip
-    custom-gpt:
-      runtime_id: chatgpt_custom
-      runtime_key: custom_gpt
-      builder: custom_gpt
-      artifact_type: custom_gpt_zip
-      filename_pattern: <project-id>-custom-gpt-<version>.zip
     claude:
       runtime_id: claude_project
       runtime_key: claude
@@ -778,7 +770,6 @@ direct_build:
   deliver:
   - project_zip
   - chat_zip
-  - custom_gpt_zip_when_enabled
   - claude_zip_when_enabled
   - opencode_zip_when_enabled
   - plugin_zip_when_enabled
