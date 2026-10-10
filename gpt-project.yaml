@@ -159,7 +159,6 @@ runtime:
         - docs/dynamic-planning.md
         - docs/resume-flow.md
         - docs/next-step-recommendation.md
-    - docs/skills/project-workflow-operations.md
     validation:
       require_agents_md: true
       require_runtime_contract: true
@@ -235,6 +234,7 @@ skills:
     - docs/dynamic-planning.md
     - docs/resume-flow.md
     - docs/next-step-recommendation.md
+    - docs/skills/project-workflow-operations.md
   - id: legacy-project-analysis
     name: legacy-project-analysis
     description: Inventera, tolka och rekonstruera äldre GPT-projekt evidensbaserat utan att aktivera runtime.
