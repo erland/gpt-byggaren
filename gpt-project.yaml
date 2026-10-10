@@ -673,7 +673,6 @@ runtime_parity:
     type: canonical_contract
   registered_runtimes:
   - chatgpt_chat
-  - chatgpt_custom
   - claude_project
   - opencode
   - openai_plugin
