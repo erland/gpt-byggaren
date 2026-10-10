@@ -586,7 +586,7 @@ def build_claude_skills(root: Path, cfg: dict, build_root: Path, version: str) -
     )
     (out / "VERSION").write_text(version + "\\n", encoding="utf-8")
     (out / "runtime-contract.json").write_text(
-        json.dumps(claude_skills_runtime_contract(cfg, built_skills), ensure_ascii=False, indent=2) + "\\n",
+        json.dumps(claude_skills_runtime_contract(cfg, built_skills), ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
     write_manifest(out, cfg["project"]["id"] + "-claude-skills", version, "README.md")
