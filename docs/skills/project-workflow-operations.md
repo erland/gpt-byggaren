@@ -44,3 +44,7 @@ Uppdatera aldrig auktoritativ status till klar före relevanta valideringar och 
 ## Nya projekt: modulär Skill-arkitektur
 
 Före första distribution ska projektets förmågor delas upp och dokumenteras enligt `docs/skills/skill-decomposition.md`. Säkerställ att samma Skill-karta styr samtliga fem runtime-distributioner. Skapa inte en monolitisk Skill för flera oberoende förmågor utan dokumenterad motivering.
+
+## Generering av körbart distributionssystem
+
+När ett nytt projekt har en komplett `gpt-project.yaml` med fem `build_system.runtime_targets`, installera den kanoniska distributionsmotorn med `python scripts/install_distribution_engine.py --project-root <projektkatalog>` från GPT Byggarens källträd. Skapa inte en separat förenklad byggare i projektet. Kopiera nödvändiga projektberoenden och kör projektets egna byggen samt valideringar innan projektet markeras som färdigt. Om källträdet eller beroendena inte finns tillgängliga, markera genereringen som blockerad; fabricera inte distributions-ZIP-filer.
