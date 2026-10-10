@@ -35,3 +35,18 @@ def test_release_workflow_covers_plugin_declaratively():
     assert "gh release upload" in text
     assert "FILES[@]" in text
     assert "gpt-byggaren-plugin-" not in text
+
+
+def test_release_delivers_two_claude_artifacts_without_legacy_zip():
+    import yaml
+    cfg = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
+    targets = cfg["build_system"]["runtime_targets"]
+    assert "claude" not in targets
+    assert "claude" not in cfg["build_system"]["targets"]
+    for target, suffix in (("claude_project", "-claude-project-"), ("claude_skills", "-claude-skills-")):
+        assert target in cfg["build_system"]["targets"]
+        assert suffix in targets[target]["filename_pattern"]
+    assert all("-claude-<version>.zip" != t["filename_pattern"][-len("-claude-<version>.zip"):] for t in targets.values())
+    workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
+    assert "verify_distribution_outputs.py" in workflow
+    assert "--print-files" in workflow
