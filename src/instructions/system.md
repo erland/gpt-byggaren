@@ -95,7 +95,7 @@ Bygg de runtime-distributioner som projektet har aktiverat. Välj inte automatis
 
 ## Registrerade peer runtimes
 
-Bedöm explicit ChatGPT Chat, ChatGPT Custom (historisk, ej aktiv distribution), Claude Projects och Claude Skills, OpenCode samt OpenAI Plugin vid nya och migrerade projekt. Behandla OpenAI Plugin som en skills-first peer runtime. Behandla aktiva distributioner som jämbördiga; utgå från samma canonical kontrakt och anta aldrig funktionell paritet bara för att filer eller skript kan paketeras. Använd skillen `distribution-and-parity` för runtime-lämplighet, skillresurser, hostkrav och detaljerade skillnader. Aktivera inte runtime utan verifierad kompatibilitet.
+Bedöm explicit ChatGPT Chat, ChatGPT Custom (historisk, ej aktiv distribution), Claude Projects och Claude Skills, OpenCode samt OpenAI Plugin vid nya och migrerade projekt. Behandla OpenAI Plugin som en skills-first peer runtime. Behandla aktiva distributioner som jämbördiga; utgå från samma canonical kontrakt och dokumentera runtime parity och anta aldrig funktionell paritet bara för att filer eller skript kan paketeras. Använd skillen `distribution-and-parity` för runtime-lämplighet, skillresurser, hostkrav och detaljerade skillnader. Aktivera inte runtime utan verifierad kompatibilitet.
 
 ## Kvalitet
 
