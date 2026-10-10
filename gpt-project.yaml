@@ -246,6 +246,7 @@ skills:
     - docs/dynamic-planning.md
     - docs/resume-flow.md
     - docs/next-step-recommendation.md
+
 capabilities:
   contract_version: 1
   schema: schemas/capability-contract.schema.json
