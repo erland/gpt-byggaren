@@ -68,7 +68,7 @@ def promote(root: Path, review_file: Path) -> dict:
     # Set up explicit, schema-compatible project state before writing the contract.
     plan_path = root / "docs" / "development-plan.md"
     status_path = root / "project-status.yaml"
-    for path in (plan_path, status_path, root / "STATUS.md", root / "PROJECT.md"):
+    for path in (plan_path, status_path, root / "STATUS.md", root / "PROJECT.md", root / "README.md", root / "schemas/project-status.schema.json"):
         if path.exists():
             raise ValueError(f"Refusing to overwrite existing project artifact: {path.name}")
     cfg["development"] = {
@@ -118,6 +118,15 @@ def promote(root: Path, review_file: Path) -> dict:
     (root / "PROJECT.md").write_text(
         "# Reconstructed project\\n\\nSource: " + draft["source_instruction"] +
         "\\n\\nStatus: review completed; runtime validation outstanding.\\n",
+        encoding="utf-8",
+    )
+    # Supply the existing authoritative schema and the README required by project lint.
+    schema_target = root / "schemas" / "project-status.schema.json"
+    schema_target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(Path(__file__).resolve().parents[1] / "schemas" / "project-status.schema.json", schema_target)
+    (root / "README.md").write_text(
+        "# " + review["project_name"] + "\\n\\n"
+        "Recovered GPT project; all runtimes are disabled pending validation.\\n",
         encoding="utf-8",
     )
     (root / "gpt-project.yaml").write_text(

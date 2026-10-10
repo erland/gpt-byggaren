@@ -58,6 +58,8 @@ def test_reviewed_reconstruction_creates_disabled_canonical_draft(tmp_path):
     assert (tmp_path / "docs/development-plan.md").is_file()
     assert (tmp_path / "STATUS.md").is_file()
     assert (tmp_path / "PROJECT.md").is_file()
+    assert (tmp_path / "README.md").is_file()
+    assert (tmp_path / "schemas/project-status.schema.json").is_file()
     assert run(tmp_path, review).returncode != 0
 
 
