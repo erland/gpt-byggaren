@@ -268,6 +268,30 @@ def write_review_project_draft(project: Path, recovery: dict, dependencies: dict
     return {"result": "created_for_review", "file": target.relative_to(project).as_posix(), "release_ready": False}
 
 
+def assess_existing_project(project: Path) -> dict:
+    """Report compatibility gaps without altering or inventing runtime configuration."""
+    cfg = load_cfg(project)
+    runtime = (cfg or {}).get("runtime") or {}
+    build_system = (cfg or {}).get("build_system") or {}
+    issues = []
+    if "openai_plugin" in runtime and "plugin" not in runtime:
+        issues.append("Legacy runtime.openai_plugin needs explicit mapping to runtime.plugin")
+    if not build_system.get("runtime_targets"):
+        issues.append("No modern build_system.runtime_targets are declared")
+    if any((runtime.get(k) or {}).get("enabled") for k in ("chat_zip", "claude", "opencode", "plugin")):
+        issues.append("Previously enabled runtimes require independent parity review")
+    if not (project / "src" / "instructions" / "system.md").is_file():
+        issues.append("Canonical instructions missing from expected modern source path")
+    return {
+        "status": "review_required" if issues else "existing_contract_present",
+        "project_contract_present": True,
+        "issues": issues,
+        "dependency_inventory": inventory_recovered_dependencies(project),
+        "ready_for_modern_distribution_build": False,
+        "release_ready": False,
+    }
+
+
 def migrate(source: Path, destination: Path) -> dict:
     source, destination = source.resolve(), destination.resolve()
     if not source.exists():
@@ -306,6 +330,7 @@ def migrate(source: Path, destination: Path) -> dict:
         changed = apply_changes(project, cfg, report)
         retired = retire_custom_gpt(project)
         report["custom_gpt_retirement"] = retired
+        report["existing_project_assessment"] = assess_existing_project(project)
         report["apply"] = {"result": "changed" if changed or retired["result"] == "changed" else "no_changes"}
     (destination / "MIGRATION-REPORT.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
