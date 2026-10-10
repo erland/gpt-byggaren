@@ -105,3 +105,45 @@ def test_custom_gpt_is_retired_only_in_migrated_copy(tmp_path):
     assert migrated["direct_build"]["deliver"] == ["plugin_zip_when_enabled"]
     assert migrated["release"]["github"]["artifacts"] == ["plugin_zip_when_enabled"]
     assert json.loads((dest / "MIGRATION-REPORT.json").read_text())["custom_gpt_retirement"]["legacy_configuration_preserved"]
+
+
+def test_distribution_inventory_identifies_legacy_chat_zip(tmp_path):
+    archive = tmp_path / "chat.zip"
+    dest = tmp_path / "converted"
+    with zipfile.ZipFile(archive, "w") as z:
+        z.writestr("START-HERE.md", "Start")
+        z.writestr("assistant/instructions.md", "Canonical text unavailable")
+        z.writestr("knowledge/domain.md", "Domain rules")
+    result = invoke(archive, dest)
+    assert result.returncode == 0, result.stderr
+    report = json.loads((dest / "MIGRATION-REPORT.json").read_text())
+    inv = report["distribution_inventory"]
+    assert inv["classification"] == "chat_zip"
+    assert inv["knowledge_file_count"] == 1
+    assert inv["reconstruction"] == "review_required"
+    assert report["apply"]["result"] == "blocked"
+
+
+def test_distribution_inventory_identifies_plugin_without_mcp_dependency(tmp_path):
+    archive = tmp_path / "plugin.zip"
+    dest = tmp_path / "converted"
+    with zipfile.ZipFile(archive, "w") as z:
+        z.writestr("plugin.json", "{}")
+        z.writestr("skills/example/SKILL.md", "# Skill")
+    result = invoke(archive, dest)
+    assert result.returncode == 0, result.stderr
+    inv = json.loads((dest / "MIGRATION-REPORT.json").read_text())["distribution_inventory"]
+    assert inv["classification"] == "openai_plugin"
+    assert "skills/example/SKILL.md" in inv["evidence"]
+
+
+def test_distribution_inventory_reports_ambiguity(tmp_path):
+    archive = tmp_path / "mixed.zip"
+    dest = tmp_path / "converted"
+    with zipfile.ZipFile(archive, "w") as z:
+        z.writestr("plugin.json", "{}")
+        z.writestr("AGENTS.md", "Agent")
+    result = invoke(archive, dest)
+    assert result.returncode == 0, result.stderr
+    inv = json.loads((dest / "MIGRATION-REPORT.json").read_text())["distribution_inventory"]
+    assert inv["classification"] == "ambiguous"
