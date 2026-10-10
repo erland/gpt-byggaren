@@ -12,6 +12,8 @@ from pathlib import Path
 ENGINE_FILES = (
     "scripts/build_distributions.py",
     "scripts/lib/project_model.py",
+    "scripts/validate_distributions.py",
+    "scripts/validate_portable_skills.py",
 )
 REQUIRED_TARGETS = {"chat", "plugin", "claude_project", "claude_skills", "opencode"}
 
