@@ -170,11 +170,31 @@ def _parse_skill_frontmatter(text: str) -> dict:
     return data
 
 
+def validate_plugin_zip_entries(zip_path: Path) -> list[str]:
+    """Check installable archive entries, not just staging paths."""
+    errors = []
+    try:
+        with zipfile.ZipFile(zip_path) as archive:
+            for entry in archive.namelist():
+                if entry.replace("\\", "/").rstrip("/").split("/")[-1].lower() == "mcp.json":
+                    errors.append(f"Forbidden plugin ZIP entry: {entry}")
+    except (OSError, zipfile.BadZipFile) as exc:
+        errors.append(f"Invalid plugin ZIP: {exc}")
+    return errors
+
+
 def validate_plugin(root: Path, cfg: dict) -> list[str]:
     errors = []
     build = root / "build" / "plugin"
     if not build.exists():
         return ["Plugin build directory missing"]
+
+    for path in build.rglob("*"):
+        if path.is_file() and path.name.lower() == "mcp.json":
+            errors.append(f"Forbidden plugin file: {path.relative_to(build)}")
+
+    for archive in (root / "dist").glob(f"{cfg['project']['id']}-plugin-*.zip"):
+        errors.extend(validate_plugin_zip_entries(archive))
 
     runtime_cfg = cfg["runtime"]["plugin"]
     required = [
