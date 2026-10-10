@@ -78,12 +78,13 @@ def test_installed_engine_builds_distinct_runtime_archives(tmp_path):
                     destination = project / relative
                     destination.parent.mkdir(parents=True, exist_ok=True)
                     destination.write_bytes(source.read_bytes())
-    subprocess.run(
+    result = subprocess.run(
         [sys.executable, str(project / "scripts/build_distributions.py"),
          "--project-root", str(project), "--version", "0.1.0",
          "--targets", "chat,plugin,claude_project,claude_skills,opencode"],
-        check=True, capture_output=True, text=True,
+        capture_output=True, text=True,
     )
+    assert result.returncode == 0, result.stdout + "\\n" + result.stderr
     archives = list((project / "dist").glob("*.zip"))
     assert len(archives) == 5
     layouts = []
