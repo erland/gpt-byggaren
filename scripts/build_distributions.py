@@ -158,6 +158,35 @@ def copy_declared_tool_scripts(root: Path, cfg: dict, target: Path) -> list[str]
     return copied
 
 
+def copy_portable_skill_modules(root: Path, cfg: dict, target: Path) -> list[str]:
+    """Compile canonical skills and copy their explicit resources for text-first runtimes.
+
+    These files are included as usable references without assuming that Claude
+    Projects or Chat ZIP will automatically install/activate host Skills.
+    """
+    result = []
+    for skill in canonical_skill_definitions(cfg):
+        ident = skill["id"]
+        destination = target / ident
+        for category in ("references", "assets", "scripts"):
+            seen = set()
+            for source_ref in skill.get(category, []) or []:
+                source = root / source_ref
+                if not source.is_file() or source.is_symlink() or not source.resolve().is_relative_to(root.resolve()):
+                    raise SystemExit(f"Missing/unsafe canonical skill resource: {source_ref}")
+                if source.name in seen:
+                    raise SystemExit(f"Colliding skill resource filename: {source.name}")
+                seen.add(source.name)
+                copy_file(source, destination / category / source.name)
+        destination.mkdir(parents=True, exist_ok=True)
+        (destination / "SKILL.md").write_text(
+            compile_skill_markdown(skill, compatibility="portable-reference"),
+            encoding="utf-8",
+        )
+        result.append(ident)
+    return result
+
+
 def build_chat(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     out = build_root / "chat"
     ensure_clean_dir(out)
@@ -168,6 +197,7 @@ def build_chat(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
 
     instr_src = root / cfg["instructions"]["canonical"]
     copy_file(instr_src, assistant / "instructions.md")
+    copy_portable_skill_modules(root, cfg, assistant / "skills")
 
     starters_root = root / cfg["structure"]["conversation_starters"]["path"]
     if starters_root.exists():
@@ -482,6 +512,7 @@ def build_claude(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     instructions_ref = runtime_cfg["project"]["instructions"]
     instructions_path = out / instructions_ref
     copy_file(instr_src, instructions_path)
+    copy_portable_skill_modules(root, cfg, out / "skills")
 
     knowledge_root = root / cfg["knowledge_architecture"]["canonical_root"]
     knowledge_ref = runtime_cfg["project"]["knowledge"]
