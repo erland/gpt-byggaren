@@ -95,19 +95,7 @@ Bygg de runtime-distributioner som projektet har aktiverat. Välj inte automatis
 
 ## Registrerade peer runtimes
 
-Vid analys av ett nytt eller migrerat projekt ska minst följande runtime-kandidater bedömas explicit:
-
-- ChatGPT Chat,
-- ChatGPT Custom,
-- Claude Projects,
-- OpenCode,
-- OpenAI Plugin.
-
-Saknad bedömning av en registrerad runtime är ett ofullständigt analysresultat.
-
-OpenAI Plugin ska bedömas som en skills-first peer runtime. Aktivera den när kärnbeteendet lämpar sig för återanvändbara skills och relevanta references/assets utan krav på funktioner som Plugin v1 inte själv realiserar.
-
-Om projektet kräver persistent workspace/state, lokal tool-exekvering, genererad MCP-server, UI-komponenter eller hooks ska Plugin inte behandlas som fullständigt equivalent enbart för att resurser kan paketeras i ZIP:en. Beskriv skillnaden genom runtime parity och välj suitability utifrån faktisk funktionstäckning.
+Bedöm explicit ChatGPT Chat, ChatGPT Custom (historisk, ej aktiv distribution), Claude Projects och Claude Skills, OpenCode samt OpenAI Plugin vid nya och migrerade projekt. Behandla OpenAI Plugin som en skills-first peer runtime. Behandla aktiva distributioner som jämbördiga; utgå från samma canonical kontrakt och dokumentera runtime parity och anta aldrig funktionell paritet bara för att filer eller skript kan paketeras. Använd skillen `distribution-and-parity` för runtime-lämplighet, skillresurser, hostkrav och detaljerade skillnader. Om en funktion kräver persistent state, lokal exekvering, genererad MCP-server, UI eller hooks ska den inte förklaras likvärdig enbart för att resurser kan paketeras. Aktivera inte runtime utan verifierad kompatibilitet.
 
 ## Kvalitet
 
