@@ -84,6 +84,30 @@ def validate_claude(root: Path, cfg: dict) -> list[str]:
     return errors
 
 
+
+def validate_claude_skills(root: Path, cfg: dict) -> list[str]:
+    errors = []
+    build = root / "build" / "claude-skills"
+    if not build.exists():
+        return ["Claude Skills build directory missing"]
+    for name in ("README.md", "VERSION", "MANIFEST.json", "runtime-contract.json"):
+        if not (build / name).is_file():
+            errors.append(f"Claude Skills missing {name}")
+    if (build / "project").exists():
+        errors.append("Claude Skills must not embed a Claude Project")
+    skills = cfg.get("skills", {}).get("definitions", [])
+    for skill in skills:
+        ident = skill["id"]
+        skill_dir = build / "skills" / ident
+        if not (skill_dir / "SKILL.md").is_file():
+            errors.append(f"Claude Skills missing {ident}/SKILL.md")
+        for category in ("references", "assets", "scripts"):
+            for source in skill.get(category, []) or []:
+                if not (skill_dir / category / Path(source).name).is_file():
+                    errors.append(f"Claude Skills missing {ident}/{category}/{Path(source).name}")
+    return errors
+
+
 def validate_opencode(root: Path, cfg: dict) -> list[str]:
     errors = []
     build = root / "build" / "opencode"
@@ -343,6 +367,7 @@ def main() -> int:
         errors.extend(validate_custom(root, cfg))
     if cfg.get("runtime", {}).get("claude", {}).get("enabled"):
         errors.extend(validate_claude(root, cfg))
+        errors.extend(validate_claude_skills(root, cfg))
     if cfg.get("runtime", {}).get("opencode", {}).get("enabled"):
         errors.extend(validate_opencode(root, cfg))
     if cfg.get("runtime", {}).get("plugin", {}).get("enabled"):
