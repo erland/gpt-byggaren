@@ -71,26 +71,6 @@ def test_custom_instruction_compiler_blocks_overflow_after_safe_compression():
     assert "do not move core behavior to Knowledge" in str(exc.value)
 
 
-def test_custom_build_emits_compilation_report():
-    import json
-    import shutil
-    for name in ["build", "dist"]:
-        p = ROOT / name
-        if p.exists():
-            shutil.rmtree(p)
-    r = subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "build_distributions.py"),
-         "--project-root", str(ROOT), "--version", "0.0.0-reporttest"],
-        capture_output=True, text=True
-    )
-    assert r.returncode == 0, r.stdout + r.stderr
-    report_path = ROOT / "build" / "custom-gpt" / "builder" / "compilation-report.json"
-    assert report_path.exists()
-    report = json.loads(report_path.read_text(encoding="utf-8"))
-    assert report["instruction"]["compiled_characters"] <= report["instruction"]["max_characters"]
-    assert report["knowledge"]["selected_files"] <= report["knowledge"]["max_files"]
-
-
 def test_chat_build_compiles_canonical_contract_snapshot_and_declared_tools():
     import json
     import shutil
@@ -128,42 +108,6 @@ def test_chat_build_compiles_canonical_contract_snapshot_and_declared_tools():
 
     assert manifest["adapter_id"] == "chatgpt_chat"
     assert manifest["contract_snapshot"] == "assistant/runtime-contract.json"
-
-
-def test_custom_build_compiles_canonical_contract_snapshot():
-    import json
-    import shutil
-
-    for name in ["build", "dist"]:
-        p = ROOT / name
-        if p.exists():
-            shutil.rmtree(p)
-
-    r = subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "build_distributions.py"),
-         "--project-root", str(ROOT), "--version", "0.0.0-customcontract",
-         "--targets", "custom-gpt"],
-        capture_output=True, text=True
-    )
-    assert r.returncode == 0, r.stdout + r.stderr
-
-    custom = ROOT / "build" / "custom-gpt"
-    snapshot = json.loads((custom / "builder" / "runtime-contract.json").read_text(encoding="utf-8"))
-    manifest = json.loads((custom / "MANIFEST.json").read_text(encoding="utf-8"))
-    report = json.loads((custom / "builder" / "compilation-report.json").read_text(encoding="utf-8"))
-
-    assert snapshot["runtime_id"] == "chatgpt_custom"
-    assert snapshot["adapter"]["builder_package"] is True
-    assert snapshot["adapter"]["tool_execution"] == "not_embedded"
-
-    tool_states = {item["id"]: item for item in snapshot["adapter"]["tool_states"]}
-    assert tool_states["lint-project"]["state"] == "missing"
-    assert tool_states["project-hygiene"]["state"] == "reduced"
-
-    assert manifest["adapter_id"] == "chatgpt_custom"
-    assert manifest["contract_snapshot"] == "builder/runtime-contract.json"
-    assert report["runtime_id"] == "chatgpt_custom"
-    assert report["contract_snapshot"] == "builder/runtime-contract.json"
 
 
 def test_claude_build_compiles_project_package_from_canonical_contracts():
@@ -275,3 +219,12 @@ def test_opencode_build_compiles_base_workspace_from_canonical_contracts():
 def test_opencode_build_tool_default_targets_include_plugin():
     text = (ROOT / "scripts" / "build_distributions.py").read_text(encoding="utf-8")
     assert 'project,chat,custom-gpt,claude,opencode,plugin' in text
+
+
+def test_custom_gpt_is_not_an_active_distribution():
+    import yaml
+    cfg = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
+    assert cfg["runtime"]["custom_gpt"]["enabled"] is False
+    assert "custom-gpt" not in cfg["build_system"]["targets"]
+    assert "custom-gpt" not in cfg["build_system"]["runtime_targets"]
+    assert "plugin" in cfg["build_system"]["targets"]
