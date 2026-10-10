@@ -7,10 +7,13 @@ project files produce a review report rather than invented project metadata.
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import shutil
 import sys
 import zipfile
+
+import yaml
 from pathlib import Path
 
 from migrate_legacy_project import apply_changes, build_report, load_cfg
@@ -68,6 +71,46 @@ def _project_root(dest: Path) -> Path:
     return dest
 
 
+def retire_custom_gpt(project: Path) -> dict:
+    """Retire only active Builder targets; preserve legacy configuration."""
+    path = project / "gpt-project.yaml"
+    cfg = yaml.safe_load(path.read_text(encoding="utf-8"))
+    if not isinstance(cfg, dict):
+        return {"result": "blocked", "reason": "Invalid project contract"}
+    original = copy.deepcopy(cfg)
+    runtime = cfg.get("runtime")
+    previous_enabled = False
+    if isinstance(runtime, dict) and isinstance(runtime.get("custom_gpt"), dict):
+        previous_enabled = runtime["custom_gpt"].get("enabled") is True
+        runtime["custom_gpt"]["enabled"] = False
+    build = cfg.get("build")
+    if isinstance(build, dict) and build.get("build_custom_gpt_zip") is True:
+        build["build_custom_gpt_zip"] = False
+    build_system = cfg.get("build_system")
+    if isinstance(build_system, dict):
+        if isinstance(build_system.get("targets"), list):
+            build_system["targets"] = [t for t in build_system["targets"] if t != "custom-gpt"]
+        if isinstance(build_system.get("runtime_targets"), dict):
+            build_system["runtime_targets"].pop("custom-gpt", None)
+    parity = cfg.get("runtime_parity")
+    if isinstance(parity, dict) and isinstance(parity.get("registered_runtimes"), list):
+        parity["registered_runtimes"] = [r for r in parity["registered_runtimes"] if r != "chatgpt_custom"]
+    for section, key in (("direct_build", "deliver"), ("release", "artifacts")):
+        obj = cfg.get(section)
+        if section == "release" and isinstance(obj, dict):
+            obj = obj.get("github")
+        if isinstance(obj, dict) and isinstance(obj.get(key), list):
+            obj[key] = [t for t in obj[key] if t != "custom_gpt_zip_when_enabled"]
+    if cfg != original:
+        path.write_text(yaml.safe_dump(cfg, sort_keys=False, allow_unicode=True), encoding="utf-8")
+    return {
+        "result": "changed" if cfg != original else "no_changes",
+        "previously_enabled": previous_enabled,
+        "legacy_configuration_preserved": True,
+        "automatic_plugin_conversion": False,
+    }
+
+
 def migrate(source: Path, destination: Path) -> dict:
     source, destination = source.resolve(), destination.resolve()
     if not source.exists():
@@ -100,7 +143,9 @@ def migrate(source: Path, destination: Path) -> dict:
         report["apply"] = {"result": "blocked", "reason": "No gpt-project.yaml; reconstruction requires review"}
     else:
         changed = apply_changes(project, cfg, report)
-        report["apply"] = {"result": "changed" if changed else "no_changes"}
+        retired = retire_custom_gpt(project)
+        report["custom_gpt_retirement"] = retired
+        report["apply"] = {"result": "changed" if changed or retired["result"] == "changed" else "no_changes"}
     (destination / "MIGRATION-REPORT.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
