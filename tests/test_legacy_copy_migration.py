@@ -179,3 +179,23 @@ def test_ambiguous_distribution_does_not_invent_canonical_instructions(tmp_path)
     report = json.loads((destination / "MIGRATION-REPORT.json").read_text())
     assert report["reconstruction"]["result"] == "review_required"
     assert not (destination / "reconstructed-canonical").exists()
+
+
+def test_dependency_inventory_lists_files_without_claiming_tool_support(tmp_path):
+    archive = tmp_path / "legacy.zip"
+    destination = tmp_path / "output"
+    with zipfile.ZipFile(archive, "w") as z:
+        z.writestr("plugin.json", "{}")
+        z.writestr("skills/example/SKILL.md", "Test")
+        z.writestr("skills/example/references/background.md", "Background")
+        z.writestr("skills/example/scripts/helper.py", "print('ok')")
+        z.writestr("skills/example/mcp.json", "{}")
+    result = invoke(archive, destination)
+    assert result.returncode == 0, result.stderr
+    inventory = json.loads((destination / "MIGRATION-REPORT.json").read_text())["dependency_inventory"]
+    assert "skills/example/references/background.md" in inventory["knowledge_files"]
+    assert "skills/example/scripts/helper.py" in inventory["candidate_scripts"]
+    assert "skills/example/mcp.json" in inventory["integration_manifests"]
+    assert inventory["tools_verified"] is False
+    assert inventory["knowledge_completeness_verified"] is False
+    assert inventory["review_required"] is True
