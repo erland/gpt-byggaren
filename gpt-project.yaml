@@ -235,6 +235,7 @@ skills:
     - docs/resume-flow.md
     - docs/next-step-recommendation.md
     - docs/skills/project-workflow-operations.md
+    - docs/skills/skill-decomposition.md
   - id: legacy-project-analysis
     name: legacy-project-analysis
     description: Inventera, tolka och rekonstruera äldre GPT-projekt evidensbaserat utan att aktivera runtime.
