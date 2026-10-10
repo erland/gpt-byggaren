@@ -29,15 +29,16 @@ def validate(root, version):
     gates["blank_idea_e2e"]="pass" if select_profile(scenario["features"]) == scenario["expected"]["profile"] else "blocked"
 
     cfg=yaml.safe_load((root/"gpt-project.yaml").read_text(encoding="utf-8"))
-    instr=(root/"src"/"instructions"/"system.md").read_text(encoding="utf-8")
     custom=cfg.get("runtime",{}).get("custom_gpt",{})
-    max_chars=custom.get("instruction",{}).get("max_characters") or custom.get("instruction_max_characters") or 8000
-    gates["custom_instruction_limit"]="pass" if len(instr) <= int(max_chars) else "blocked"
+    if custom.get("enabled") and "custom-gpt" in cfg.get("build_system",{}).get("targets",[]):
+        instr=(root/"src"/"instructions"/"system.md").read_text(encoding="utf-8")
+        max_chars=custom.get("instruction",{}).get("max_characters") or custom.get("instruction_max_characters") or 8000
+        gates["custom_instruction_limit"]="pass" if len(instr) <= int(max_chars) else "blocked"
 
-    kroot=root/"knowledge"
-    kfiles=[p for p in kroot.rglob("*") if p.is_file() and p.name!="KNOWLEDGE.md"] if kroot.exists() else []
-    max_files=custom.get("knowledge",{}).get("max_files") or custom.get("knowledge_max_files") or 20
-    gates["custom_knowledge_limit"]="pass" if len(kfiles) <= int(max_files) else "blocked"
+        kroot=root/"knowledge"
+        kfiles=[p for p in kroot.rglob("*") if p.is_file() and p.name!="KNOWLEDGE.md"] if kroot.exists() else []
+        max_files=custom.get("knowledge",{}).get("max_files") or custom.get("knowledge_max_files") or 20
+        gates["custom_knowledge_limit"]="pass" if len(kfiles) <= int(max_files) else "blocked"
 
     compile_ok=True
     for p in list((root/"scripts").rglob("*.py"))+list((root/"tests").rglob("*.py")):
