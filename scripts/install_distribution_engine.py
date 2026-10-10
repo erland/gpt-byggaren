@@ -42,6 +42,9 @@ def install(source: Path, project: Path) -> list[str]:
         if tool.get("type") == "script" and tool.get("script"):
             declared_scripts.append(tool["script"])
     files_to_install = tuple(dict.fromkeys((*ENGINE_FILES, *declared_scripts)))
+    template = cfg.get("runtime", {}).get("chat_zip", {}).get("start_here_template")
+    if template:
+        files_to_install = tuple(dict.fromkeys((*files_to_install, template)))
     for relative in files_to_install:
         relative_path = Path(relative)
         if relative_path.is_absolute() or ".." in relative_path.parts:
