@@ -4,6 +4,7 @@ import json
 import subprocess
 import sys
 import yaml
+import jsonschema
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "promote_reconstructed_project.py"
@@ -49,6 +50,14 @@ def test_reviewed_reconstruction_creates_disabled_canonical_draft(tmp_path):
     assert (tmp_path / "src/instructions/system.md").read_bytes() == raw
     assert cfg["reconstruction"]["release_ready"] is False
     assert all(not x["enabled"] for key, x in cfg["runtime"].items() if isinstance(x, dict))
+    status = yaml.safe_load((tmp_path / "project-status.yaml").read_text())
+    schema = json.loads((ROOT / "schemas/project-status.schema.json").read_text())
+    jsonschema.Draft202012Validator(schema).validate(status)
+    assert status["state"]["overall"] == "blocked"
+    assert status["progress"]["completed_steps"] == []
+    assert (tmp_path / "docs/development-plan.md").is_file()
+    assert (tmp_path / "STATUS.md").is_file()
+    assert (tmp_path / "PROJECT.md").is_file()
     assert run(tmp_path, review).returncode != 0
 
 
