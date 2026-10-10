@@ -15,7 +15,8 @@ ENGINE_FILES = (
     "scripts/validate_distributions.py",
     "scripts/validate_portable_skills.py",
 )
-REQUIRED_TARGETS = {"chat", "plugin", "claude_project", "claude_skills", "opencode"}
+REQUIRED_BUILDERS = {"chat": "chat", "plugin": "plugin", "claude_project": "claude", "claude_skills": "claude_skills", "opencode": "opencode"}
+REQUIRED_TARGETS = set(REQUIRED_BUILDERS)
 
 
 def install(source: Path, project: Path) -> list[str]:
@@ -56,10 +57,15 @@ def install(source: Path, project: Path) -> list[str]:
         if not (source / relative).is_file() and not (project / relative).is_file():
             raise FileNotFoundError(source / relative)
     copied = []
+    for target, expected in REQUIRED_BUILDERS.items():
+        if targets[target].get("builder") != expected:
+            raise ValueError(f"Incorrect builder for {target}: expected {expected}")
     for relative in files_to_install:
         if not (source / relative).is_file():
             continue
         destination = project / relative
+        if relative in declared_scripts and destination.is_file():
+            continue
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source / relative, destination)
         copied.append(relative)
