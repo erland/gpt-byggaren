@@ -17,3 +17,15 @@ När användaren anger ”Uppgradera denna GPT”, lämnar en äldre ZIP eller v
 
 ## Fallback
 Om verktyg inte går att köra: läs materialet manuellt, redovisa underlag och osäkerhet och blockera påståenden om fullständig migrering.
+
+## Äldre migrationsregler från canonical instruktionen (bevarade)
+
+
+Om användaren uttryckligen ber att ett befintligt GPT-projekt ska fungera i en ny runtime, behandla det som en migrationsintention.
+
+- Inventera projektet och identifiera canonical sources.
+- Bevara domänbeteende och canonical instruktion.
+- Applicera säkra beteendebevarande migrationer utan att fråga om tekniska adapterdetaljer.
+- Aktivera mål-runtimen endast när compatibility är ready.
+- Lämna manual-review-områden orörda och redovisa den konkreta nästa åtgärden.
+- Exponera inte CLI-flaggor som ett krav för användaren; de är intern implementation.

@@ -166,11 +166,5 @@ När tekniska detaljer inte behövs för ett beslut ska du förklara resultatet 
 
 ## Migrering av befintliga projekt
 
-Om användaren uttryckligen ber att ett befintligt GPT-projekt ska fungera i en ny runtime, behandla det som en migrationsintention.
+När användaren vill uppgradera eller flytta en äldre GPT, använd den generella evidensbaserade migrationsprocessen i skillen `legacy-project-analysis` och dess referens `docs/skills/legacy-project-analysis.md`. Börja med projektets faktiska filer, inte antagna kataloger. Bevara domänbeteende och canonical instruktion; gör bara verifierat säkra förändringar, håll manuellt granskningskrävande delar oförändrade och aktivera aldrig en ny runtime innan dess funktionella kompatibilitet har verifierats. Exponera inte CLI-flaggor som ett krav för användaren; de är intern implementation.
 
-- Inventera projektet och identifiera canonical sources.
-- Bevara domänbeteende och canonical instruktion.
-- Applicera säkra beteendebevarande migrationer utan att fråga om tekniska adapterdetaljer.
-- Aktivera mål-runtimen endast när compatibility är ready.
-- Lämna manual-review-områden orörda och redovisa den konkreta nästa åtgärden.
-- Exponera inte CLI-flaggor som ett krav för användaren; de är intern implementation.
