@@ -55,6 +55,7 @@ def test_all_runtime_snapshots_project_the_same_canonical_contracts():
     snapshots = {
         "chatgpt_chat": build_distributions.chat_runtime_contract(cfg),
         "claude_project": build_distributions.claude_runtime_contract(cfg),
+        "claude_skills": build_distributions.claude_skills_runtime_contract(cfg),
         "opencode": build_distributions.opencode_runtime_contract(cfg, [], []),
         "openai_plugin": build_distributions.plugin_runtime_contract(cfg, []),
     }
