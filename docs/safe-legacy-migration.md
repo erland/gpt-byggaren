@@ -33,3 +33,7 @@ Om ett äldre projekt innehåller en aktiv `runtime.custom_gpt` behålls hela de
 När `gpt-project.yaml` saknas identifieras kända paketlayouter: Chat ZIP, OpenAI Plugin, Custom GPT Builder-material, Claude Projects och OpenCode. Rapporten redovisar detekterade format, indikatorfiler, antal identifierade kunskapsfiler och osäkerhet. Vid flera träffar anges `ambiguous` och ingen automatisk rekonstruktion görs.
 
 Innehållet bevaras i kopian. Avsaknad av canonical projektkontrakt och auktoritativ projektstatus markeras `review_required`; det ska inte tolkas som en färdig uppgradering till senaste arkitektur.
+
+## Återställd instruktion för granskning
+
+När en äldre distributions-ZIP entydigt innehåller instruktioner från Chat ZIP, Custom GPT, Claude Projects eller OpenCode kan ett **exakt innehållskopierat** instruktionsutkast placeras i `reconstructed-canonical/instructions.md`. Ursprungsfilen anges i `reconstructed-canonical/RECOVERY.json`. Resultatet är uttryckligen **inte ett verifierat canonical projekt**, skapar inte `gpt-project.yaml` och är inte releaseklart. Komprimerade Builder-instruktioner kan sakna delar av originalets beteende; Knowledge och tool-beroenden måste bedömas före konvertering. Plugin ZIP med flera skills saknar ofta en entydig sammanhängande instruktion och markeras därför för granskning i stället för att sammanfogas på måfå.
