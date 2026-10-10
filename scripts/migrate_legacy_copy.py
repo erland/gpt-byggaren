@@ -229,6 +229,45 @@ def reconstruct_review_project(project: Path, inventory: dict) -> dict:
     return recovery
 
 
+def write_review_project_draft(project: Path, recovery: dict, dependencies: dict) -> dict:
+    """Create a non-executable draft manifest, never a release-ready project."""
+    if recovery.get("status") != "review_required" or not recovery.get("recovered_instruction"):
+        return {"result": "not_created", "reason": "No unambiguous recovered instruction"}
+    output = project / "reconstructed-canonical"
+    draft = {
+        "schema_version": 1,
+        "status": "review_required",
+        "source_instruction": recovery["provenance"],
+        "instruction": recovery["recovered_instruction"],
+        "knowledge_candidates": dependencies["knowledge_files"],
+        "tool_candidates": dependencies["candidate_scripts"],
+        "integration_candidates": dependencies["integration_manifests"],
+        "verified": {
+            "instruction_bytes_copied": True,
+            "knowledge_complete": False,
+            "tools_executable": False,
+            "runtime_parity": False,
+        },
+        "runtime_activation": {
+            "chat_zip": False,
+            "claude": False,
+            "opencode": False,
+            "plugin": False,
+            "custom_gpt": False,
+        },
+        "release_ready": False,
+        "required_reviews": [
+            "Verify original instruction semantics and completeness",
+            "Review available Knowledge and missing dependencies",
+            "Classify tool candidates and host capabilities",
+            "Create canonical project contract after review",
+        ],
+    }
+    target = output / "project-draft.json"
+    target.write_text(json.dumps(draft, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return {"result": "created_for_review", "file": target.relative_to(project).as_posix(), "release_ready": False}
+
+
 def migrate(source: Path, destination: Path) -> dict:
     source, destination = source.resolve(), destination.resolve()
     if not source.exists():
@@ -261,6 +300,7 @@ def migrate(source: Path, destination: Path) -> dict:
         report["distribution_inventory"] = inventory_distribution(project)
         report["dependency_inventory"] = inventory_recovered_dependencies(project)
         report["reconstruction"] = reconstruct_review_project(project, report["distribution_inventory"])
+        report["project_draft"] = write_review_project_draft(project, report["reconstruction"], report["dependency_inventory"])
         report["apply"] = {"result": "blocked", "reason": "No gpt-project.yaml; reconstruction requires review"}
     else:
         changed = apply_changes(project, cfg, report)
