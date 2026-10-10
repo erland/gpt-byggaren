@@ -28,6 +28,8 @@ def install(source: Path, project: Path) -> list[str]:
     except ImportError as exc:
         raise RuntimeError("PyYAML is required") from exc
     cfg = yaml.safe_load((project / "gpt-project.yaml").read_text(encoding="utf-8"))
+    if not isinstance(cfg, dict):
+        raise ValueError("Project configuration must be a YAML mapping")
     targets = cfg.get("build_system", {}).get("runtime_targets", {})
     missing = REQUIRED_TARGETS - set(targets)
     if missing:
