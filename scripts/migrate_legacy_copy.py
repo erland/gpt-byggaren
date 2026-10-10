@@ -327,8 +327,22 @@ def create_legacy_plugin_migration_plan(project: Path) -> dict:
         },
         "source_entrypoint": entrypoint,
         "source_entrypoint_exists": bool(entry_is_safe and (project / entrypoint).is_file()),
+        "source_entrypoint_missing": not bool(entry_is_safe and (project / entrypoint).is_file()),
+        "recovery_sources": [
+            ref for ref in (
+                ((cfg.get("instructions") or {}).get("canonical")),
+                "src/instructions/system.md",
+                "knowledge/KNOWLEDGE.md",
+            )
+            if isinstance(ref, str) and ref.strip()
+            and not Path(ref).is_absolute() and ".." not in Path(ref).parts
+            and (project / ref).is_file()
+        ],
+        "skill_reconstruction_required": not bool(entry_is_safe and (project / entrypoint).is_file()),
+
         "host_capability_dependencies": dependencies,
         "requires_review": [
+            "Recover missing declared SKILL.md from verified canonical instructions when absent",
             "Ensure canonical skills map to the original plugin behavior",
             "Verify optional host tools and capability fallbacks",
             "Verify Knowledge/resources, plugin template and manifest compatibility",
