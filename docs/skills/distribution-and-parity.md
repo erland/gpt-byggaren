@@ -3,6 +3,12 @@
 ## När denna förmåga används
 När ett granskat canonical GPT-projekt ska byggas, testas eller levereras för Chat ZIP, ChatGPT Plugin, Claude eller OpenCode.
 
+## Obligatoriskt för nygenererade projekt
+
+Generera **inte** ett förenklat projektspecifikt `build_distributions.py` som lägger samma `INSTRUCTIONS.md` och `SKILL.md` i fem ZIP-filer. Nya projekt måste använda GPT Byggarens kanoniska distributionsbyggare och dess deklarativa `build_system.runtime_targets`, med projektspecifika data och Skills som indata. Kopiera eller versionera den befintliga bygg- och valideringsimplementationen tillsammans med dess nödvändiga kontrakt och mallar; kontrollera att alla beroenden finns i det genererade projektet. Om ett fullständigt körbart byggsystem inte kan levereras ska projektet markeras som ofullständigt, inte förses med fem missvisande ZIP-filer.
+
+Varje runtime har ett eget installationskontrakt: Chat ZIP med assistant-instruktioner och portabla moduler, OpenAI Plugin med pluginmanifest och Skills, Claude Projects med projektinstruktioner och kunskap, Claude Skills med Skills och resurser, OpenCode med `AGENTS.md`, `.opencode/skills` och relevanta verktyg. Bygg och validera var och en med befintliga runtime-specifika funktioner. En identisk fillista i alla fem runtime-ZIP-filerna är ett regressionsfel.
+
 ## Arbetsgång
 1. Utgå från samma canonical instruktioner, förmågor, resurs- och verktygskontrakt.
 2. Kontrollera skriptens hostkrav och fallback; tillgång till filerna är inte bevis för körbarhet.
