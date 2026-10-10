@@ -193,7 +193,7 @@ def test_opencode_build_compiles_base_workspace_from_canonical_contracts():
     assert manifest["contract_snapshot"] == ".opencode/runtime-contract.json"
     assert manifest["instructions"] == "AGENTS.md"
     assert manifest["skills_included"] is True
-    assert manifest["skills"] == ["gpt-project-workflow"]
+    assert manifest["skills"] == ["gpt-project-workflow", "legacy-project-analysis", "distribution-and-parity"]
     assert manifest["tool_integration"] == "custom_tools"
 
     integrations = {item["id"]: item for item in snapshot["adapter"]["tool_integrations"]}
