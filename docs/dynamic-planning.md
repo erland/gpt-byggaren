@@ -32,7 +32,7 @@ GPT Byggaren ska:
 
 1. analysera idén,
 2. klassificera projektprofil,
-3. identifiera obligatoriska byggblock,
+3. identifiera obligatoriska byggblock och dela upp förmågorna i Skills enligt `docs/skills/skill-decomposition.md`,
 4. identifiera villkorade byggblock,
 5. ordna beroenden,
 6. skapa projektspecifika steg,

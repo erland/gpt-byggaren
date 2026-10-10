@@ -35,7 +35,7 @@ REQUIRED_CORE = [
 RUNTIME_BUILD_FLAGS = {
     "chat_zip": "build_chat_zip",
     "custom_gpt": "build_custom_gpt_zip",
-    "claude": "build_claude_zip",
+    "claude": "build_claude_project_zip",
     "opencode": "build_opencode_zip",
     "plugin": "build_plugin_zip",
 }
@@ -96,6 +96,9 @@ def validate(project_root: Path) -> None:
 
     runtimes = config.get("runtime") or {}
     build = config.get("build") or {}
+    if (runtimes.get("claude") or {}).get("enabled") is True and build.get("build_claude_skills_zip") is not True:
+        fail("MODEL-ROBUSTNESS-009: enabled runtime claude requires build.build_claude_skills_zip=true")
+
     for runtime_name, build_flag in RUNTIME_BUILD_FLAGS.items():
         runtime = runtimes.get(runtime_name) or {}
         if runtime.get("enabled") is True and build.get(build_flag) is not True:

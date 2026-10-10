@@ -24,13 +24,13 @@ def test_modular_skills_in_all_four_real_builds(tmp_path):
     run = subprocess.run(
         [sys.executable, str(project / "scripts/build_distributions.py"),
          "--project-root", str(project), "--version", "0.0.0-module-parity",
-         "--targets", "chat,claude,opencode,plugin"],
+         "--targets", "chat,claude_project,claude_skills,opencode,plugin"],
         text=True, capture_output=True,
     )
     assert run.returncode == 0, run.stdout + run.stderr
     destinations = {
         "chat": project / "build/chat/assistant/skills",
-        "claude": project / "build/claude/skills",
+        "claude": project / "build/claude-skills/skills",
         "opencode": project / "build/opencode/.opencode/skills",
         "plugin": project / "build/plugin/skills",
     }
@@ -46,7 +46,7 @@ def test_modular_skills_in_all_four_real_builds(tmp_path):
     assert (project / "build/claude" / claude_path).read_bytes() == (
         project / "src/instructions/system.md").read_bytes()
     assert (project / "build/plugin/skills/legacy-project-analysis/references/legacy-project-analysis.md").is_file()
-    assert (project / "build/claude/skills/gpt-project-workflow/references/project-workflow-operations.md").is_file()
+    assert (project / "build/claude-skills/skills/gpt-project-workflow/references/project-workflow-operations.md").is_file()
     assert (project / "build/chat/assistant/skills/gpt-project-workflow/references/project-workflow-operations.md").is_file()
     assert not list((project / "build/plugin").rglob("mcp.json"))
 

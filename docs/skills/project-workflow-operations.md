@@ -40,3 +40,7 @@ Förvänta inte en given filstruktur när ett gammalt projekt ännu inte har en 
 ## Verifiering
 
 Uppdatera aldrig auktoritativ status till klar före relevanta valideringar och tester. Om källor, byggmiljö eller runtime saknas ska utfallet redovisas som ej verifierat. Använd projektets faktiska status för nästa rekommendation.
+
+## Nya projekt: modulär Skill-arkitektur
+
+Före första distribution ska projektets förmågor delas upp och dokumenteras enligt `docs/skills/skill-decomposition.md`. Säkerställ att samma Skill-karta styr samtliga fem runtime-distributioner. Skapa inte en monolitisk Skill för flera oberoende förmågor utan dokumenterad motivering.
