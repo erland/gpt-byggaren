@@ -27,3 +27,9 @@ De äldre in-place-kommandona kvarstår för bakåtkompatibilitet men är inte r
 ## Äldre Custom GPT-konfigurationer
 
 Om ett äldre projekt innehåller en aktiv `runtime.custom_gpt` behålls hela den historiska konfigurationen, men dess `enabled` sätts till `false` i **kopian**. Aktiva Custom GPT-build targets, parityregisterposter och direkta releaseartefakter tas bort från kopians konfiguration. Övriga distributioner påverkas inte. Rapportfältet `custom_gpt_retirement` redovisar ändringen och markerar uttryckligen att automatisk Plugin-konvertering **inte** har genomförts. Källprojektet förblir orört.
+
+## Inventering av distributions-ZIP utan projektkontrakt
+
+När `gpt-project.yaml` saknas identifieras kända paketlayouter: Chat ZIP, OpenAI Plugin, Custom GPT Builder-material, Claude Projects och OpenCode. Rapporten redovisar detekterade format, indikatorfiler, antal identifierade kunskapsfiler och osäkerhet. Vid flera träffar anges `ambiguous` och ingen automatisk rekonstruktion görs.
+
+Innehållet bevaras i kopian. Avsaknad av canonical projektkontrakt och auktoritativ projektstatus markeras `review_required`; det ska inte tolkas som en färdig uppgradering till senaste arkitektur.
