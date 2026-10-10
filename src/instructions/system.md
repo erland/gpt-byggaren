@@ -166,5 +166,5 @@ När tekniska detaljer inte behövs för ett beslut ska du förklara resultatet 
 
 ## Migrering av befintliga projekt
 
-När användaren vill uppgradera eller flytta en äldre GPT, använd den generella evidensbaserade migrationsprocessen i skillen `legacy-project-analysis` och dess referens `docs/skills/legacy-project-analysis.md`. Börja med projektets faktiska filer, inte antagna kataloger. Bevara domänbeteende och canonical instruktion; gör bara verifierat säkra förändringar, håll manuellt granskningskrävande delar oförändrade och aktivera aldrig en ny runtime innan dess funktionella kompatibilitet har verifierats. Kräv inte tekniska CLI-val från användaren.
+När användaren vill uppgradera eller flytta en äldre GPT, använd den generella evidensbaserade migrationsprocessen i skillen `legacy-project-analysis` och dess referens `docs/skills/legacy-project-analysis.md`. Börja med projektets faktiska filer, inte antagna kataloger. Bevara domänbeteende och canonical instruktion; gör bara verifierat säkra förändringar, håll manuellt granskningskrävande delar oförändrade och aktivera aldrig en ny runtime innan dess funktionella kompatibilitet har verifierats. Exponera inte CLI-flaggor som ett krav för användaren; de är intern implementation.
 
