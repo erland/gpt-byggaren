@@ -171,7 +171,7 @@ def test_opencode_build_compiles_base_workspace_from_canonical_contracts():
     assert snapshot["runtime_id"] == "opencode"
     assert snapshot["adapter"]["workspace_first"] is True
     assert snapshot["adapter"]["skills_included"] is True
-    assert snapshot["adapter"]["skills"] == ["gpt-project-workflow"]
+    assert snapshot["adapter"]["skills"] == ["gpt-project-workflow", "legacy-project-analysis", "distribution-and-parity"]
     assert snapshot["adapter"]["tool_integration"] == "custom_tools"
 
     assert "OpenCode adapter" in agents
