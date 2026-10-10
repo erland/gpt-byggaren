@@ -147,3 +147,55 @@ def test_distribution_inventory_reports_ambiguity(tmp_path):
     assert result.returncode == 0, result.stderr
     inv = json.loads((dest / "MIGRATION-REPORT.json").read_text())["distribution_inventory"]
     assert inv["classification"] == "ambiguous"
+
+
+def test_reconstructs_reviewable_snapshot_from_chat_distribution(tmp_path):
+    archive = tmp_path / "chat.zip"
+    destination = tmp_path / "output"
+    raw = b"# Original instructions\\nKeep every word.\\n"
+    with zipfile.ZipFile(archive, "w") as z:
+        z.writestr("START-HERE.md", "Start")
+        z.writestr("assistant/instructions.md", raw)
+        z.writestr("knowledge/facts.md", "Important knowledge")
+    result = invoke(archive, destination)
+    assert result.returncode == 0, result.stderr
+    recovery = json.loads((destination / "reconstructed-canonical" / "RECOVERY.json").read_text())
+    assert recovery["status"] == "review_required"
+    assert recovery["provenance"] == "assistant/instructions.md"
+    assert recovery["canonical_contract_created"] is False
+    assert recovery["release_ready"] is False
+    assert (destination / recovery["recovered_instruction"]).read_bytes() == raw
+    assert (destination / "knowledge" / "facts.md").read_text() == "Important knowledge"
+
+
+def test_ambiguous_distribution_does_not_invent_canonical_instructions(tmp_path):
+    archive = tmp_path / "ambiguous.zip"
+    destination = tmp_path / "output"
+    with zipfile.ZipFile(archive, "w") as z:
+        z.writestr("plugin.json", "{}")
+        z.writestr("AGENTS.md", "Agent content")
+    result = invoke(archive, destination)
+    assert result.returncode == 0, result.stderr
+    report = json.loads((destination / "MIGRATION-REPORT.json").read_text())
+    assert report["reconstruction"]["result"] == "review_required"
+    assert not (destination / "reconstructed-canonical").exists()
+
+
+def test_dependency_inventory_lists_files_without_claiming_tool_support(tmp_path):
+    archive = tmp_path / "legacy.zip"
+    destination = tmp_path / "output"
+    with zipfile.ZipFile(archive, "w") as z:
+        z.writestr("plugin.json", "{}")
+        z.writestr("skills/example/SKILL.md", "Test")
+        z.writestr("skills/example/references/background.md", "Background")
+        z.writestr("skills/example/scripts/helper.py", "print('ok')")
+        z.writestr("skills/example/mcp.json", "{}")
+    result = invoke(archive, destination)
+    assert result.returncode == 0, result.stderr
+    inventory = json.loads((destination / "MIGRATION-REPORT.json").read_text())["dependency_inventory"]
+    assert "skills/example/references/background.md" in inventory["knowledge_files"]
+    assert "skills/example/scripts/helper.py" in inventory["candidate_scripts"]
+    assert "skills/example/mcp.json" in inventory["integration_manifests"]
+    assert inventory["tools_verified"] is False
+    assert inventory["knowledge_completeness_verified"] is False
+    assert inventory["review_required"] is True

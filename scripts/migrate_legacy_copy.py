@@ -151,6 +151,84 @@ def inventory_distribution(project: Path) -> dict:
     }
 
 
+
+def inventory_recovered_dependencies(project: Path) -> dict:
+    """Evidence-only inventory: files and candidate tools are never promoted to contracts."""
+    knowledge_parts = {"knowledge", "references", "assets", "knowledge-package"}
+    script_parts = {"scripts", "tools"}
+    knowledge = []
+    scripts = []
+    manifests = []
+    for file in sorted(p for p in project.rglob("*") if p.is_file()):
+        rel = file.relative_to(project)
+        if any(part in SKIP for part in rel.parts):
+            continue
+        if "reconstructed-canonical" in rel.parts or rel.name == "MIGRATION-REPORT.json":
+            continue
+        name = rel.as_posix()
+        if any(part in knowledge_parts for part in rel.parts[:-1]):
+            knowledge.append(name)
+        if any(part in script_parts for part in rel.parts[:-1]) and file.suffix.lower() in {".py", ".js", ".ts", ".sh"}:
+            scripts.append(name)
+        if rel.name in {"plugin.json", "mcp.json", "runtime-contract.json", "openapi.json"}:
+            manifests.append(name)
+    return {
+        "knowledge_files": knowledge,
+        "candidate_scripts": scripts,
+        "integration_manifests": manifests,
+        "tools_verified": False,
+        "knowledge_completeness_verified": False,
+        "review_required": bool(scripts or manifests),
+        "limitations": [
+            "Packaged files do not prove tool availability or permissions.",
+            "A distribution may omit original Knowledge and source dependencies.",
+        ],
+    }
+
+
+def reconstruct_review_project(project: Path, inventory: dict) -> dict:
+    """Recover explicit instruction text, not a guessed canonical project contract."""
+    source_by_format = {
+        "chat_zip": "assistant/instructions.md",
+        "custom_gpt": "builder/instructions.md",
+        "claude_project": "project/instructions.md",
+        "opencode": "AGENTS.md",
+    }
+    kind = inventory["classification"]
+    if kind not in source_by_format:
+        return {"result": "review_required", "reason": "No single supported instruction source"}
+    relative = source_by_format[kind]
+    choices = [project / relative] + [
+        child / relative for child in project.iterdir() if child.is_dir()
+    ]
+    found = [p for p in choices if p.is_file()]
+    if len(found) != 1:
+        return {"result": "review_required", "reason": "Instruction source missing or ambiguous"}
+    original = found[0].read_bytes()
+    if not original.strip():
+        return {"result": "review_required", "reason": "Instruction source is empty"}
+    output = project / "reconstructed-canonical"
+    output.mkdir(exist_ok=True)
+    copied = output / "instructions.md"
+    copied.write_bytes(original)
+    recovery = {
+        "status": "review_required",
+        "provenance": found[0].relative_to(project).as_posix(),
+        "recovered_instruction": copied.relative_to(project).as_posix(),
+        "canonical_contract_created": False,
+        "release_ready": False,
+        "limitations": [
+            "Instructions may be platform-adapted or truncated.",
+            "Knowledge and tool dependencies have not been proven complete.",
+            "Canonical contract and project status require human review.",
+        ],
+    }
+    (output / "RECOVERY.json").write_text(
+        json.dumps(recovery, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    return recovery
+
+
 def migrate(source: Path, destination: Path) -> dict:
     source, destination = source.resolve(), destination.resolve()
     if not source.exists():
@@ -181,6 +259,8 @@ def migrate(source: Path, destination: Path) -> dict:
     }
     if cfg is None:
         report["distribution_inventory"] = inventory_distribution(project)
+        report["dependency_inventory"] = inventory_recovered_dependencies(project)
+        report["reconstruction"] = reconstruct_review_project(project, report["distribution_inventory"])
         report["apply"] = {"result": "blocked", "reason": "No gpt-project.yaml; reconstruction requires review"}
     else:
         changed = apply_changes(project, cfg, report)
