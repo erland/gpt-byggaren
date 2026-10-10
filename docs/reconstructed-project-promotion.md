@@ -9,3 +9,9 @@ Kör `python scripts/promote_reconstructed_project.py --project-root PROJECT --r
 Verktyget skapar en minimal canonical instruktion och `gpt-project.yaml` men **ingen runtime aktiveras** och resultatet har `reconstruction.status=requires_runtime_validation` samt `release_ready=false`. Det skriver inte över befintliga kontrakt eller instruktioner. Detta är ett mellanläge, inte ett komplett lint-/build-kompatibelt GPT-projekt eller en release.
 
 Granskningsgodkännanden får aldrig genereras automatiskt enbart för att passera spärrarna. Nästa steg kräver kompletterade canonical kontrakt, runtimeparitet och separat releasevalidering.
+
+## Återupptagningsbar projektstruktur
+
+Efter godkänd upphöjning skapas även `docs/development-plan.md`, `project-status.yaml`, `STATUS.md` och `PROJECT.md`. Projektstatus följer `schemas/project-status.schema.json` och är uttryckligen **blocked** tills canonical kontrakt, runtimeparitet och distributionernas funktioner har verifierats. Därmed kan arbetet återupptas från filer utan att chatthistoriken behöver fungera som enda statuskälla.
+
+Den här PR:en skapar inte en fullständig körbar distribution och kringgår inga releasegates. Befintliga filer skrivs inte över.
