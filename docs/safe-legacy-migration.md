@@ -37,3 +37,7 @@ Innehållet bevaras i kopian. Avsaknad av canonical projektkontrakt och auktorit
 ## Återställd instruktion för granskning
 
 När en äldre distributions-ZIP entydigt innehåller instruktioner från Chat ZIP, Custom GPT, Claude Projects eller OpenCode kan ett **exakt innehållskopierat** instruktionsutkast placeras i `reconstructed-canonical/instructions.md`. Ursprungsfilen anges i `reconstructed-canonical/RECOVERY.json`. Resultatet är uttryckligen **inte ett verifierat canonical projekt**, skapar inte `gpt-project.yaml` och är inte releaseklart. Komprimerade Builder-instruktioner kan sakna delar av originalets beteende; Knowledge och tool-beroenden måste bedömas före konvertering. Plugin ZIP med flera skills saknar ofta en entydig sammanhängande instruktion och markeras därför för granskning i stället för att sammanfogas på måfå.
+
+## Evidensbaserad beroendeinventering
+
+`MIGRATION-REPORT.json` innehåller `dependency_inventory` med återfunna Knowledge-/referens-/asset-filer, tänkbara skriptverktyg och integrationsmanifest (inklusive historiska `mcp.json`). Detta är en inventering av **källmaterial**, inte ett beslut att aktivera externa verktyg. `tools_verified=false` och `knowledge_completeness_verified=false` gäller tills faktisk funktion och fullständighet har verifierats. Befintlig `mcp.json` i en äldre käll-ZIP får bevaras i den isolerade migrationskopian för spårbarhet men får inte kopieras till en ny plugin-distribution.
