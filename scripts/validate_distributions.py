@@ -328,6 +328,14 @@ def main() -> int:
 
     root = Path(args.project_root).resolve()
     cfg = load_cfg(root)
+    if isinstance(cfg.get("reconstruction"), dict) and (
+        cfg["reconstruction"].get("release_ready") is not True
+        or cfg["reconstruction"].get("status") != "runtime_parity_verified"
+    ):
+        raise SystemExit(
+            "Reconstructed project is not release-ready: complete and verify "
+            "runtime parity before distribution build or validation"
+        )
 
     errors = []
     errors.extend(validate_chat(root, cfg))
