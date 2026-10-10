@@ -111,6 +111,46 @@ def retire_custom_gpt(project: Path) -> dict:
     }
 
 
+def inventory_distribution(project: Path) -> dict:
+    """Identify known packaging layouts without inferring missing canonical contracts."""
+    paths = {p.relative_to(project).as_posix() for p in project.rglob("*") if p.is_file()}
+    layouts = {
+        "chat_zip": ("START-HERE.md", "assistant/instructions.md"),
+        "openai_plugin": ("plugin.json",),
+        "custom_gpt": ("builder/instructions.md",),
+        "claude_project": ("project/instructions.md",),
+        "opencode": ("AGENTS.md",),
+    }
+    matches = []
+    for kind, signatures in layouts.items():
+        if all(sig in paths for sig in signatures):
+            matches.append(kind)
+    # A packaged plugin with a top-level directory is handled by _project_root
+    # only when there is a project contract; otherwise report its location.
+    if not matches:
+        for kind, signatures in layouts.items():
+            if any(all(f"{prefix}/{sig}" in paths for sig in signatures)
+                   for prefix in {p.split("/")[0] for p in paths if "/" in p}):
+                matches.append(kind)
+    markers = (
+        "assistant/instructions.md", "builder/instructions.md",
+        "project/instructions.md", "AGENTS.md", "plugin.json",
+        "START-HERE.md",
+    )
+    discovered = sorted(p for p in paths if p in markers or p.endswith("/SKILL.md"))
+    knowledge = sorted(p for p in paths if p.startswith("knowledge/") or "/knowledge/" in p
+                       or "/references/" in p or "/knowledge-package/" in p)
+    return {
+        "detected_formats": sorted(set(matches)),
+        "classification": matches[0] if len(matches) == 1 else
+            ("ambiguous" if matches else "unknown"),
+        "evidence": discovered,
+        "knowledge_file_count": len(knowledge),
+        "reconstruction": "review_required",
+        "missing": ["canonical project contract", "authoritative project status"],
+    }
+
+
 def migrate(source: Path, destination: Path) -> dict:
     source, destination = source.resolve(), destination.resolve()
     if not source.exists():
@@ -140,6 +180,7 @@ def migrate(source: Path, destination: Path) -> dict:
         "destination": str(destination),
     }
     if cfg is None:
+        report["distribution_inventory"] = inventory_distribution(project)
         report["apply"] = {"result": "blocked", "reason": "No gpt-project.yaml; reconstruction requires review"}
     else:
         changed = apply_changes(project, cfg, report)
