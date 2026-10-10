@@ -17,7 +17,7 @@ Ett normalt arbetsflöde är:
 5. När utvecklingen startar skapas en komplett projekt-ZIP.
 6. Projektet vidareutvecklas stegvis utifrån faktisk projektstatus.
 7. Efter relevanta steg körs lint, tester, validering och project hygiene.
-8. När projektet är redo byggs de runtime-distributioner som analysen har aktiverat, exempelvis ChatGPT Chat, Custom GPT, Claude Projects, OpenCode och OpenAI Plugin.
+8. När projektet är redo byggs de runtime-distributioner som analysen har aktiverat, exempelvis ChatGPT Chat, Claude Projects, OpenCode och OpenAI Plugin.
 9. Projektet kan byggas lokalt eller via GitHub Actions och GitHub Releases.
 
 Utvecklingsplanen är vägledande, inte mekanisk. GPT Byggaren kan lägga in korrigeringssteg, hoppa över onödiga steg eller omplanera när projektets faktiska tillstånd motiverar det.
@@ -26,15 +26,14 @@ Utvecklingsplanen är vägledande, inte mekanisk. GPT Byggaren kan lägga in kor
 
 GPT Byggaren bygger peer runtimes från samma canonical behavior-, capability-, artifact-, workspace/state- och tool-kontrakt.
 
-Registrerade mål är:
+Aktiva distributionsmål är:
 
 - **ChatGPT Chat / Chat ZIP** – portabel ChatGPT-runtime.
-- **Custom GPT** – paket för ChatGPT Builder med plattformens instruktion- och Knowledge-begränsningar.
 - **Claude Projects** – portabel Project Instructions + Knowledge-distribution för Claude Projects.
 - **OpenCode** – agentisk workspace-runtime med `AGENTS.md`, Skills och explicita custom tools.
 - **OpenAI Plugin** – skills-first runtime med `plugin.json`, `SKILL.md`, references, assets och runtime-relevanta scripts.
 
-Vilka av dessa som aktiveras bestäms av användningsfallet. Ingen runtime är automatiskt primär och Chat ZIP + Custom GPT är inte ett obligatoriskt standardpar.
+Vilka av dessa som aktiveras bestäms av användningsfallet. Ingen runtime är automatiskt primär. Äldre Custom GPT-projekt kan användas som migrationsunderlag men byggs inte längre som aktiva distributioner.
 
 Utöver runtime-distributionerna finns **projekt-ZIP:en**, som innehåller hela utvecklingsprojektet och används för fortsatt utveckling, Git och återupptagning.
 
@@ -48,10 +47,6 @@ Det enklaste sättet är att använda en byggd release av GPT Byggaren. Välj de
 2. Bifoga ZIP-filen i en ny ChatGPT-konversation.
 3. Be ChatGPT använda ZIP-filen som GPT Byggaren-kontext.
 4. Beskriv GPT:n du vill skapa.
-
-### Custom GPT
-
-Custom GPT-distributionen innehåller material för ChatGPT Builder: kompilerade instruktioner, conversation starters, capabilities och Knowledge-paket.
 
 ### Claude Projects
 
@@ -201,7 +196,7 @@ För att hålla README:n användbar ligger detaljerna i separata dokument.
 ### Runtime, build och release
 
 - [`docs/chat-zip-runtime.md`](docs/chat-zip-runtime.md)
-- [`docs/custom-gpt-compilation.md`](docs/custom-gpt-compilation.md)
+- [`docs/custom-gpt-compilation.md`](docs/custom-gpt-compilation.md) – historisk Builder-kompilering för migreringsreferens
 - [`docs/claude-portable-runtime.md`](docs/claude-portable-runtime.md)
 - [`docs/opencode-runtime.md`](docs/opencode-runtime.md)
 - [`docs/plugin-runtime.md`](docs/plugin-runtime.md)

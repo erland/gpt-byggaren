@@ -54,7 +54,6 @@ def test_all_runtime_snapshots_project_the_same_canonical_contracts():
 
     snapshots = {
         "chatgpt_chat": build_distributions.chat_runtime_contract(cfg),
-        "chatgpt_custom": build_distributions.custom_runtime_contract(cfg),
         "claude_project": build_distributions.claude_runtime_contract(cfg),
         "opencode": build_distributions.opencode_runtime_contract(cfg, [], []),
         "openai_plugin": build_distributions.plugin_runtime_contract(cfg, []),
@@ -126,3 +125,11 @@ def test_runtime_builders_are_referenced_declaratively():
         for target_cfg in cfg["build_system"]["runtime_targets"].values()
     }
     assert declared <= set(build_distributions.RUNTIME_BUILDERS)
+
+
+def test_legacy_custom_gpt_snapshot_remains_readable_but_inactive():
+    cfg = load_cfg()
+    snapshot = build_distributions.custom_runtime_contract(cfg)
+    assert snapshot["runtime_id"] == "chatgpt_custom"
+    assert "chatgpt_custom" not in cfg["runtime_parity"]["registered_runtimes"]
+    assert cfg["runtime"]["custom_gpt"]["enabled"] is False
