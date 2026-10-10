@@ -1338,6 +1338,34 @@ def main() -> int:
             continue
         build_runtime_target(root, cfg, build_root, dist, version, target)
 
+    # A newly generated project must not ship five identical generic archives.
+    # Compare paths inside the ZIPs, not filenames or ZIP metadata.
+    runtime_archives = []
+    for target in selected_targets:
+        if target == "project":
+            continue
+        target_cfg = runtime_targets.get(target, {})
+        runtime_cfg = cfg.get("runtime", {}).get(target_cfg.get("runtime_key"), {})
+        if not runtime_cfg.get("enabled"):
+            continue
+        name = (target_cfg["filename_pattern"]
+                .replace("<project-id>", project_id)
+                .replace("<version>", version))
+        archive = dist / name
+        if archive.exists():
+            runtime_archives.append((target, archive))
+    if len(runtime_archives) >= 2:
+        from zipfile import ZipFile
+        layouts = {}
+        for target, archive in runtime_archives:
+            with ZipFile(archive) as zf:
+                layouts[target] = frozenset(zf.namelist())
+        if len(set(layouts.values())) == 1:
+            raise SystemExit(
+                "All enabled runtime distributions have identical file layouts; "
+                "use platform-specific builders instead of generic ZIP packaging"
+            )
+
     if "project" in targets:
         project_zip = dist / f"{project_id}-project.zip"
         stable_write_zip(project_zip, root, project_files(root))
