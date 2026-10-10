@@ -92,3 +92,40 @@ def test_installed_engine_builds_distinct_runtime_archives(tmp_path):
         with zipfile.ZipFile(archive) as zf:
             layouts.append(frozenset(zf.namelist()))
     assert len(set(layouts)) == 5
+
+
+def test_existing_project_script_is_preserved(tmp_path):
+    project = tmp_path / "custom"
+    project.mkdir()
+    config = {"build_system": {"runtime_targets": {
+        name: {"builder": builder} for name, builder in module.REQUIRED_BUILDERS.items()
+    }}, "tools": {"tools": [{
+        "type": "script", "script": "scripts/validate_model_robustness.py"
+    }]}}
+    (project / "gpt-project.yaml").write_text(
+        yaml.safe_dump(config), encoding="utf-8"
+    )
+    own_script = project / "scripts" / "validate_model_robustness.py"
+    own_script.parent.mkdir(parents=True)
+    own_script.write_text("# Custom project validator\n", encoding="utf-8")
+    module.install(ROOT, project)
+    assert own_script.read_text(encoding="utf-8") == "# Custom project validator\n"
+
+
+def test_wrong_runtime_builder_is_rejected(tmp_path):
+    project = tmp_path / "wrong-builder"
+    project.mkdir()
+    targets = {
+        name: {"builder": builder} for name, builder in module.REQUIRED_BUILDERS.items()
+    }
+    targets["plugin"]["builder"] = "chat"
+    (project / "gpt-project.yaml").write_text(
+        yaml.safe_dump({"build_system": {"runtime_targets": targets}}),
+        encoding="utf-8",
+    )
+    try:
+        module.install(ROOT, project)
+    except ValueError as exc:
+        assert "Incorrect builder for plugin" in str(exc)
+    else:
+        raise AssertionError("Wrong runtime builder must be rejected")
