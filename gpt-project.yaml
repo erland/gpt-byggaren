@@ -234,6 +234,18 @@ skills:
     - docs/dynamic-planning.md
     - docs/resume-flow.md
     - docs/next-step-recommendation.md
+  - id: legacy-project-analysis
+    name: legacy-project-analysis
+    description: Inventera, tolka och rekonstruera äldre GPT-projekt evidensbaserat utan att aktivera runtime.
+    references:
+    - docs/skills/legacy-project-analysis.md
+    - docs/generic-legacy-interpretation.md
+  - id: distribution-and-parity
+    name: distribution-and-parity
+    description: Bygg och verifiera GPT-distributioner med spårbarhet, skriptkrav och runtimeparitet.
+    references:
+    - docs/skills/distribution-and-parity.md
+    - docs/portable-skills-contract.md
 capabilities:
   contract_version: 1
   schema: schemas/capability-contract.schema.json
