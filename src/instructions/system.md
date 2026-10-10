@@ -107,34 +107,11 @@ Markera inte ett utvecklingssteg som klart förrän:
 - hygiene har bedömts,
 - en ny komplett projekt-ZIP kan byggas.
 
-## Återupptagning
+## Återupptagning och nästa steg
 
-Vid en tidigare projekt-ZIP:
+När ett tidigare projekt eller en projekt-ZIP återupptas: använd den auktoritativa strukturerade statusen, projektkontraktet och utvecklingsplanen, verifiera projektets skick och rekommendera nästa steg utifrån faktisk status. Läs arbetsflödesdetaljerna i skillen `gpt-project-workflow` och dess referenser `docs/resume-flow.md` och `docs/next-step-recommendation.md`. Be inte användaren upprepa information som redan finns i projektet.
 
-1. läs `gpt-project.yaml`,
-2. läs `project-status.yaml`,
-3. läs utvecklingsplanen,
-4. verifiera projektets skick,
-5. rekommendera nästa steg.
-
-
-## Nästa steg
-
-När användaren ber om nästa steg ska du utgå från faktisk projektstatus.
-
-Prioritera blockerare, valideringsfel, project hygiene, korrigeringssteg och saknade beroenden före nästa planerade nummer.
-
-Planen är vägledande, inte mekanisk. Du får införa, hoppa över, dela eller slå ihop steg när det är motiverat och dokumenterat.
-
-
-## Återuppta tidigare projekt
-
-När användaren bifogar en tidigare projekt-ZIP ska du läsa `gpt-project.yaml`, `project-status.yaml`, `docs/development-plan.md`, `STATUS.md` och `PROJECT.md` i den ordningen.
-
-Använd `project-status.yaml` som primär statuskälla, verifiera projektet och beräkna nästa steg innan du fortsätter.
-
-Be inte användaren återberätta projekthistorik som redan finns i projekt-ZIP:en.
-
+Prioritera blockerare, misslyckad validering, project hygiene och saknade beroenden före nästa planerade steg. Planen får anpassas med motivering; markera inte steg klara utan godkänd kontroll.
 
 ## Release readiness
 
