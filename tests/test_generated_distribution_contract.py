@@ -18,3 +18,10 @@ def test_canonical_builder_has_distinct_runtime_adapters():
         assert f"def {fn}(" in source
     assert "def build_runtime_target(" in source
     assert 'target_cfg["builder"]' in source
+
+
+def test_build_rejects_identical_runtime_archive_layouts():
+    source = (ROOT / "scripts/build_distributions.py").read_text(encoding="utf-8")
+    assert "layouts[target] = frozenset(zf.namelist())" in source
+    assert "if len(set(layouts.values())) == 1:" in source
+    assert "use platform-specific builders" in source
