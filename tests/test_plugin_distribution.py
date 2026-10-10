@@ -125,3 +125,35 @@ def test_plugin_zip_is_deterministic():
             assert any(name.endswith("/SKILL.md") for name in names)
             assert any(name.endswith("/scripts/lib/project_model.py") for name in names)
             assert names == sorted(names)
+
+
+def test_plugin_zip_rejects_mcp_json_at_any_depth(tmp_path):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "validate_distributions", ROOT / "scripts" / "validate_distributions.py"
+    )
+    validator = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(validator)
+
+    archive = tmp_path / "plugin.zip"
+    with zipfile.ZipFile(archive, "w") as zf:
+        zf.writestr("plugin.json", "{}")
+        zf.writestr("skills/example/mcp.json", "{}")
+
+    assert any("mcp.json" in msg for msg in validator.validate_plugin_zip_entries(archive))
+
+
+def test_plugin_zip_accepts_manifest_and_skills_without_mcp_json(tmp_path):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "validate_distributions", ROOT / "scripts" / "validate_distributions.py"
+    )
+    validator = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(validator)
+
+    archive = tmp_path / "plugin.zip"
+    with zipfile.ZipFile(archive, "w") as zf:
+        zf.writestr("plugin.json", "{}")
+        zf.writestr("skills/example/SKILL.md", "test")
+
+    assert validator.validate_plugin_zip_entries(archive) == []

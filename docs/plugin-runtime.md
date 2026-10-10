@@ -291,3 +291,12 @@ med de filesystem-, dependency- och code-execution-förmågor som scriptet fakti
 ## Dogfood
 
 GPT Byggaren bygger och testar sin egen Plugin-distribution. Resultatet och den avsiktligt reducerade pariteten för workspace/state och executable tools dokumenteras i [plugin-dogfood.md](plugin-dogfood.md).
+
+
+## Mobilkompatibilitet och MCP-konfiguration
+
+Pluginpaketet får inte innehålla någon fil med basnamnet `mcp.json`, oavsett katalognivå. Erfarenhet från ChatGPT-installation visar att sådan konfiguration kan begränsa import till dator. MCP-tjänster kan fortsatt användas som **valfria, externt installerade** verktyg när de finns tillgängliga; de är inte en förutsättning för att installera skills-first-pluginen.
+
+GPT Byggaren ska automatiskt analysera behovet av verktyg från användarens idé, inte begära att användaren väljer MCP-strategi eller distributionsformat. Om ett nödvändigt verktyg saknas ska faktisk runtimeparitet och fallback redovisas, inte döljas.
+
+Buildvalideringen granskar både mellanliggande pluginfiler och färdiga ZIP-poster. Den är en strukturell kontroll: lyckad import på iOS/iPadOS och desktop måste verifieras separat före release.
