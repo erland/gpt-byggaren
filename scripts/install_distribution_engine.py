@@ -43,8 +43,12 @@ def install(source: Path, project: Path) -> list[str]:
             declared_scripts.append(tool["script"])
     files_to_install = tuple(dict.fromkeys((*ENGINE_FILES, *declared_scripts)))
     template = cfg.get("runtime", {}).get("chat_zip", {}).get("start_here_template")
-    if template:
-        files_to_install = tuple(dict.fromkeys((*files_to_install, template)))
+    declared_templates = [template] if template else []
+    for runtime in ("plugin", "claude", "opencode"):
+        templates = cfg.get("runtime", {}).get(runtime, {}).get("templates", {})
+        if isinstance(templates, dict):
+            declared_templates.extend(value for value in templates.values() if isinstance(value, str))
+    files_to_install = tuple(dict.fromkeys((*files_to_install, *declared_templates)))
     for relative in files_to_install:
         relative_path = Path(relative)
         if relative_path.is_absolute() or ".." in relative_path.parts:
