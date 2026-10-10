@@ -35,6 +35,9 @@ def create_fixture(tmp_path, include_status_schema=True):
     instruction = tmp_path / "src/instructions/system.md"
     instruction.parent.mkdir(parents=True)
     instruction.write_text("Recovered behavior", encoding="utf-8")
+    (tmp_path / "README.md").write_text("# Recovered project\\n", encoding="utf-8")
+    (tmp_path / "PROJECT.md").write_text("# Project\\n", encoding="utf-8")
+    (tmp_path / "STATUS.md").write_text("# Status: blocked\\n", encoding="utf-8")
     status = {"schema_version": 1, "project": {"id": "recovered", "name": "Recovered"},
               "plan": {"path": "docs/development-plan.md", "total_steps": 1},
               "progress": {"current_step": 1, "last_completed_step": 0, "completed_steps": []},
