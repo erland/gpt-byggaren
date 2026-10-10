@@ -67,3 +67,41 @@ def test_unsafe_zip_and_existing_destination_are_rejected(tmp_path):
     good = tmp_path / "good"
     good.mkdir()
     assert invoke(good, tmp_path).returncode != 0
+
+
+def test_custom_gpt_is_retired_only_in_migrated_copy(tmp_path):
+    source = tmp_path / "legacy"
+    dest = tmp_path / "updated"
+    source.mkdir()
+    cfg = {
+        "project": {"id": "old"},
+        "runtime": {
+            "custom_gpt": {"enabled": True, "instruction": {"max_characters": 8000}},
+            "chat_zip": {"enabled": True},
+        },
+        "build": {"build_custom_gpt_zip": True},
+        "build_system": {
+            "targets": ["project", "chat", "custom-gpt", "plugin"],
+            "runtime_targets": {
+                "custom-gpt": {"runtime_id": "chatgpt_custom", "runtime_key": "custom_gpt"},
+                "plugin": {"runtime_id": "openai_plugin", "runtime_key": "plugin"},
+            },
+        },
+        "runtime_parity": {"registered_runtimes": ["chatgpt_custom", "openai_plugin"]},
+        "direct_build": {"deliver": ["custom_gpt_zip_when_enabled", "plugin_zip_when_enabled"]},
+        "release": {"github": {"artifacts": ["custom_gpt_zip_when_enabled", "plugin_zip_when_enabled"]}},
+    }
+    (source / "gpt-project.yaml").write_text(yaml.safe_dump(cfg), encoding="utf-8")
+    result = invoke(source, dest)
+    assert result.returncode == 0, result.stderr
+    migrated = yaml.safe_load((dest / "gpt-project.yaml").read_text())
+    untouched = yaml.safe_load((source / "gpt-project.yaml").read_text())
+    assert untouched == cfg
+    assert migrated["runtime"]["custom_gpt"]["enabled"] is False
+    assert migrated["runtime"]["custom_gpt"]["instruction"]["max_characters"] == 8000
+    assert migrated["build_system"]["targets"] == ["project", "chat", "plugin"]
+    assert "custom-gpt" not in migrated["build_system"]["runtime_targets"]
+    assert migrated["runtime_parity"]["registered_runtimes"] == ["openai_plugin"]
+    assert migrated["direct_build"]["deliver"] == ["plugin_zip_when_enabled"]
+    assert migrated["release"]["github"]["artifacts"] == ["plugin_zip_when_enabled"]
+    assert json.loads((dest / "MIGRATION-REPORT.json").read_text())["custom_gpt_retirement"]["legacy_configuration_preserved"]
