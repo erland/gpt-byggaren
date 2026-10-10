@@ -122,7 +122,7 @@ def test_claude_build_compiles_project_package_from_canonical_contracts():
     r = subprocess.run(
         [sys.executable, str(ROOT / "scripts" / "build_distributions.py"),
          "--project-root", str(ROOT), "--version", "0.0.0-claudecontract",
-         "--targets", "claude"],
+         "--targets", "claude_project"],
         capture_output=True, text=True
     )
     assert r.returncode == 0, r.stdout + r.stderr
@@ -218,7 +218,7 @@ def test_opencode_build_compiles_base_workspace_from_canonical_contracts():
 
 def test_opencode_build_tool_default_targets_include_plugin():
     text = (ROOT / "scripts" / "build_distributions.py").read_text(encoding="utf-8")
-    assert 'project,chat,custom-gpt,claude,opencode,plugin' in text
+    assert 'project,chat,custom-gpt,claude_project,claude_skills,opencode,plugin' in text
 
 
 def test_custom_gpt_is_not_an_active_distribution():
