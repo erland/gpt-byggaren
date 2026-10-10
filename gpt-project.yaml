@@ -733,7 +733,8 @@ build_system:
   targets:
   - project
   - chat
-  - claude
+  - claude_project
+  - claude_skills
   - opencode
   - plugin
   runtime_targets:
@@ -743,12 +744,18 @@ build_system:
       builder: chat
       artifact_type: chat_zip
       filename_pattern: <project-id>-chat-<version>.zip
-    claude:
+    claude_project:
       runtime_id: claude_project
       runtime_key: claude
       builder: claude
-      artifact_type: claude_zip
-      filename_pattern: <project-id>-claude-<version>.zip
+      artifact_type: claude_project_zip
+      filename_pattern: <project-id>-claude-project-<version>.zip
+    claude_skills:
+      runtime_id: claude_skills
+      runtime_key: claude
+      builder: claude_skills
+      artifact_type: claude_skills_zip
+      filename_pattern: <project-id>-claude-skills-<version>.zip
     opencode:
       runtime_id: opencode
       runtime_key: opencode
