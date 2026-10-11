@@ -34,6 +34,12 @@ def validate(root: Path, project_zip: Path | None = None, dist_dir: Path | None 
                 errors.append("Missing canonical five runtime_targets mapping")
             if not isinstance(cfg.get("runtime"), dict):
                 errors.append("Missing runtime mapping")
+            else:
+                if cfg["runtime"].get("custom_gpt", {}).get("enabled") is not False:
+                    errors.append("Custom GPT must be disabled")
+                enabled_targets = cfg.get("build_system", {}).get("targets", [])
+                if not isinstance(enabled_targets, list) or set(enabled_targets) != set(TARGETS) | {"project"}:
+                    errors.append("Expected project and all five canonical build targets")
         except (ImportError, ValueError, TypeError, AttributeError) as exc:
             errors.append(f"Cannot inspect gpt-project.yaml: {exc}")
     for relative in ENGINE:
@@ -58,6 +64,15 @@ def validate(root: Path, project_zip: Path | None = None, dist_dir: Path | None 
                     filename = item.get("file")
                     if not isinstance(filename, str) or Path(filename).name != filename or not (dist_dir / filename).is_file():
                         errors.append(f"Missing or unsafe distribution file: {filename}")
+                    else:
+                        try:
+                            with zipfile.ZipFile(dist_dir / filename) as archive:
+                                if ".gitignore" in archive.namelist():
+                                    errors.append(f"Unexpected runtime root .gitignore: {filename}")
+                                if archive.testzip() is not None:
+                                    errors.append(f"Invalid runtime ZIP contents: {filename}")
+                        except zipfile.BadZipFile:
+                            errors.append(f"Invalid runtime ZIP: {filename}")
                 project_entries = [item for item in entries if isinstance(item, dict)
                                    and item.get("type") == "project_zip"]
                 if len(project_entries) != 1 or not (dist_dir / str(project_entries[0].get("file", ""))).is_file():
