@@ -6,6 +6,7 @@ import argparse
 from pathlib import Path
 import zipfile
 import json
+import hashlib
 
 TARGETS = ("chat", "plugin", "claude_project", "claude_skills", "opencode")
 FORBIDDEN = {".git", "dist", "build", "__pycache__", ".pytest_cache", ".mypy_cache"}
@@ -60,6 +61,29 @@ def validate(root: Path, project_zip: Path | None = None, dist_dir: Path | None 
                                and str(item.get("file", "")).endswith(".zip")]
                 if len(zip_entries) != 5:
                     errors.append(f"Expected five runtime distributions, found {len(zip_entries)}")
+                expected_types = {"chat_zip", "plugin_zip", "claude_project_zip", "claude_skills_zip", "opencode_zip"}
+                actual_types = [item.get("type") for item in zip_entries]
+                if set(actual_types) != expected_types or len(actual_types) != len(set(actual_types)):
+                    errors.append("Runtime distribution types must be exactly the canonical five, once each")
+                filenames = [item.get("file") for item in zip_entries if isinstance(item.get("file"), str)]
+                if len(filenames) != len(set(filenames)):
+                    errors.append("Duplicate runtime distribution filenames")
+                for item in entries:
+                    if not isinstance(item, dict) or item.get("type") == "checksums":
+                        continue
+                    filename = item.get("file")
+                    if not isinstance(filename, str) or Path(filename).name != filename:
+                        errors.append(f"Unsafe artifact filename: {filename}")
+                        continue
+                    artifact = dist_dir / filename
+                    if not artifact.is_file():
+                        errors.append(f"Missing manifest artifact: {filename}")
+                        continue
+                    digest = hashlib.sha256(artifact.read_bytes()).hexdigest()
+                    if item.get("sha256") != digest:
+                        errors.append(f"SHA256 mismatch or missing digest: {filename}")
+                    if item.get("size") != artifact.stat().st_size:
+                        errors.append(f"Size mismatch or missing size: {filename}")
                 for item in zip_entries:
                     filename = item.get("file")
                     if not isinstance(filename, str) or Path(filename).name != filename or not (dist_dir / filename).is_file():
