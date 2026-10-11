@@ -65,6 +65,30 @@ def install(source: Path, project: Path) -> list[str]:
             raise ValueError(f"Missing runtime.{key} configuration mapping")
     if runtime.get("custom_gpt", {}).get("enabled") is not False:
         raise ValueError("Custom GPT is retired and must be disabled")
+    # A generated project must not inherit Builder-only profile paths unless
+    # its own reference profile definitions are present.
+    profiles = cfg.get("reference_profiles")
+    if isinstance(profiles, dict) and profiles.get("root"):
+        profile_root = Path(str(profiles["root"]))
+        if profile_root.is_absolute() or ".." in profile_root.parts:
+            raise ValueError("Unsafe reference_profiles.root")
+        declared = profiles.get("profiles", [])
+        if not isinstance(declared, list) or any(
+            not isinstance(name, str) or not name or "/" in name or ".." in name
+            for name in declared
+        ):
+            raise ValueError("Invalid reference_profiles.profiles")
+        absent = [
+            name for name in declared
+            if not any((project / profile_root / (name + ext)).is_file()
+                       for ext in (".yaml", ".yml", ".json"))
+        ]
+        if absent:
+            raise ValueError(
+                "Missing reference profile definitions: " + ", ".join(absent)
+                + ". Remove Builder-only reference_profiles from the new "
+                  "gpt-project.yaml, or provide the project's own profile files."
+            )
     declared_scripts = []
     for tool in cfg.get("tools", {}).get("tools", []):
         if tool.get("type") == "script" and tool.get("script"):
