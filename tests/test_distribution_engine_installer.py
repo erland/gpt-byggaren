@@ -57,7 +57,7 @@ def test_installed_engine_builds_distinct_runtime_archives(tmp_path):
     config["project"]["id"] = "generated-smoke"
     config["project"]["name"] = "Generated Smoke"
     config.pop("reference_profiles", None)  # Builder-only profile definitions are not inherited.
-    config["skills"]["definitions"] = []
+    config["skills"]["definitions"] = [{"id": "distribution-and-parity", "name": "distribution-and-parity", "description": "Build canonical distributions.", "references": [], "assets": [], "scripts": []}]
     config["tools"]["tools"] = []
     config["runtime"]["chat_zip"]["include"]["knowledge"] = []
     config["runtime"]["opencode"]["skills"]["definitions"] = []
