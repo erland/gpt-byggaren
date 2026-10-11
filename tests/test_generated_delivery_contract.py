@@ -115,3 +115,19 @@ def test_rejects_tampered_runtime_digest(tmp_path):
     (dist / "DELIVERY-MANIFEST.json").write_text(json.dumps({"artifacts": artifacts}))
     errors = delivery.validate(tmp_path, dist_dir=dist)
     assert "SHA256 mismatch or missing digest: runtime-0.zip" in errors
+
+
+def test_legacy_delivery_mode_rejected(tmp_path):
+    (tmp_path / "project-status.yaml").write_text(
+        "delivery_mode: zip\\ngithub_allowed: false\\n", encoding="utf-8"
+    )
+    errors = delivery.validate(tmp_path)
+    assert "Legacy delivery_mode field is not allowed; use delivery.mode" in errors
+
+
+def test_canonical_zip_delivery_mode_accepted(tmp_path):
+    (tmp_path / "project-status.yaml").write_text(
+        "delivery:\\n  mode: zip\\n", encoding="utf-8"
+    )
+    errors = delivery.validate(tmp_path)
+    assert not any("delivery.mode" in error for error in errors)
