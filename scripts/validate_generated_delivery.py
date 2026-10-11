@@ -40,23 +40,30 @@ def validate(root: Path, project_zip: Path | None = None, dist_dir: Path | None 
         if not (root / relative).is_file():
             errors.append(f"Missing canonical engine file: {relative}")
     if dist_dir is not None:
-        manifest = dist_dir / "manifest.json"
+        manifest = dist_dir / "DELIVERY-MANIFEST.json"
         if not manifest.is_file():
-            errors.append("Missing distribution manifest.json")
+            errors.append("Missing canonical DELIVERY-MANIFEST.json")
         else:
             try:
                 data = json.loads(manifest.read_text(encoding="utf-8"))
-                entries = data.get("distributions", [])
+                entries = data.get("artifacts", [])
                 if not isinstance(entries, list):
-                    raise ValueError("distributions must be a list")
-                if len(entries) != 5:
-                    errors.append(f"Expected five distributions, found {len(entries)}")
-                for item in entries:
-                    filename = item.get("file") if isinstance(item, dict) else None
+                    raise ValueError("artifacts must be a list")
+                zip_entries = [item for item in entries if isinstance(item, dict)
+                               and item.get("type") not in ("project_zip", "checksums")
+                               and str(item.get("file", "")).endswith(".zip")]
+                if len(zip_entries) != 5:
+                    errors.append(f"Expected five runtime distributions, found {len(zip_entries)}")
+                for item in zip_entries:
+                    filename = item.get("file")
                     if not isinstance(filename, str) or Path(filename).name != filename or not (dist_dir / filename).is_file():
                         errors.append(f"Missing or unsafe distribution file: {filename}")
+                project_entries = [item for item in entries if isinstance(item, dict)
+                                   and item.get("type") == "project_zip"]
+                if len(project_entries) != 1 or not (dist_dir / str(project_entries[0].get("file", ""))).is_file():
+                    errors.append("Missing project ZIP in delivery manifest")
             except (ValueError, TypeError, AttributeError) as exc:
-                errors.append(f"Invalid distribution manifest: {exc}")
+                errors.append(f"Invalid delivery manifest: {exc}")
     if project_zip is not None:
         if not project_zip.is_file():
             errors.append(f"Missing project ZIP: {project_zip}")
