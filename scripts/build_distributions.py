@@ -187,10 +187,30 @@ def copy_portable_skill_modules(root: Path, cfg: dict, target: Path) -> list[str
     return result
 
 
+def bundle_distribution_engine(root: Path, destination: Path) -> None:
+    """Include the offline project generator in a runtime distribution."""
+    import importlib.util
+
+    installer_path = root / "scripts" / "install_distribution_engine.py"
+    spec = importlib.util.spec_from_file_location("distribution_engine_installer", installer_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("Distribution engine installer is unavailable")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    engine = destination / "distribution-engine"
+    engine.mkdir(parents=True, exist_ok=True)
+    for relative in (*module.ENGINE_FILES, "scripts/install_distribution_engine.py"):
+        source_file = root / relative
+        if not source_file.is_file():
+            raise FileNotFoundError(source_file)
+        copy_file(source_file, engine / relative)
+
+
 def build_chat(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     out = build_root / "chat"
     ensure_clean_dir(out)
 
+    bundle_distribution_engine(root, out)
     assistant = out / "assistant"
     policies = assistant / "policies"
     policies.mkdir(parents=True)
@@ -934,6 +954,7 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     out = build_root / "plugin"
     ensure_clean_dir(out)
     write_plugin_manifest(out, cfg, version)
+    bundle_distribution_engine(root, out)
 
     canonical_instruction = (root / cfg["instructions"]["canonical"]).read_text(encoding="utf-8")
     built_skills: list[str] = []
