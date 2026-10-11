@@ -127,22 +127,26 @@ def test_installed_engine_builds_distinct_runtime_archives(tmp_path):
         with zipfile.ZipFile(archive) as zf:
             layouts.append(frozenset(zf.namelist()))
     assert len(set(layouts)) == 5
-    # The canonical engine must be accessible as individual Skill files.
+    # The canonical engine must be exposed as normal Skill scripts and assets.
     plugin_archive = project / "dist/generated-smoke-plugin-0.1.0.zip"
     with zipfile.ZipFile(plugin_archive) as zf:
-        prefix = "skills/distribution-and-parity/assets/canonical-engine/"
+        skill_prefix = "skills/distribution-and-parity/"
         names = set(zf.namelist())
         for name in (
             "scripts/build_distributions.py",
             "scripts/install_distribution_engine.py",
             "scripts/lib/project_model.py",
-            "gpt-project.yaml",
         ):
-            assert prefix + name in names
-        assert prefix + "scripts/build_distributions.py" in names
-        skill = zf.read("skills/distribution-and-parity/SKILL.md").decode("utf-8")
+            assert skill_prefix + "scripts/canonical-engine/" + name in names
+        assert skill_prefix + "assets/canonical-engine/gpt-project.yaml" in names
+        assert any(
+            item.startswith(skill_prefix + "assets/canonical-engine/templates/")
+            for item in names
+        )
+        skill = zf.read(skill_prefix + "SKILL.md").decode("utf-8")
+        assert "scripts/canonical-engine/scripts/" in skill
         assert "assets/canonical-engine/" in skill
-        assert prefix + "distribution-engine.zip" not in names
+        assert not any(item.endswith("distribution-engine.zip") for item in names)
     for archive in archives:
         with zipfile.ZipFile(archive) as zf:
             assert all("gpt-byggaren" not in name for name in zf.namelist())
