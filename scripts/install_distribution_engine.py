@@ -86,7 +86,7 @@ def install(source: Path, project: Path) -> list[str]:
         if not (source / relative).is_file():
             continue
         destination = project / relative
-        if relative in declared_scripts and destination.is_file():
+        if relative not in ENGINE_FILES and destination.is_file():
             continue
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source / relative, destination)
