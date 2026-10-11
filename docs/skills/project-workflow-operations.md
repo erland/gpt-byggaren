@@ -62,3 +62,18 @@ GPT Byggarens ChatGPT Chat- och Plugin-arkiv innehåller `distribution-engine/` 
 5. Om runtime saknar filåtkomst eller exekvering, leverera motorn i projekt-ZIP och låt GitHub Actions köra den. Markera inte byggda distributioner som verifierade innan bygg och validering lyckats.
 
 Ingen nedladdning från GitHub ska krävas för själva distributionsmotorn.
+
+
+## Obligatoriskt leveranskontrakt för nya projekt
+
+Innan projektet får markeras klart:
+
+1. Skapa `gpt-project.yaml` i projektroten med projektets egen identitet, canonical instruktion, Skill-kontrakt, runtime-konfiguration och fem runtime_targets. Kör installeraren och den kanoniska distributionsbyggaren. Skapa **inte** en projektspecifik ersättning för `scripts/build_distributions.py`.
+2. Skapa `.gitignore` från `distribution-engine/templates/generated-project.gitignore` innan första Git-commit. Genererade `dist/`, `build/`, release-artefakter, cache och lokala filer får inte checkas in.
+3. Projekt-ZIP ska innehålla källfiler och konfiguration men aldrig `.git/`, `dist/`, `build/`, cache eller andra genererade artefakter. Filtrera explicit vid ZIP-skapande: `.gitignore` skyddar inte ZIP-paketering.
+4. Bygg, validera och länka **sex** separata nedladdningar: projekt-ZIP samt ChatGPT Chat, OpenAI Plugin, Claude Projects, Claude Skills och OpenCode. Visa en separat klickbar länk per faktisk artefakt. Om en fil inte skapats får den inte presenteras som nedladdningsbar.
+5. Vid varje leverans, sammanfatta verifieringsstatus per distribution. Byggd ZIP är inte samma sak som hostverifierad runtime. Inkludera SHA256/manifest när det finns.
+6. Presentera nästa rekommenderade steg som en konkret uppföljningsfråga eller valbar åtgärd. Använd interaktiva nästa-steg-knappar när gränssnittet stödjer dem, men behåll alltid ett tydligt textalternativ. Hitta inte på knappar eller länkar som runtime inte kan rendera.
+7. Kör `scripts/validate_generated_delivery.py --project-root <projektkatalog> --version <version>` när skriptet finns tillgängligt. Åtgärda samtliga fel innan leverans. Saknas exekvering, redovisa kontrollen som ej utförd, inte godkänd.
+
+Dessa regler gäller även när användaren ber att publicera på GitHub. `dist/` är ett tillfälligt byggresultat och hör inte till källrepon.
