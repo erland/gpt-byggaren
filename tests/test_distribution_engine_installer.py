@@ -59,6 +59,7 @@ def test_installed_engine_builds_distinct_runtime_archives(tmp_path):
     config["skills"]["definitions"] = []
     config["tools"]["tools"] = []
     config["runtime"]["chat_zip"]["include"]["knowledge"] = []
+    config["runtime"]["opencode"]["skills"]["definitions"] = []
     (project / "gpt-project.yaml").write_text(
         yaml.safe_dump(config, allow_unicode=True), encoding="utf-8"
     )
