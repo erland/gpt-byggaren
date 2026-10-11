@@ -65,3 +65,30 @@ def test_packaged_skill_has_resolver(tmp_path):
         instructions = (directory / "SKILL.md").read_text(encoding="utf-8")
         assert "matching version" in instructions
         assert "latest" in instructions
+
+
+def test_canonical_engine_direct_skill_files(tmp_path):
+    import yaml
+    spec = importlib.util.spec_from_file_location(
+        "build_distributions_direct", ROOT / "scripts/build_distributions.py"
+    )
+    builder = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(builder)
+    cfg = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
+    plugin = builder.build_plugin(ROOT, cfg, tmp_path, "0.0.0-test")
+    claude = builder.build_claude_skills(ROOT, cfg, tmp_path, "0.0.0-test")
+    for runtime in (plugin, claude):
+        skill = runtime / "skills" / "distribution-and-parity"
+        for relative in (
+            "scripts/canonical-engine/scripts/build_distributions.py",
+            "scripts/canonical-engine/scripts/install_distribution_engine.py",
+            "scripts/canonical-engine/scripts/lib/project_model.py",
+            "assets/canonical-engine/gpt-project.yaml",
+        ):
+            assert (skill / relative).is_file(), relative
+        assert any((skill / "assets/canonical-engine/templates").rglob("*.tpl"))
+    skill_text = (plugin / "skills/distribution-and-parity/SKILL.md").read_text(
+        encoding="utf-8"
+    )
+    assert "scripts/canonical-engine/scripts/" in skill_text
+    assert "assets/canonical-engine/" in skill_text
