@@ -581,6 +581,9 @@ def build_claude_skills(root: Path, cfg: dict, build_root: Path, version: str) -
         skill_dir = out / "skills" / skill_id
         resources = resolve_plugin_skill_resources(root, cfg, skill)
         _copy_skill_resources(root, skill_dir, resources)
+        if cfg.get("project", {}).get("id") == "gpt-byggaren":
+            copy_file(root / "scripts" / "fetch_distribution_engine.py",
+                      skill_dir / "scripts" / "fetch_distribution_engine.py")
         compiled = dict(skill)
         compiled.update(resources)
         skill_dir.mkdir(parents=True, exist_ok=True)
