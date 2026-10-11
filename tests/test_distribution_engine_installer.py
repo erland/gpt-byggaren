@@ -138,3 +138,19 @@ def test_legacy_manualguiden_target_list_rejected(tmp_path):
         assert "must be a mapping" in str(exc)
     else:
         raise AssertionError("Legacy target lists must fail with actionable error")
+
+
+def test_project_specific_template_is_preserved(tmp_path):
+    project = tmp_path / "manualguiden"
+    project.mkdir()
+    config = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
+    config["project"]["id"] = "manualguiden"
+    config["project"]["name"] = "Manualguiden"
+    (project / "gpt-project.yaml").write_text(yaml.safe_dump(config), encoding="utf-8")
+    relative = config["runtime"]["chat_zip"]["start_here_template"]
+    custom = project / relative
+    custom.parent.mkdir(parents=True, exist_ok=True)
+    custom.write_text("Manualguidens egen introduktion\n", encoding="utf-8")
+    module.install(ROOT, project)
+    assert custom.read_text(encoding="utf-8") == "Manualguidens egen introduktion\n"
+    assert (project / "gpt-project.yaml").read_text(encoding="utf-8").find("manualguiden") != -1
