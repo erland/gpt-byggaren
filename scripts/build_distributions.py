@@ -599,6 +599,9 @@ def build_claude_skills(root: Path, cfg: dict, build_root: Path, version: str) -
         if cfg.get("project", {}).get("id") == "gpt-byggaren":
             copy_file(root / "scripts" / "fetch_distribution_engine.py",
                       skill_dir / "scripts" / "fetch_distribution_engine.py")
+            if skill_id == "distribution-and-parity":
+                copy_file(root / "scripts" / "selftest_distribution_engine.py",
+                          skill_dir / "scripts" / "selftest_distribution_engine.py")
         compiled = dict(skill)
         compiled.update(resources)
         skill_dir.mkdir(parents=True, exist_ok=True)
@@ -990,6 +993,18 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
             include_canonical_behavior=True,
             runtime_requirements=plugin_script_runtime_requirements(cfg),
         )
+        if cfg.get("project", {}).get("id") == "gpt-byggaren" and skill_id == "distribution-and-parity":
+            skill_markdown += (
+                "\\n## Mandatory engine access self-test\\n\\n"
+                "Before building a generated GPT, run "
+                "`scripts/selftest_distribution_engine.py --source <materialized-engine-root>` "
+                "in a compatible Python workspace. The self-test checks source files, "
+                "materialization, SHA-256 integrity, the original installer and a "
+                "six-archive smoke build. Report the first failed stage and its "
+                "error verbatim. If no writable workspace or Python execution "
+                "is available, report materialize/installer as unavailable; "
+                "never claim self-test success or invent an alternative packager.\\n"
+            )
         if cfg.get("project", {}).get("id") == "gpt-byggaren":
             skill_markdown += (
                 "\n## Canonical distribution engine resolution\n\n"
@@ -1007,6 +1022,9 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
             )
             copy_file(root / "scripts" / "fetch_distribution_engine.py",
                       skill_dir / "scripts" / "fetch_distribution_engine.py")
+            if skill_id == "distribution-and-parity":
+                copy_file(root / "scripts" / "selftest_distribution_engine.py",
+                          skill_dir / "scripts" / "selftest_distribution_engine.py")
         if cfg.get("project", {}).get("id") == "gpt-byggaren":
             skill_markdown += (
                 "\n## Direct canonical engine Skill resources\n\n"
