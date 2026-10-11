@@ -64,6 +64,12 @@ def test_installed_engine_builds_distinct_runtime_archives(tmp_path):
         yaml.safe_dump(config, allow_unicode=True), encoding="utf-8"
     )
     module.install(ROOT, project)
+    # ZIP-only projects do not need GitHub or a release workflow.
+    status = {"delivery": {"mode": "zip"}, "phase": "implementation"}
+    (project / "project-status.yaml").write_text(
+        yaml.safe_dump(status), encoding="utf-8"
+    )
+    assert not (project / ".github").exists()
     # Canonical build configuration is exercised against an isolated project root.
     # Minimal canonical instructions and one Skill are sufficient for the smoke run.
     instruction_path = project / config["instructions"]["canonical"]
@@ -89,6 +95,22 @@ def test_installed_engine_builds_distinct_runtime_archives(tmp_path):
     assert result.returncode == 0, result.stdout + "\\n" + result.stderr
     archives = list((project / "dist").glob("*.zip"))
     assert len(archives) == 6
+    assert (project / ".gitignore").is_file()
+    assert not list(project.glob("*custom-gpt*.zip"))
+    project_archive = project / "dist/generated-smoke-project.zip"
+    with zipfile.ZipFile(project_archive) as zf:
+        names = zf.namelist()
+        assert ".gitignore" in names
+        assert "gpt-project.yaml" in names
+        assert "scripts/build_distributions.py" in names
+        assert "project-status.yaml" in names
+        assert yaml.safe_load(zf.read("project-status.yaml"))["delivery"]["mode"] == "zip"
+        assert not any(name.startswith((".git/", "dist/", "build/", ".github/")) for name in names)
+    for archive in archives:
+        if archive == project_archive:
+            continue
+        with zipfile.ZipFile(archive) as zf:
+            assert ".gitignore" not in zf.namelist()
     delivery = subprocess.run(
         [sys.executable, str(ROOT / "scripts/validate_generated_delivery.py"),
          "--project-root", str(project),

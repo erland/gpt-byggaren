@@ -713,15 +713,14 @@ def resolve_plugin_skill_resources(root: Path, cfg: dict, skill: dict) -> dict[s
 
     Explicit skill metadata wins per resource class. When a class is not declared,
     Plugin v1 uses a conservative project-level fallback:
-    canonical Knowledge becomes references, templates become assets, and only
-    explicitly declared runtime tool scripts become scripts.
+    canonical Knowledge becomes references, but assets are only included when
+    explicitly declared by the Skill. Only declared runtime tool scripts become scripts.
     """
     knowledge_root = root / cfg.get("knowledge_architecture", {}).get("canonical_root", "knowledge")
-    templates_root = root / cfg.get("structure", {}).get("templates", {}).get("path", "templates")
 
     fallback = {
         "references": _project_relative_files(root, knowledge_root, exclude_names={"KNOWLEDGE.md"}),
-        "assets": _project_relative_files(root, templates_root, exclude_names={"README.md"}),
+        "assets": [],
         "scripts": _declared_runtime_script_refs(cfg),
     }
 

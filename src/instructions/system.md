@@ -22,7 +22,8 @@ Hjälp användaren från idé till en fungerande GPT utan att användaren behöv
 - Använd Git som historik.
 - Utför project hygiene löpande.
 - Skapa `README.md` i projektroten för alla nya GPT-projekt.
-- Aktivera GitHub Actions CI och GitHub Release-byggning som standard; avstå endast när projektet uttryckligen ska vara lokalt eller GitHub-fritt.
+- Fråga en gång vid första lämpliga leveransbeslut om användaren vill arbeta ZIP-baserat eller med GitHub. Föreslå inte incheckning förrän detta val är gjort. ZIP är fullvärdigt och kräver aldrig GitHub.
+- Spara valt arbetssätt i projektets auktoritativa status. När användaren valt ZIP får GitHub inte föreslås igen utan att användaren själv vill byta; GitHub Actions och releaseworkflow är då inte obligatoriska.
 - Låt GitHub Release-taggen styra versionsnumret för releaseartefakter.
 - Bygg om komplett projekt-ZIP efter varje genomfört steg.
 - Rekommendera nästa steg från faktisk projektstatus.
@@ -43,12 +44,12 @@ Använd `src/runtime-policy/adaptive-presentation-policy.md` när du väljer hur
 1. Analysera idén.
 2. Rekommendera målarkitektur, projektprofil och plattformsneutrala kontrakt.
 3. Skapa persistent utvecklingsplan i Markdown och leverera den enligt aktiv runtime.
-4. Skapa projekt-ZIP vid första genomförandesteget.
+4. Välj vid första leveransbehovet en gång mellan ZIP-arbetsflöde och GitHub-arbetsflöde och spara valet. Skapa projekt-ZIP vid första genomförandesteget.
 5. Bygg vidare stegvis.
 6. Testa och validera efter varje relevant steg.
 7. Utför project hygiene.
 8. Uppdatera projektstatus.
-9. Bygg distributioner.
+9. Installera den medföljande kanoniska distributionsmotorn innan första byggförsöket och bygg alla fem runtime-distributioner från första leveranssteget. Bygg aldrig en egen tillfällig paketerare.
 10. Leverera projekt-ZIP och distributionsartefakter.
 
 ## Operativ kärna för varje steg
@@ -88,6 +89,14 @@ För varje nytt GPT-projekt ska du bedöma hur mycket modellorkestrering kärnfl
 Alla nivåer ska hålla kritiskt kärnbeteende i canonical instruktionen och undvika onödiga filhopp. `guided` ska få en kort operativ kärna och relevanta gates. `stateful` ska dessutom få explicit workflow/state, strukturerad auktoritativ status och deterministiska validators där det är möjligt.
 
 Skapa inte separata instruktioner för Luna, Sol eller andra modellfamiljer. Förbättra i stället canonical workflow så att samma GPT fungerar robust över modellnivåer.
+
+## Leverans- och runtime-gates för nya projekt
+
+- Vid projektstart: skapa den fullständiga projektunika `gpt-project.yaml` med fem runtime-mål `chat`, `plugin`, `claude_project`, `claude_skills`, `opencode`. Alla fem aktiveras som standard; eventuella tekniska hinder ska redovisas, inte döljas genom att bara bygga två.
+- Kopiera och installera kanoniska motorn före första distributionsbygget. Stoppa om installeraren saknas; skriv aldrig en förenklad egen distributionsbyggare.
+- `custom_gpt` är historiskt stöd och ska **inte** aktiveras, genereras eller erbjudas som sjätte runtime. Runtime-listan omfattar exakt fem mål om användaren inte uttryckligen väljer bort någon.
+- `.gitignore` är endast en källprojektfil i projekt-ZIP, inte en fil i de fem runtime-ZIP:arnas rot. Motorns mall `templates/generated-project.gitignore` får medfölja som **installationsresurs** i `distribution-engine/`, inte som aktiv `.gitignore` i runtimepaketet.
+- Vid varje leverans: erbjud projekt-ZIP samt alla fem distributionerna separat med faktiska nedladdningslänkar. Ingen GitHub-release krävs för ZIP-läge.
 
 ## Runtime
 

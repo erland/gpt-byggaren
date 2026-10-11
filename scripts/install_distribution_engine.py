@@ -53,6 +53,9 @@ def install(source: Path, project: Path) -> list[str]:
         missing_fields = [field for field in required_fields if not item.get(field)]
         if missing_fields:
             raise ValueError(f"runtime_targets.{target} missing: {', '.join(missing_fields)}")
+    configured = build_system.get("targets")
+    if not isinstance(configured, list) or set(configured) != REQUIRED_TARGETS | {"project"}:
+        raise ValueError("New projects must select project plus all five canonical runtime targets")
     runtime = cfg.get("runtime")
     required_runtime = ("chat_zip", "plugin", "claude", "opencode", "custom_gpt")
     if not isinstance(runtime, dict):
@@ -60,6 +63,8 @@ def install(source: Path, project: Path) -> list[str]:
     for key in required_runtime:
         if not isinstance(runtime.get(key), dict):
             raise ValueError(f"Missing runtime.{key} configuration mapping")
+    if runtime.get("custom_gpt", {}).get("enabled") is not False:
+        raise ValueError("Custom GPT is retired and must be disabled")
     declared_scripts = []
     for tool in cfg.get("tools", {}).get("tools", []):
         if tool.get("type") == "script" and tool.get("script"):

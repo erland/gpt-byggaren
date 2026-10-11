@@ -6,6 +6,7 @@ import argparse
 from pathlib import Path
 import zipfile
 import json
+import hashlib
 
 TARGETS = ("chat", "plugin", "claude_project", "claude_skills", "opencode")
 FORBIDDEN = {".git", "dist", "build", "__pycache__", ".pytest_cache", ".mypy_cache"}
@@ -22,6 +23,18 @@ def validate(root: Path, project_zip: Path | None = None, dist_dir: Path | None 
         for name in ("dist/", "build/"):
             if name not in [line.strip() for line in patterns]:
                 errors.append(f".gitignore missing {name}")
+    status_file = root / "project-status.yaml"
+    if status_file.is_file():
+        try:
+            import yaml
+            status = yaml.safe_load(status_file.read_text(encoding="utf-8"))
+            mode = status.get("delivery", {}).get("mode") if isinstance(status, dict) and isinstance(status.get("delivery"), dict) else None
+            if isinstance(status, dict) and ("delivery" in status or "delivery_mode" in status) and mode not in ("zip", "github"):
+                errors.append("Project status requires delivery.mode: zip or github")
+            if isinstance(status, dict) and "delivery_mode" in status:
+                errors.append("Legacy delivery_mode field is not allowed; use delivery.mode")
+        except (ImportError, ValueError, TypeError, AttributeError) as exc:
+            errors.append(f"Cannot inspect project-status.yaml: {exc}")
     cfg_file = root / "gpt-project.yaml"
     if not cfg_file.is_file():
         errors.append("Missing gpt-project.yaml")
@@ -34,6 +47,12 @@ def validate(root: Path, project_zip: Path | None = None, dist_dir: Path | None 
                 errors.append("Missing canonical five runtime_targets mapping")
             if not isinstance(cfg.get("runtime"), dict):
                 errors.append("Missing runtime mapping")
+            else:
+                if cfg["runtime"].get("custom_gpt", {}).get("enabled") is not False:
+                    errors.append("Custom GPT must be disabled")
+                enabled_targets = cfg.get("build_system", {}).get("targets", [])
+                if not isinstance(enabled_targets, list) or set(enabled_targets) != set(TARGETS) | {"project"}:
+                    errors.append("Expected project and all five canonical build targets")
         except (ImportError, ValueError, TypeError, AttributeError) as exc:
             errors.append(f"Cannot inspect gpt-project.yaml: {exc}")
     for relative in ENGINE:
@@ -54,10 +73,42 @@ def validate(root: Path, project_zip: Path | None = None, dist_dir: Path | None 
                                and str(item.get("file", "")).endswith(".zip")]
                 if len(zip_entries) != 5:
                     errors.append(f"Expected five runtime distributions, found {len(zip_entries)}")
+                expected_types = {"chat_zip", "plugin_zip", "claude_project_zip", "claude_skills_zip", "opencode_zip"}
+                actual_types = [item.get("type") for item in zip_entries]
+                if set(actual_types) != expected_types or len(actual_types) != len(set(actual_types)):
+                    errors.append("Runtime distribution types must be exactly the canonical five, once each")
+                filenames = [item.get("file") for item in zip_entries if isinstance(item.get("file"), str)]
+                if len(filenames) != len(set(filenames)):
+                    errors.append("Duplicate runtime distribution filenames")
+                for item in entries:
+                    if not isinstance(item, dict) or item.get("type") == "checksums":
+                        continue
+                    filename = item.get("file")
+                    if not isinstance(filename, str) or Path(filename).name != filename:
+                        errors.append(f"Unsafe artifact filename: {filename}")
+                        continue
+                    artifact = dist_dir / filename
+                    if not artifact.is_file():
+                        errors.append(f"Missing manifest artifact: {filename}")
+                        continue
+                    digest = hashlib.sha256(artifact.read_bytes()).hexdigest()
+                    if item.get("sha256") != digest:
+                        errors.append(f"SHA256 mismatch or missing digest: {filename}")
+                    if item.get("size") != artifact.stat().st_size:
+                        errors.append(f"Size mismatch or missing size: {filename}")
                 for item in zip_entries:
                     filename = item.get("file")
                     if not isinstance(filename, str) or Path(filename).name != filename or not (dist_dir / filename).is_file():
                         errors.append(f"Missing or unsafe distribution file: {filename}")
+                    else:
+                        try:
+                            with zipfile.ZipFile(dist_dir / filename) as archive:
+                                if ".gitignore" in archive.namelist():
+                                    errors.append(f"Unexpected runtime root .gitignore: {filename}")
+                                if archive.testzip() is not None:
+                                    errors.append(f"Invalid runtime ZIP contents: {filename}")
+                        except zipfile.BadZipFile:
+                            errors.append(f"Invalid runtime ZIP: {filename}")
                 project_entries = [item for item in entries if isinstance(item, dict)
                                    and item.get("type") == "project_zip"]
                 if len(project_entries) != 1 or not (dist_dir / str(project_entries[0].get("file", ""))).is_file():
