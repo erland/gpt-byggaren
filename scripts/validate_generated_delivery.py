@@ -45,6 +45,24 @@ def validate(root: Path, project_zip: Path | None = None, dist_dir: Path | None 
             targets = cfg.get("build_system", {}).get("runtime_targets", {}) if isinstance(cfg, dict) else {}
             if not isinstance(targets, dict) or any(key not in targets for key in TARGETS):
                 errors.append("Missing canonical five runtime_targets mapping")
+            profiles = cfg.get("reference_profiles")
+            if isinstance(profiles, dict) and profiles.get("root"):
+                profile_root = Path(str(profiles["root"]))
+                if profile_root.is_absolute() or ".." in profile_root.parts:
+                    errors.append("Unsafe reference_profiles.root")
+                else:
+                    listed = profiles.get("profiles", [])
+                    if not isinstance(listed, list):
+                        errors.append("Invalid reference_profiles.profiles")
+                    else:
+                        for name in listed:
+                            if not isinstance(name, str) or not name or "/" in name or ".." in name:
+                                errors.append(f"Invalid reference profile name: {name}")
+                            elif not any((root / profile_root / (name + ext)).is_file()
+                                         for ext in (".yaml", ".yml", ".json")):
+                                errors.append(f"Missing reference profile definition: {name}")
+                        if not (root / profile_root).is_dir():
+                            errors.append(f"Missing reference_profiles.root: {profile_root}")
             if not isinstance(cfg.get("runtime"), dict):
                 errors.append("Missing runtime mapping")
             else:
