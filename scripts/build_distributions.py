@@ -964,15 +964,30 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
         compiled_skill = dict(skill)
         compiled_skill.update(resources)
         skill_dir.mkdir(parents=True, exist_ok=True)
-        (skill_dir / "SKILL.md").write_text(
-            compile_skill_markdown(
-                compiled_skill,
-                canonical_instruction=canonical_instruction,
-                include_canonical_behavior=True,
-                runtime_requirements=plugin_script_runtime_requirements(cfg),
-            ),
-            encoding="utf-8",
+        skill_markdown = compile_skill_markdown(
+            compiled_skill,
+            canonical_instruction=canonical_instruction,
+            include_canonical_behavior=True,
+            runtime_requirements=plugin_script_runtime_requirements(cfg),
         )
+        if cfg.get("project", {}).get("id") == "gpt-byggaren":
+            skill_markdown += (
+                "\\n## Canonical distribution engine resolution\\n\\n"
+                "Before a distribution build, use the bundled original engine if accessible. "
+                "If the bundled asset is unreadable, execute the included "
+                "`scripts/fetch_distribution_engine.py` using the installed plugin version "
+                "from `VERSION` or `plugin.json`. It fetches the GitHub Release asset "
+                "`distribution-engine.zip` from the matching version first; only a missing "
+                "release or missing asset permits fallback to the latest published release. "
+                "Verify its SHA-256 digest and original engine structure. "
+                "Use the downloaded canonical scripts, templates and installer unchanged. "
+                "If code execution, HTTPS access or integrity verification fails, BLOCK the "
+                "distribution build. Never improvise a replacement packager. "
+                "Report the selected release tag, especially when fallback was used.\\n"
+            )
+            copy_file(root / "scripts" / "fetch_distribution_engine.py",
+                      skill_dir / "scripts" / "fetch_distribution_engine.py")
+        (skill_dir / "SKILL.md").write_text(skill_markdown, encoding="utf-8")
         built_skills.append(skill_id)
 
     if not built_skills:
