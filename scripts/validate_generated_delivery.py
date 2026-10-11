@@ -29,7 +29,7 @@ def validate(root: Path, project_zip: Path | None = None, dist_dir: Path | None 
             import yaml
             status = yaml.safe_load(status_file.read_text(encoding="utf-8"))
             mode = status.get("delivery", {}).get("mode") if isinstance(status, dict) and isinstance(status.get("delivery"), dict) else None
-            if mode not in ("zip", "github"):
+            if isinstance(status, dict) and ("delivery" in status or "delivery_mode" in status) and mode not in ("zip", "github"):
                 errors.append("Project status requires delivery.mode: zip or github")
             if isinstance(status, dict) and "delivery_mode" in status:
                 errors.append("Legacy delivery_mode field is not allowed; use delivery.mode")
