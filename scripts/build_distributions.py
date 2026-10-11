@@ -581,17 +581,18 @@ def build_claude_skills(root: Path, cfg: dict, build_root: Path, version: str) -
         skill_dir = out / "skills" / skill_id
         resources = resolve_plugin_skill_resources(root, cfg, skill)
         _copy_skill_resources(root, skill_dir, resources)
-        # Preserve cross-runtime Skill resource parity with Plugin.
         if skill_id == "distribution-and-parity":
-            engine_dir = build_root / "claude-skills-engine"
-            ensure_clean_dir(engine_dir)
-            bundle_distribution_engine(root, engine_dir)
-            engine_root = engine_dir / "distribution-engine"
-            stable_write_zip(
-                skill_dir / "assets" / "distribution-engine.zip",
-                engine_root,
-                [p for p in engine_root.rglob("*") if p.is_file()],
-            )
+            # Keep the shared Skill resource layout consistent with Plugin.
+            engine_staging = build_root / "claude-skills-engine"
+            ensure_clean_dir(engine_staging)
+            bundle_distribution_engine(root, engine_staging)
+            engine_dir = engine_staging / "distribution-engine"
+            for file in sorted(engine_dir.rglob("*")):
+                if file.is_file():
+                    copy_file(
+                        file,
+                        skill_dir / "assets" / "canonical-engine" / file.relative_to(engine_dir),
+                    )
         compiled = dict(skill)
         compiled.update(resources)
         skill_dir.mkdir(parents=True, exist_ok=True)
