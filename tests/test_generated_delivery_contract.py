@@ -41,14 +41,14 @@ def test_rejects_missing_distribution_artifact(tmp_path):
     import json
     dist = tmp_path / "dist"
     dist.mkdir()
-    (dist / "manifest.json").write_text(json.dumps({
-        "distributions": [{"file": f"runtime-{i}.zip"} for i in range(5)]
+    (dist / "DELIVERY-MANIFEST.json").write_text(json.dumps({
+        "artifacts": [{"type": "runtime_zip", "file": f"runtime-{i}.zip"} for i in range(5)] + [{"type": "project_zip", "file": "project.zip"}]
     }), encoding="utf-8")
     errors = delivery.validate(tmp_path, dist_dir=dist)
     assert any("Missing or unsafe distribution file" in error for error in errors)
 
 
 def test_rejects_incomplete_distribution_manifest(tmp_path):
-    (tmp_path / "manifest.json").write_text('{"distributions": []}', encoding="utf-8")
+    (tmp_path / "DELIVERY-MANIFEST.json").write_text('{"artifacts": []}', encoding="utf-8")
     errors = delivery.validate(tmp_path, dist_dir=tmp_path)
-    assert "Expected five distributions, found 0" in errors
+    assert "Expected five runtime distributions, found 0" in errors
