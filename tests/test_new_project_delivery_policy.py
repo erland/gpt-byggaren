@@ -28,3 +28,18 @@ def test_gitignore_is_project_only_not_runtime_root():
     operations = (ROOT / "docs/skills/project-workflow-operations.md").read_text(encoding="utf-8")
     assert "runtime-ZIP:arnas rot saknar" in operations
     assert "distribution-engine/" in operations
+
+
+def test_builder_config_defaults_to_five_peer_targets():
+    import yaml
+    cfg = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
+    selected = set(cfg["build_system"]["targets"])
+    assert selected == {"project", "chat", "plugin", "claude_project", "claude_skills", "opencode"}
+    assert cfg["runtime"]["custom_gpt"]["enabled"] is False
+
+
+def test_runtime_builder_does_not_package_project_root_gitignore():
+    builder = (ROOT / "scripts/build_distributions.py").read_text(encoding="utf-8")
+    assert 'excluded_top = {"build", "dist", ".git"}' in builder
+    assert 'stable_write_zip(zip_path, runtime_root,' in builder
+    assert 'bundle_distribution_engine(root, out)' in builder
