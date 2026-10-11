@@ -131,3 +131,21 @@ def test_canonical_zip_delivery_mode_accepted(tmp_path):
     )
     errors = delivery.validate(tmp_path)
     assert not any("delivery.mode" in error for error in errors)
+
+def test_rejects_inherited_missing_reference_profiles(tmp_path):
+    import yaml
+    cfg = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
+    cfg["reference_profiles"] = {"root": "profiles", "profiles": ["simple"]}
+    (tmp_path / "gpt-project.yaml").write_text(yaml.safe_dump(cfg), encoding="utf-8")
+    errors = delivery.validate(tmp_path)
+    assert "Missing reference_profiles.root: profiles" in errors
+    assert "Missing reference profile definition: simple" in errors
+
+
+def test_project_without_reference_profiles_has_no_profile_errors(tmp_path):
+    import yaml
+    cfg = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
+    cfg.pop("reference_profiles", None)
+    (tmp_path / "gpt-project.yaml").write_text(yaml.safe_dump(cfg), encoding="utf-8")
+    errors = delivery.validate(tmp_path)
+    assert not any("reference profile" in error or "reference_profiles" in error for error in errors)
