@@ -83,14 +83,24 @@ def test_installed_engine_builds_distinct_runtime_archives(tmp_path):
     result = subprocess.run(
         [sys.executable, str(project / "scripts/build_distributions.py"),
          "--project-root", str(project), "--version", "0.1.0",
-         "--targets", "chat,plugin,claude_project,claude_skills,opencode"],
+         "--targets", "project,chat,plugin,claude_project,claude_skills,opencode"],
         capture_output=True, text=True,
     )
     assert result.returncode == 0, result.stdout + "\\n" + result.stderr
     archives = list((project / "dist").glob("*.zip"))
-    assert len(archives) == 5
+    assert len(archives) == 6
+    delivery = subprocess.run(
+        [sys.executable, str(ROOT / "scripts/validate_generated_delivery.py"),
+         "--project-root", str(project),
+         "--project-zip", str(project / "dist/generated-smoke-project.zip"),
+         "--dist-dir", str(project / "dist")],
+        capture_output=True, text=True,
+    )
+    assert delivery.returncode == 0, delivery.stdout + "\\n" + delivery.stderr
     layouts = []
     for archive in archives:
+        if archive.name.endswith("-project.zip"):
+            continue
         with zipfile.ZipFile(archive) as zf:
             layouts.append(frozenset(zf.namelist()))
     assert len(set(layouts)) == 5
