@@ -972,7 +972,7 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
         )
         if cfg.get("project", {}).get("id") == "gpt-byggaren":
             skill_markdown += (
-                "\\n## Canonical distribution engine resolution\\n\\n"
+                "\n## Canonical distribution engine resolution\n\n"
                 "Before a distribution build, use the bundled original engine if accessible. "
                 "If the bundled asset is unreadable, execute the included "
                 "`scripts/fetch_distribution_engine.py` using the installed plugin version "
@@ -983,7 +983,7 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
                 "Use the downloaded canonical scripts, templates and installer unchanged. "
                 "If code execution, HTTPS access or integrity verification fails, BLOCK the "
                 "distribution build. Never improvise a replacement packager. "
-                "Report the selected release tag, especially when fallback was used.\\n"
+                "Report the selected release tag, especially when fallback was used.\n"
             )
             copy_file(root / "scripts" / "fetch_distribution_engine.py",
                       skill_dir / "scripts" / "fetch_distribution_engine.py")
