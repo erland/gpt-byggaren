@@ -94,6 +94,10 @@ def test_installed_engine_builds_distinct_runtime_archives(tmp_path):
         with zipfile.ZipFile(archive) as zf:
             layouts.append(frozenset(zf.namelist()))
     assert len(set(layouts)) == 5
+    for archive in archives:
+        with zipfile.ZipFile(archive) as zf:
+            assert all("gpt-byggaren" not in name for name in zf.namelist())
+            assert any("generated-smoke" in name for name in zf.namelist()) or archive.name.startswith("generated-smoke")
     assert config["project"]["id"] == "generated-smoke"
     assert not (project / "src/instructions/system.md").read_text(encoding="utf-8").startswith("GPT Byggaren")
 
