@@ -591,7 +591,10 @@ def build_claude_skills(root: Path, cfg: dict, build_root: Path, version: str) -
                 if file.is_file():
                     copy_file(
                         file,
-                        skill_dir / "assets" / "canonical-engine" / file.relative_to(engine_dir),
+                        skill_dir / (
+                            "scripts" if file.relative_to(engine_dir).parts[0] == "scripts"
+                            else "assets"
+                        ) / "canonical-engine" / file.relative_to(engine_dir),
                     )
         compiled = dict(skill)
         compiled.update(resources)
@@ -979,7 +982,8 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
             for file in sorted(engine_dir.rglob("*")):
                 if file.is_file():
                     relative = file.relative_to(engine_dir)
-                    copy_file(file, skill_dir / "assets" / "canonical-engine" / relative)
+                    category = "scripts" if relative.parts[0] == "scripts" else "assets"
+                    copy_file(file, skill_dir / category / "canonical-engine" / relative)
 
         compiled_skill = dict(skill)
         compiled_skill.update(resources)
@@ -994,11 +998,13 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
             skill_text += (
                 "\\n## Bundled canonical distribution engine\\n\\n"
                 "The original engine files are available individually under "
+                "`scripts/canonical-engine/scripts/` and "
                 "`assets/canonical-engine/`, including "
                 "`scripts/build_distributions.py`, "
                 "`scripts/install_distribution_engine.py`, "
                 "`scripts/lib/project_model.py` and `templates/`. "
-                "Copy the complete directory to a writable project workspace "
+                "Reconstruct the original relative paths from these two resource roots "
+                "in a writable project workspace "
                 "before running the scripts. Never generate a substitute. "
                 "If files or execution are not exposed by the host, report "
                 "the limitation and stop.\\n"
