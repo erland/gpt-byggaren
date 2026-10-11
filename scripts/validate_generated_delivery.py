@@ -23,6 +23,18 @@ def validate(root: Path, project_zip: Path | None = None, dist_dir: Path | None 
         for name in ("dist/", "build/"):
             if name not in [line.strip() for line in patterns]:
                 errors.append(f".gitignore missing {name}")
+    status_file = root / "project-status.yaml"
+    if status_file.is_file():
+        try:
+            import yaml
+            status = yaml.safe_load(status_file.read_text(encoding="utf-8"))
+            mode = status.get("delivery", {}).get("mode") if isinstance(status, dict) and isinstance(status.get("delivery"), dict) else None
+            if mode not in ("zip", "github"):
+                errors.append("Project status requires delivery.mode: zip or github")
+            if isinstance(status, dict) and "delivery_mode" in status:
+                errors.append("Legacy delivery_mode field is not allowed; use delivery.mode")
+        except (ImportError, ValueError, TypeError, AttributeError) as exc:
+            errors.append(f"Cannot inspect project-status.yaml: {exc}")
     cfg_file = root / "gpt-project.yaml"
     if not cfg_file.is_file():
         errors.append("Missing gpt-project.yaml")
