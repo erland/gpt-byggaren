@@ -89,6 +89,20 @@ def test_installed_engine_builds_distinct_runtime_archives(tmp_path):
     assert result.returncode == 0, result.stdout + "\\n" + result.stderr
     archives = list((project / "dist").glob("*.zip"))
     assert len(archives) == 6
+    assert (project / ".gitignore").is_file()
+    assert not list(project.glob("*custom-gpt*.zip"))
+    project_archive = project / "dist/generated-smoke-project.zip"
+    with zipfile.ZipFile(project_archive) as zf:
+        names = zf.namelist()
+        assert ".gitignore" in names
+        assert "gpt-project.yaml" in names
+        assert "scripts/build_distributions.py" in names
+        assert not any(name.startswith((".git/", "dist/", "build/")) for name in names)
+    for archive in archives:
+        if archive == project_archive:
+            continue
+        with zipfile.ZipFile(archive) as zf:
+            assert ".gitignore" not in zf.namelist()
     delivery = subprocess.run(
         [sys.executable, str(ROOT / "scripts/validate_generated_delivery.py"),
          "--project-root", str(project),
