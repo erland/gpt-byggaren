@@ -52,3 +52,30 @@ def test_rejects_incomplete_distribution_manifest(tmp_path):
     (tmp_path / "DELIVERY-MANIFEST.json").write_text('{"artifacts": []}', encoding="utf-8")
     errors = delivery.validate(tmp_path, dist_dir=tmp_path)
     assert "Expected five runtime distributions, found 0" in errors
+
+
+def test_rejects_disabled_targets_or_enabled_custom_gpt(tmp_path):
+    import yaml
+    cfg = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
+    cfg["build_system"]["targets"] = ["project", "chat", "plugin"]
+    cfg["runtime"]["custom_gpt"]["enabled"] = True
+    (tmp_path / "gpt-project.yaml").write_text(yaml.safe_dump(cfg), encoding="utf-8")
+    errors = delivery.validate(tmp_path)
+    assert "Expected project and all five canonical build targets" in errors
+    assert "Custom GPT must be disabled" in errors
+
+
+def test_rejects_gitignore_in_runtime_zip(tmp_path):
+    import json
+    dist = tmp_path / "dist"
+    dist.mkdir()
+    artifacts = [{"type": "project_zip", "file": "project.zip"}]
+    (dist / "project.zip").write_bytes(b"placeholder")
+    for index in range(5):
+        name = f"runtime-{index}.zip"
+        with zipfile.ZipFile(dist / name, "w") as zf:
+            zf.writestr(".gitignore" if index == 0 else "SKILL.md", "content")
+        artifacts.append({"type": "runtime_zip", "file": name})
+    (dist / "DELIVERY-MANIFEST.json").write_text(json.dumps({"artifacts": artifacts}))
+    errors = delivery.validate(tmp_path, dist_dir=dist)
+    assert "Unexpected runtime root .gitignore: runtime-0.zip" in errors
