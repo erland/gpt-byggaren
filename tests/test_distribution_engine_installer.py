@@ -164,3 +164,16 @@ def test_project_specific_template_is_preserved(tmp_path):
     module.install(ROOT, project)
     assert custom.read_text(encoding="utf-8") == "Manualguidens egen introduktion\n"
     assert (project / "gpt-project.yaml").read_text(encoding="utf-8").find("manualguiden") != -1
+
+
+def test_installer_creates_gitignore_without_overwriting_existing(tmp_path):
+    project = tmp_path / "generated"
+    project.mkdir()
+    config = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
+    (project / "gpt-project.yaml").write_text(yaml.safe_dump(config), encoding="utf-8")
+    module.install(ROOT, project)
+    assert "dist/" in (project / ".gitignore").read_text(encoding="utf-8")
+    assert "build/" in (project / ".gitignore").read_text(encoding="utf-8")
+    (project / ".gitignore").write_text("custom-ignore\\n", encoding="utf-8")
+    module.install(ROOT, project)
+    assert (project / ".gitignore").read_text(encoding="utf-8") == "custom-ignore\\n"
