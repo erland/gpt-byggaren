@@ -189,16 +189,11 @@ def copy_portable_skill_modules(root: Path, cfg: dict, target: Path) -> list[str
 
 def bundle_distribution_engine(root: Path, destination: Path) -> None:
     """Include the offline project generator in a runtime distribution."""
-    import importlib.util
-
-    installer_path = root / "scripts" / "install_distribution_engine.py"
-    spec = importlib.util.spec_from_file_location("distribution_engine_installer", installer_path)
-    if spec is None or spec.loader is None:
-        raise RuntimeError("Distribution engine installer is unavailable")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
     engine = destination / "distribution-engine"
     engine.mkdir(parents=True, exist_ok=True)
+    required = ("scripts/build_distributions.py", "scripts/lib/project_model.py")
+    if any(not (root / relative).is_file() for relative in required):
+        raise FileNotFoundError("Canonical distribution engine is incomplete")
     for folder in ("scripts", "templates"):
         for source_file in sorted((root / folder).rglob("*")):
             if not source_file.is_file() or "__pycache__" in source_file.parts or source_file.suffix == ".pyc":
