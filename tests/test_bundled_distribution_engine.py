@@ -20,6 +20,7 @@ def test_chat_and_plugin_bundle_engine(tmp_path):
         assert archives, f"No archive for {target}"
         with zipfile.ZipFile(archives[0]) as archive:
             names = set(archive.namelist())
+            assert "distribution-engine/gpt-project.yaml" in names
             assert "distribution-engine/scripts/build_distributions.py" in names
             assert "distribution-engine/scripts/install_distribution_engine.py" in names
             assert "distribution-engine/scripts/lib/project_model.py" in names

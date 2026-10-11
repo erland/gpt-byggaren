@@ -31,13 +31,35 @@ def install(source: Path, project: Path) -> list[str]:
     cfg = yaml.safe_load((project / "gpt-project.yaml").read_text(encoding="utf-8"))
     if not isinstance(cfg, dict):
         raise ValueError("Project configuration must be a YAML mapping")
-    targets = cfg.get("build_system", {}).get("runtime_targets", {})
+    build_system = cfg.get("build_system")
+    if not isinstance(build_system, dict):
+        raise ValueError("build_system must be a YAML mapping")
+    targets = build_system.get("runtime_targets")
+    if not isinstance(targets, dict):
+        raise ValueError(
+            "build_system.runtime_targets must be a mapping, not a list; "
+            "generate complete target objects from the canonical project contract"
+        )
     missing = REQUIRED_TARGETS - set(targets)
     if missing:
         raise ValueError("Missing platform-specific runtime targets: " + ", ".join(sorted(missing)))
-    missing_builders = [t for t in REQUIRED_TARGETS if not targets[t].get("builder")]
-    if missing_builders:
-        raise ValueError("Missing builder declarations: " + ", ".join(sorted(missing_builders)))
+    required_fields = ("builder", "runtime_key", "runtime_id", "artifact_type", "filename_pattern")
+    for target, expected in REQUIRED_BUILDERS.items():
+        item = targets[target]
+        if not isinstance(item, dict):
+            raise ValueError(f"runtime_targets.{target} must be a mapping")
+        if item.get("builder") != expected:
+            raise ValueError(f"Incorrect builder for {target}: expected {expected}")
+        missing_fields = [field for field in required_fields if not item.get(field)]
+        if missing_fields:
+            raise ValueError(f"runtime_targets.{target} missing: {', '.join(missing_fields)}")
+    runtime = cfg.get("runtime")
+    required_runtime = ("chat_zip", "plugin", "claude", "opencode", "custom_gpt")
+    if not isinstance(runtime, dict):
+        raise ValueError("Missing runtime configuration mapping")
+    for key in required_runtime:
+        if not isinstance(runtime.get(key), dict):
+            raise ValueError(f"Missing runtime.{key} configuration mapping")
     declared_scripts = []
     for tool in cfg.get("tools", {}).get("tools", []):
         if tool.get("type") == "script" and tool.get("script"):
@@ -64,7 +86,7 @@ def install(source: Path, project: Path) -> list[str]:
         if not (source / relative).is_file():
             continue
         destination = project / relative
-        if relative in declared_scripts and destination.is_file():
+        if relative not in ENGINE_FILES and destination.is_file():
             continue
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source / relative, destination)

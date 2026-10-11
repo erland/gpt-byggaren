@@ -47,8 +47,9 @@ Före första distribution ska projektets förmågor delas upp och dokumenteras 
 
 ## Generering av körbart distributionssystem
 
-När ett nytt projekt har en komplett `gpt-project.yaml` med fem `build_system.runtime_targets`, installera den kanoniska distributionsmotorn med `python scripts/install_distribution_engine.py --project-root <projektkatalog>` från GPT Byggarens källträd. Skapa inte en separat förenklad byggare i projektet. Kopiera nödvändiga projektberoenden och kör projektets egna byggen samt valideringar innan projektet markeras som färdigt. Om källträdet eller beroendena inte finns tillgängliga, markera genereringen som blockerad; fabricera inte distributions-ZIP-filer.
+Skapa först en projektunik konfiguration enligt det **fullständiga** kontraktet i den medföljande distributionsmotorns `distribution-engine/gpt-project.yaml`-referens. `build_system.runtime_targets` ska vara en mapping med fem nycklar (`chat`, `plugin`, `claude_project`, `claude_skills`, `opencode`) och respektive `builder`, `runtime_key`, `runtime_id`, `artifact_type` och `filename_pattern`. En lista med plattformsnamn är **inte** giltig. Projektet behöver även en `runtime`-mapping med `chat_zip`, `plugin`, `claude`, `opencode` och `custom_gpt`, samt canonical `instructions`, `structure` och `skills` som faktiskt pekar på projektets egna resurser. Återanvänd inte GPT Byggarens projektspecifika Skills eller instruktioner som Manualguidens innehåll. Referensfilen är ett schemaexempel, **inte** en konfiguration som får kopieras oförändrad: skriv projektets egna `project`, `instructions`, `skills`, `tools` och sökvägar och kontrollera att alla deklarerade filer finns.
 
+Kör den medföljande `scripts/install_distribution_engine.py --source <medföljande distribution-engine> --project-root <projektkatalog>` först efter att projektkonfigurationen är fullständig. Avbryt och redovisa konkreta kontraktsfel om den saknas. Skapa aldrig fem likadana ersättningsarkiv.
 
 ## Offline-distributionsmotor i steg 6
 
