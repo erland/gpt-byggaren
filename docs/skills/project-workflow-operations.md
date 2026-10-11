@@ -48,3 +48,16 @@ Före första distribution ska projektets förmågor delas upp och dokumenteras 
 ## Generering av körbart distributionssystem
 
 När ett nytt projekt har en komplett `gpt-project.yaml` med fem `build_system.runtime_targets`, installera den kanoniska distributionsmotorn med `python scripts/install_distribution_engine.py --project-root <projektkatalog>` från GPT Byggarens källträd. Skapa inte en separat förenklad byggare i projektet. Kopiera nödvändiga projektberoenden och kör projektets egna byggen samt valideringar innan projektet markeras som färdigt. Om källträdet eller beroendena inte finns tillgängliga, markera genereringen som blockerad; fabricera inte distributions-ZIP-filer.
+
+
+## Offline-distributionsmotor i steg 6
+
+GPT Byggarens ChatGPT Chat- och Plugin-arkiv innehåller `distribution-engine/` med distributionsbyggaren, installeraren, skript och mallar. Vid skapande av ett nytt GPT-projekt ska dessa redan medföljande filer användas; extern hämtning från GitHub får inte vara ett obligatoriskt steg.
+
+1. Skapa projektets kanoniska konfiguration och resurser.
+2. Kopiera `distribution-engine/` från GPT Byggarens egen runtime-distribution till projektets arbetsyta, eller kör dess `scripts/install_distribution_engine.py` med `--source` satt till den medföljande motorns rot och `--project-root` satt till projektet.
+3. Kontrollera deklarerade skript, mallar och projektunika resurser utan att ersätta egna projektskript.
+4. Kör `scripts/build_distributions.py` och verifiera fem plattformsspecifika arkiv. Skapa CI och releaseworkflow först med verifierade byggsteg.
+5. Om runtime saknar filåtkomst eller exekvering, leverera motorn i projekt-ZIP och låt GitHub Actions köra den. Markera inte byggda distributioner som verifierade innan bygg och validering lyckats.
+
+Ingen nedladdning från GitHub ska krävas för själva distributionsmotorn.
