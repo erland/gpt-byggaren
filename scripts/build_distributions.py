@@ -570,6 +570,16 @@ def build_claude(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
 
 
 
+def expose_canonical_engine_skill_files(engine_root: Path, skill_dir: Path) -> None:
+    """Expose original canonical engine files as ordinary Skill resources."""
+    for file in sorted(engine_root.rglob("*")):
+        if not file.is_file():
+            continue
+        relative = file.relative_to(engine_root)
+        category = "scripts" if relative.parts[0] == "scripts" else "assets"
+        copy_file(file, skill_dir / category / "canonical-engine" / relative)
+
+
 def build_claude_skills(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     """Build a Claude Skills distribution with the canonical portable resources."""
     out = build_root / "claude-skills"
@@ -581,6 +591,11 @@ def build_claude_skills(root: Path, cfg: dict, build_root: Path, version: str) -
         skill_dir = out / "skills" / skill_id
         resources = resolve_plugin_skill_resources(root, cfg, skill)
         _copy_skill_resources(root, skill_dir, resources)
+        if cfg.get("project", {}).get("id") == "gpt-byggaren" and skill_id == "distribution-and-parity":
+            staging = build_root / "claude-skills-engine"
+            ensure_clean_dir(staging)
+            bundle_distribution_engine(root, staging)
+            expose_canonical_engine_skill_files(staging / "distribution-engine", skill_dir)
         if cfg.get("project", {}).get("id") == "gpt-byggaren":
             copy_file(root / "scripts" / "fetch_distribution_engine.py",
                       skill_dir / "scripts" / "fetch_distribution_engine.py")
@@ -963,6 +978,8 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
         skill_dir = out / "skills" / skill_id
         resources = resolve_plugin_skill_resources(root, cfg, skill)
         _copy_skill_resources(root, skill_dir, resources)
+        if cfg.get("project", {}).get("id") == "gpt-byggaren" and skill_id == "distribution-and-parity":
+            expose_canonical_engine_skill_files(out / "distribution-engine", skill_dir)
 
         compiled_skill = dict(skill)
         compiled_skill.update(resources)
@@ -990,6 +1007,17 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
             )
             copy_file(root / "scripts" / "fetch_distribution_engine.py",
                       skill_dir / "scripts" / "fetch_distribution_engine.py")
+        if cfg.get("project", {}).get("id") == "gpt-byggaren":
+            skill_markdown += (
+                "\n## Direct canonical engine Skill resources\n\n"
+                "The original builder scripts are also installed as ordinary Skill files "
+                "under `scripts/canonical-engine/scripts/`; config and templates are under "
+                "`assets/canonical-engine/`. When exposed by the host, reconstruct "
+                "these original relative paths in a writable project workspace and run "
+                "the unchanged canonical installer and builder. Prefer direct bundled "
+                "files over network retrieval; if neither source is accessible, BLOCK "
+                "rather than invent a replacement.\n"
+            )
         (skill_dir / "SKILL.md").write_text(skill_markdown, encoding="utf-8")
         built_skills.append(skill_id)
 
