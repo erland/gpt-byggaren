@@ -49,6 +49,9 @@ jobs:
       - name: Assess release readiness
         run: python scripts/assess_release_readiness.py --project-root . --include-build-state
 
+      - name: Package canonical distribution engine
+        run: python scripts/package_distribution_engine.py
+
       - name: Verify release filenames
         run: python scripts/verify_distribution_outputs.py --project-root . --version "${{ steps.version.outputs.version }}"
       - name: Upload release artifacts
@@ -61,4 +64,4 @@ jobs:
             --project-root . \
             --version "${{ steps.version.outputs.version }}" \
             --print-files)
-          gh release upload "${{ github.event.release.tag_name }}" "${FILES[@]}" --clobber
+          gh release upload "${{ github.event.release.tag_name }}" "${FILES[@]}" dist/distribution-engine.zip --clobber
