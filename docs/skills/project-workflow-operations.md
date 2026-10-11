@@ -64,14 +64,25 @@ GPT Byggarens ChatGPT Chat- och Plugin-arkiv innehåller `distribution-engine/` 
 Ingen nedladdning från GitHub ska krävas för själva distributionsmotorn.
 
 
+## Leveransval och kontinuitet
+
+Vid första behovet av att spara eller publicera projektet: erbjud **ZIP** eller **GitHub** som två likvärdiga arbetsformer, helst som två valbara alternativ och alltid som text. Fråga **en gång**, dokumentera `delivery.mode: zip` eller `delivery.mode: github` i `project-status.yaml` (eller motsvarande auktoritativa projektstatus) och respektera det vid återupptagning.
+
+- **ZIP**: bygg och lämna ut projekt-ZIP och fem runtime-ZIP direkt; lägg inte in GitHub-remote, GitHub Actions eller releaseworkflow som krav. Föreslå inte GitHub igen efter valet. Byte sker endast på användarens initiativ.
+- **GitHub**: lägg till GitHub Actions/releaseworkflow och publicera källprojektet enligt användarens önskemål. Skapa fortfarande samma sex artefakter.
+- Avvakta GitHub-förslag tills användaren nått detta val; GitHub är inte ett naturligt obligatoriskt första steg i en ny GPT.
+- Om val redan är registrerat får du inte återställa det när projektets status uppdateras.
+
 ## Obligatoriskt leveranskontrakt för nya projekt
 
 Innan projektet får markeras klart:
 
-1. Skapa `gpt-project.yaml` i projektroten med projektets egen identitet, canonical instruktion, Skill-kontrakt, runtime-konfiguration och fem runtime_targets. Kör installeraren och den kanoniska distributionsbyggaren. Skapa **inte** en projektspecifik ersättning för `scripts/build_distributions.py`.
-2. Skapa `.gitignore` från `distribution-engine/templates/generated-project.gitignore` innan första Git-commit. Genererade `dist/`, `build/`, release-artefakter, cache och lokala filer får inte checkas in.
-3. Projekt-ZIP ska innehålla källfiler och konfiguration men aldrig `.git/`, `dist/`, `build/`, cache eller andra genererade artefakter. Filtrera explicit vid ZIP-skapande: `.gitignore` skyddar inte ZIP-paketering.
-4. Bygg, validera och länka **sex** separata nedladdningar: projekt-ZIP samt ChatGPT Chat, OpenAI Plugin, Claude Projects, Claude Skills och OpenCode. Visa en separat klickbar länk per faktisk artefakt. Om en fil inte skapats får den inte presenteras som nedladdningsbar.
+1. Skapa `gpt-project.yaml` i projektroten med projektets egen identitet, canonical instruktion, Skill-kontrakt, runtime-konfiguration och fem runtime_targets. Installera den medföljande kanoniska distributionsmotorn **innan den första runtime-distributionen byggs** och använd den konsekvent under hela utvecklingen. Avbryt hellre än att bygga Chat/Plugin med en tillfällig egen byggare. Kör därefter den kanoniska distributionsbyggaren för **alla fem** runtime-mål från första leveranstillfället. Skapa **inte** en projektspecifik ersättning för `scripts/build_distributions.py`.
+2. Aktivera inte `custom_gpt` som runtime-mål. Eventuella äldre `custom_gpt`-konfigurationsblock måste ha `enabled: false` och får inte finnas i aktiva `build_system.targets`.
+3. Skapa `.gitignore` från `distribution-engine/templates/generated-project.gitignore` innan första Git-commit. Genererade `dist/`, `build/`, release-artefakter, cache och lokala filer får inte checkas in.
+4. Projekt-ZIP ska innehålla källfiler och konfiguration men aldrig `.git/`, `dist/`, `build/`, cache eller andra genererade artefakter. Filtrera explicit vid ZIP-skapande: `.gitignore` skyddar inte ZIP-paketering.
+5. Kontrollera att **runtime-ZIP:arnas rot saknar `.gitignore`**. Motorns inbyggda `templates/generated-project.gitignore` är en avsiktlig installationsmall och får ligga i `distribution-engine/` för Chat/Plugin.
+6. Bygg, validera och länka **sex** separata nedladdningar: projekt-ZIP samt ChatGPT Chat, OpenAI Plugin, Claude Projects, Claude Skills och OpenCode. Visa en separat klickbar länk per faktisk artefakt. Om en fil inte skapats får den inte presenteras som nedladdningsbar.
 5. Vid varje leverans, sammanfatta verifieringsstatus per distribution. Byggd ZIP är inte samma sak som hostverifierad runtime. Inkludera SHA256/manifest när det finns.
 6. Presentera nästa rekommenderade steg som en konkret uppföljningsfråga eller valbar åtgärd. Använd interaktiva nästa-steg-knappar när gränssnittet stödjer dem, men behåll alltid ett tydligt textalternativ. Hitta inte på knappar eller länkar som runtime inte kan rendera.
 7. Kör `scripts/validate_generated_delivery.py --project-root <projektkatalog> --version <version>` när skriptet finns tillgängligt. Åtgärda samtliga fel innan leverans. Saknas exekvering, redovisa kontrollen som ej utförd, inte godkänd.
