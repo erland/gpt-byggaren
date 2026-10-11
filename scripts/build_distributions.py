@@ -199,11 +199,12 @@ def bundle_distribution_engine(root: Path, destination: Path) -> None:
     spec.loader.exec_module(module)
     engine = destination / "distribution-engine"
     engine.mkdir(parents=True, exist_ok=True)
-    for relative in (*module.ENGINE_FILES, "scripts/install_distribution_engine.py"):
-        source_file = root / relative
-        if not source_file.is_file():
-            raise FileNotFoundError(source_file)
-        copy_file(source_file, engine / relative)
+    for folder in ("scripts", "templates"):
+        for source_file in sorted((root / folder).rglob("*")):
+            if not source_file.is_file() or "__pycache__" in source_file.parts or source_file.suffix == ".pyc":
+                continue
+            relative = source_file.relative_to(root)
+            copy_file(source_file, engine / relative)
 
 
 def build_chat(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
