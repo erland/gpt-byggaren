@@ -983,9 +983,9 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
             skill_text += (
                 "\\n## Canonical offline distribution engine\\n\\n"
                 "The complete original engine is attached as "
-                "\`assets/distribution-engine.zip\`. Extract it to access "
-                "\`scripts/build_distributions.py\`, "
-                "\`scripts/install_distribution_engine.py\`, "
+                "`assets/distribution-engine.zip`. Extract it to access "
+                "`scripts/build_distributions.py`, "
+                "`scripts/install_distribution_engine.py`, "
                 "templates and their dependencies. Reuse these exact files; "
                 "never synthesize a substitute. If the plugin host does not "
                 "expose the asset, report that limitation and stop the build.\\n"
