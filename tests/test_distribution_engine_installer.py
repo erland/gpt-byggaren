@@ -58,6 +58,7 @@ def test_installed_engine_builds_distinct_runtime_archives(tmp_path):
     config["project"]["name"] = "Generated Smoke"
     config["skills"]["definitions"] = []
     config["tools"]["tools"] = []
+    config["runtime"]["chat_zip"]["include"]["knowledge"] = []
     (project / "gpt-project.yaml").write_text(
         yaml.safe_dump(config, allow_unicode=True), encoding="utf-8"
     )
