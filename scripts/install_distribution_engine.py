@@ -68,7 +68,7 @@ def install(source: Path, project: Path) -> list[str]:
     # A generated project must not inherit Builder-only profile paths unless
     # its own reference profile definitions are present.
     profiles = cfg.get("reference_profiles")
-    if isinstance(profiles, dict) and profiles.get("root"):
+    if (project / "project-status.yaml").is_file() and isinstance(profiles, dict) and profiles.get("root"):
         profile_root = Path(str(profiles["root"]))
         if profile_root.is_absolute() or ".." in profile_root.parts:
             raise ValueError("Unsafe reference_profiles.root")
