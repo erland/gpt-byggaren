@@ -128,8 +128,8 @@ def test_legacy_manualguiden_target_list_rejected(tmp_path):
     project = tmp_path / "manualguiden"
     project.mkdir()
     (project / "gpt-project.yaml").write_text(
-        "build_system:\\n  runtime_targets:\\n  - chatgpt-chat\\n  - openai-plugin\\n"
-        "  - claude-projects\\n  - claude-skills\\n  - opencode\\n",
+        "build_system:\n  runtime_targets:\n  - chatgpt-chat\n  - openai-plugin\\n"
+        "  - claude-projects\n  - claude-skills\n  - opencode\\n",
         encoding="utf-8",
     )
     try:
