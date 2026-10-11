@@ -79,3 +79,39 @@ def test_rejects_gitignore_in_runtime_zip(tmp_path):
     (dist / "DELIVERY-MANIFEST.json").write_text(json.dumps({"artifacts": artifacts}))
     errors = delivery.validate(tmp_path, dist_dir=dist)
     assert "Unexpected runtime root .gitignore: runtime-0.zip" in errors
+
+
+def test_rejects_duplicate_runtime_types_even_with_five_zips(tmp_path):
+    import hashlib
+    import json
+    dist = tmp_path / "dist"
+    dist.mkdir()
+    types = ["chat_zip", "chat_zip", "claude_project_zip", "claude_skills_zip", "opencode_zip"]
+    artifacts = []
+    for index, kind in enumerate(types):
+        filename = f"runtime-{index}.zip"
+        with zipfile.ZipFile(dist / filename, "w") as archive:
+            archive.writestr("SKILL.md", "runtime")
+        data = (dist / filename).read_bytes()
+        artifacts.append({"type": kind, "file": filename,
+                          "sha256": hashlib.sha256(data).hexdigest(), "size": len(data)})
+    (dist / "DELIVERY-MANIFEST.json").write_text(json.dumps({"artifacts": artifacts}))
+    errors = delivery.validate(tmp_path, dist_dir=dist)
+    assert "Runtime distribution types must be exactly the canonical five, once each" in errors
+
+
+def test_rejects_tampered_runtime_digest(tmp_path):
+    import json
+    dist = tmp_path / "dist"
+    dist.mkdir()
+    types = ["chat_zip", "plugin_zip", "claude_project_zip", "claude_skills_zip", "opencode_zip"]
+    artifacts = []
+    for index, kind in enumerate(types):
+        filename = f"runtime-{index}.zip"
+        with zipfile.ZipFile(dist / filename, "w") as archive:
+            archive.writestr("SKILL.md", "runtime")
+        artifacts.append({"type": kind, "file": filename,
+                          "sha256": "0" * 64, "size": (dist / filename).stat().st_size})
+    (dist / "DELIVERY-MANIFEST.json").write_text(json.dumps({"artifacts": artifacts}))
+    errors = delivery.validate(tmp_path, dist_dir=dist)
+    assert "SHA256 mismatch or missing digest: runtime-0.zip" in errors
