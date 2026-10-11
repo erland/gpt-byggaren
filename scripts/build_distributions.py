@@ -961,18 +961,36 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
         resources = resolve_plugin_skill_resources(root, cfg, skill)
         _copy_skill_resources(root, skill_dir, resources)
 
+        # Plugin hosts may expose Skill resources without exposing arbitrary ZIP
+        # top-level directories. Publish the same canonical offline engine as a
+        # deterministic Skill asset, not a second build implementation.
+        if skill_id == "distribution-and-parity":
+            engine_dir = out / "distribution-engine"
+            asset = skill_dir / "assets" / "distribution-engine.zip"
+            engine_files = [p for p in engine_dir.rglob("*") if p.is_file()]
+            stable_write_zip(asset, engine_dir, engine_files)
+
         compiled_skill = dict(skill)
         compiled_skill.update(resources)
         skill_dir.mkdir(parents=True, exist_ok=True)
-        (skill_dir / "SKILL.md").write_text(
-            compile_skill_markdown(
-                compiled_skill,
-                canonical_instruction=canonical_instruction,
-                include_canonical_behavior=True,
-                runtime_requirements=plugin_script_runtime_requirements(cfg),
-            ),
-            encoding="utf-8",
+        skill_text = compile_skill_markdown(
+            compiled_skill,
+            canonical_instruction=canonical_instruction,
+            include_canonical_behavior=True,
+            runtime_requirements=plugin_script_runtime_requirements(cfg),
         )
+        if skill_id == "distribution-and-parity":
+            skill_text += (
+                "\\n## Canonical offline distribution engine\\n\\n"
+                "The complete original engine is attached as "
+                "\`assets/distribution-engine.zip\`. Extract it to access "
+                "\`scripts/build_distributions.py\`, "
+                "\`scripts/install_distribution_engine.py\`, "
+                "templates and their dependencies. Reuse these exact files; "
+                "never synthesize a substitute. If the plugin host does not "
+                "expose the asset, report that limitation and stop the build.\\n"
+            )
+        (skill_dir / "SKILL.md").write_text(skill_text, encoding="utf-8")
         built_skills.append(skill_id)
 
     if not built_skills:
