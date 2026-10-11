@@ -56,6 +56,7 @@ def test_installed_engine_builds_distinct_runtime_archives(tmp_path):
     config = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
     config["project"]["id"] = "generated-smoke"
     config["project"]["name"] = "Generated Smoke"
+    config.pop("reference_profiles", None)  # Builder-only profile definitions are not inherited.
     config["skills"]["definitions"] = []
     config["tools"]["tools"] = []
     config["runtime"]["chat_zip"]["include"]["knowledge"] = []

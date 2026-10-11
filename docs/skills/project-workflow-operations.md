@@ -73,6 +73,12 @@ Vid första behovet av att spara eller publicera projektet: erbjud **ZIP** eller
 - Avvakta GitHub-förslag tills användaren nått detta val; GitHub är inte ett naturligt obligatoriskt första steg i en ny GPT.
 - Om val redan är registrerat får du inte återställa det när projektets status uppdateras.
 
+## Projektunika konfigurationsreferenser
+
+Härled `gpt-project.yaml` från den nya GPT:ns egna behov, inte genom att kopiera hela GPT Byggarens projektkonfiguration. Fältet `reference_profiles` är valfritt och används endast om den nya GPT:n faktiskt har egna profildefinitioner. Ta bort GPT Byggarens `reference_profiles` vid skapandet om sådana profiler inte behövs. Om fältet används måste `reference_profiles.root` och samtliga namngivna `.yaml`, `.yml` eller `.json`-profiler finnas i projekt-ZIP före leverans. Skapa inte tomma kataloger enbart för att tysta lintern.
+
+GitHub Actions-filer får finnas även när `delivery.mode: zip` används. ZIP-valet innebär att GitHub inte är obligatoriskt och inte ska föreslås igen, inte att användbar CI-konfiguration ska raderas.
+
 ## Obligatoriskt leveranskontrakt för nya projekt
 
 Innan projektet får markeras klart:

@@ -92,6 +92,9 @@ Skapa inte separata instruktioner för Luna, Sol eller andra modellfamiljer. Fö
 
 ## Leverans- och runtime-gates för nya projekt
 
+- Nya projekt ska ha en **projektunik** `gpt-project.yaml`. Kopiera inte GPT Byggarens interna `reference_profiles` till en annan GPT om den inte faktiskt har egna profiler. Om `reference_profiles` anges måste katalogen och alla namngivna profilfiler existera före leverans; dölj inte felet med en tom platshållarkatalog. GitHub Actions får följa med även i ZIP-läge utan att GitHub därmed blir ett krav.
+
+
 - Vid projektstart: skapa den fullständiga projektunika `gpt-project.yaml` med fem runtime-mål `chat`, `plugin`, `claude_project`, `claude_skills`, `opencode`. Alla fem aktiveras som standard; eventuella tekniska hinder ska redovisas, inte döljas genom att bara bygga två.
 - Kopiera och installera kanoniska motorn före första distributionsbygget. Stoppa om installeraren saknas; skriv aldrig en förenklad egen distributionsbyggare.
 - `custom_gpt` är historiskt stöd och ska **inte** aktiveras, genereras eller erbjudas som sjätte runtime. Runtime-listan omfattar exakt fem mål om användaren inte uttryckligen väljer bort någon.
