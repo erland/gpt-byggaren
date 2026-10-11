@@ -127,6 +127,19 @@ def test_installed_engine_builds_distinct_runtime_archives(tmp_path):
         with zipfile.ZipFile(archive) as zf:
             layouts.append(frozenset(zf.namelist()))
     assert len(set(layouts)) == 5
+    # Plugin must expose the canonical engine through an actual Skill asset.
+    plugin_archive = project / "dist/generated-smoke-plugin-0.1.0.zip"
+    with zipfile.ZipFile(plugin_archive) as zf:
+        resource = "skills/distribution-and-parity/assets/distribution-engine.zip"
+        assert resource in zf.namelist()
+        import io
+        with zipfile.ZipFile(io.BytesIO(zf.read(resource))) as nested:
+            assert "scripts/build_distributions.py" in nested.namelist()
+            assert "scripts/install_distribution_engine.py" in nested.namelist()
+            assert "scripts/lib/project_model.py" in nested.namelist()
+        skill = zf.read("skills/distribution-and-parity/SKILL.md").decode("utf-8")
+        assert "assets/distribution-engine.zip" in skill
+
     for archive in archives:
         with zipfile.ZipFile(archive) as zf:
             assert all("gpt-byggaren" not in name for name in zf.namelist())
