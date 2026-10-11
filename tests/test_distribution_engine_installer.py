@@ -56,6 +56,8 @@ def test_installed_engine_builds_distinct_runtime_archives(tmp_path):
     config = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
     config["project"]["id"] = "generated-smoke"
     config["project"]["name"] = "Generated Smoke"
+    config["skills"]["definitions"] = []
+    config["tools"]["tools"] = []
     (project / "gpt-project.yaml").write_text(
         yaml.safe_dump(config, allow_unicode=True), encoding="utf-8"
     )
@@ -90,6 +92,8 @@ def test_installed_engine_builds_distinct_runtime_archives(tmp_path):
         with zipfile.ZipFile(archive) as zf:
             layouts.append(frozenset(zf.namelist()))
     assert len(set(layouts)) == 5
+    assert config["project"]["id"] == "generated-smoke"
+    assert not (project / "src/instructions/system.md").read_text(encoding="utf-8").startswith("GPT Byggaren")
 
 
 def test_existing_project_script_is_preserved(tmp_path):
