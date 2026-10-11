@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 import zipfile
+import json
 
 TARGETS = ("chat", "plugin", "claude_project", "claude_skills", "opencode")
 FORBIDDEN = {".git", "dist", "build", "__pycache__", ".pytest_cache", ".mypy_cache"}
@@ -12,7 +13,7 @@ ENGINE = ("scripts/build_distributions.py", "scripts/lib/project_model.py",
           "scripts/validate_distributions.py", "scripts/validate_portable_skills.py")
 
 
-def validate(root: Path, project_zip: Path | None = None) -> list[str]:
+def validate(root: Path, project_zip: Path | None = None, dist_dir: Path | None = None) -> list[str]:
     errors: list[str] = []
     if not (root / ".gitignore").is_file():
         errors.append("Missing .gitignore")
@@ -38,6 +39,24 @@ def validate(root: Path, project_zip: Path | None = None) -> list[str]:
     for relative in ENGINE:
         if not (root / relative).is_file():
             errors.append(f"Missing canonical engine file: {relative}")
+    if dist_dir is not None:
+        manifest = dist_dir / "manifest.json"
+        if not manifest.is_file():
+            errors.append("Missing distribution manifest.json")
+        else:
+            try:
+                data = json.loads(manifest.read_text(encoding="utf-8"))
+                entries = data.get("distributions", [])
+                if not isinstance(entries, list):
+                    raise ValueError("distributions must be a list")
+                if len(entries) != 5:
+                    errors.append(f"Expected five distributions, found {len(entries)}")
+                for item in entries:
+                    filename = item.get("file") if isinstance(item, dict) else None
+                    if not isinstance(filename, str) or Path(filename).name != filename or not (dist_dir / filename).is_file():
+                        errors.append(f"Missing or unsafe distribution file: {filename}")
+            except (ValueError, TypeError, AttributeError) as exc:
+                errors.append(f"Invalid distribution manifest: {exc}")
     if project_zip is not None:
         if not project_zip.is_file():
             errors.append(f"Missing project ZIP: {project_zip}")
@@ -59,9 +78,10 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--project-root", type=Path, required=True)
     parser.add_argument("--project-zip", type=Path)
+    parser.add_argument("--dist-dir", type=Path)
     parser.add_argument("--version")  # reserved for release verification
     args = parser.parse_args()
-    errors = validate(args.project_root, args.project_zip)
+    errors = validate(args.project_root, args.project_zip, args.dist_dir)
     for error in errors:
         print("ERROR:", error)
     if not errors:
