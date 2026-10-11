@@ -10,6 +10,7 @@ import shutil
 from pathlib import Path
 
 ENGINE_FILES = (
+    "scripts/install_distribution_engine.py",
     "scripts/build_distributions.py",
     "scripts/lib/project_model.py",
     "scripts/validate_distributions.py",
