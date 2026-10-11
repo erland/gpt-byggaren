@@ -21,13 +21,11 @@ def test_install_into_generated_project(tmp_path):
         "claude_skills": "claude_skills",
         "opencode": "opencode",
     }
-    config = {"build_system": {"runtime_targets": {
-        name: {"builder": builder} for name, builder in builders.items()
-    }}}
+    config = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
     before = yaml.safe_dump(config)
     (project / "gpt-project.yaml").write_text(before, encoding="utf-8")
     copied = module.install(ROOT, project)
-    assert len(copied) == len(module.ENGINE_FILES)
+    assert set(module.ENGINE_FILES).issubset(copied)
     for relative in module.ENGINE_FILES:
         assert (project / relative).read_bytes() == (ROOT / relative).read_bytes()
     assert (project / "gpt-project.yaml").read_text(encoding="utf-8") == before
@@ -97,11 +95,7 @@ def test_installed_engine_builds_distinct_runtime_archives(tmp_path):
 def test_existing_project_script_is_preserved(tmp_path):
     project = tmp_path / "custom"
     project.mkdir()
-    config = {"build_system": {"runtime_targets": {
-        name: {"builder": builder} for name, builder in module.REQUIRED_BUILDERS.items()
-    }}, "tools": {"tools": [{
-        "type": "script", "script": "scripts/validate_model_robustness.py"
-    }]}}
+    config = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
     (project / "gpt-project.yaml").write_text(
         yaml.safe_dump(config), encoding="utf-8"
     )
@@ -115,12 +109,11 @@ def test_existing_project_script_is_preserved(tmp_path):
 def test_wrong_runtime_builder_is_rejected(tmp_path):
     project = tmp_path / "wrong-builder"
     project.mkdir()
-    targets = {
-        name: {"builder": builder} for name, builder in module.REQUIRED_BUILDERS.items()
-    }
+    config = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
+    targets = config["build_system"]["runtime_targets"]
     targets["plugin"]["builder"] = "chat"
     (project / "gpt-project.yaml").write_text(
-        yaml.safe_dump({"build_system": {"runtime_targets": targets}}),
+        yaml.safe_dump(config),
         encoding="utf-8",
     )
     try:
@@ -129,3 +122,19 @@ def test_wrong_runtime_builder_is_rejected(tmp_path):
         assert "Incorrect builder for plugin" in str(exc)
     else:
         raise AssertionError("Wrong runtime builder must be rejected")
+
+
+def test_legacy_manualguiden_target_list_rejected(tmp_path):
+    project = tmp_path / "manualguiden"
+    project.mkdir()
+    (project / "gpt-project.yaml").write_text(
+        "build_system:\\n  runtime_targets:\\n  - chatgpt-chat\\n  - openai-plugin\\n"
+        "  - claude-projects\\n  - claude-skills\\n  - opencode\\n",
+        encoding="utf-8",
+    )
+    try:
+        module.install(ROOT, project)
+    except ValueError as exc:
+        assert "must be a mapping" in str(exc)
+    else:
+        raise AssertionError("Legacy target lists must fail with actionable error")
