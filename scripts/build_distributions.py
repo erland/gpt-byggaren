@@ -187,10 +187,26 @@ def copy_portable_skill_modules(root: Path, cfg: dict, target: Path) -> list[str
     return result
 
 
+def bundle_distribution_engine(root: Path, destination: Path) -> None:
+    """Include the offline project generator in a runtime distribution."""
+    engine = destination / "distribution-engine"
+    engine.mkdir(parents=True, exist_ok=True)
+    required = ("scripts/build_distributions.py", "scripts/lib/project_model.py")
+    if any(not (root / relative).is_file() for relative in required):
+        raise FileNotFoundError("Canonical distribution engine is incomplete")
+    for folder in ("scripts", "templates"):
+        for source_file in sorted((root / folder).rglob("*")):
+            if not source_file.is_file() or "__pycache__" in source_file.parts or source_file.suffix == ".pyc":
+                continue
+            relative = source_file.relative_to(root)
+            copy_file(source_file, engine / relative)
+
+
 def build_chat(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     out = build_root / "chat"
     ensure_clean_dir(out)
 
+    bundle_distribution_engine(root, out)
     assistant = out / "assistant"
     policies = assistant / "policies"
     policies.mkdir(parents=True)
@@ -934,6 +950,7 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     out = build_root / "plugin"
     ensure_clean_dir(out)
     write_plugin_manifest(out, cfg, version)
+    bundle_distribution_engine(root, out)
 
     canonical_instruction = (root / cfg["instructions"]["canonical"]).read_text(encoding="utf-8")
     built_skills: list[str] = []
