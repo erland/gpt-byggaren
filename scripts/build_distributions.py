@@ -877,6 +877,7 @@ def build_opencode_skills(root: Path, cfg: dict, out: Path) -> list[str]:
             compatibility="opencode",
             canonical_instruction=canonical_instruction,
         )
+        skill_dir.mkdir(parents=True, exist_ok=True)
         (skill_dir / "SKILL.md").write_text(body, encoding="utf-8")
         built.append(skill_id)
 
