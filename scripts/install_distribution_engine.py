@@ -91,6 +91,11 @@ def install(source: Path, project: Path) -> list[str]:
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source / relative, destination)
         copied.append(relative)
+    ignore_template = source / "templates/generated-project.gitignore"
+    ignore_target = project / ".gitignore"
+    if not ignore_target.exists() and ignore_template.is_file():
+        shutil.copy2(ignore_template, ignore_target)
+        copied.append(".gitignore")
     return copied
 
 

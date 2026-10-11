@@ -83,14 +83,24 @@ def test_installed_engine_builds_distinct_runtime_archives(tmp_path):
     result = subprocess.run(
         [sys.executable, str(project / "scripts/build_distributions.py"),
          "--project-root", str(project), "--version", "0.1.0",
-         "--targets", "chat,plugin,claude_project,claude_skills,opencode"],
+         "--targets", "project,chat,plugin,claude_project,claude_skills,opencode"],
         capture_output=True, text=True,
     )
     assert result.returncode == 0, result.stdout + "\\n" + result.stderr
     archives = list((project / "dist").glob("*.zip"))
-    assert len(archives) == 5
+    assert len(archives) == 6
+    delivery = subprocess.run(
+        [sys.executable, str(ROOT / "scripts/validate_generated_delivery.py"),
+         "--project-root", str(project),
+         "--project-zip", str(project / "dist/generated-smoke-project.zip"),
+         "--dist-dir", str(project / "dist")],
+        capture_output=True, text=True,
+    )
+    assert delivery.returncode == 0, delivery.stdout + "\\n" + delivery.stderr
     layouts = []
     for archive in archives:
+        if archive.name.endswith("-project.zip"):
+            continue
         with zipfile.ZipFile(archive) as zf:
             layouts.append(frozenset(zf.namelist()))
     assert len(set(layouts)) == 5
@@ -164,3 +174,16 @@ def test_project_specific_template_is_preserved(tmp_path):
     module.install(ROOT, project)
     assert custom.read_text(encoding="utf-8") == "Manualguidens egen introduktion\n"
     assert (project / "gpt-project.yaml").read_text(encoding="utf-8").find("manualguiden") != -1
+
+
+def test_installer_creates_gitignore_without_overwriting_existing(tmp_path):
+    project = tmp_path / "generated"
+    project.mkdir()
+    config = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
+    (project / "gpt-project.yaml").write_text(yaml.safe_dump(config), encoding="utf-8")
+    module.install(ROOT, project)
+    assert "dist/" in (project / ".gitignore").read_text(encoding="utf-8")
+    assert "build/" in (project / ".gitignore").read_text(encoding="utf-8")
+    (project / ".gitignore").write_text("custom-ignore\\n", encoding="utf-8")
+    module.install(ROOT, project)
+    assert (project / ".gitignore").read_text(encoding="utf-8") == "custom-ignore\\n"
