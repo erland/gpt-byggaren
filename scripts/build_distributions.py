@@ -191,10 +191,10 @@ def bundle_distribution_engine(root: Path, destination: Path) -> None:
     """Include the offline project generator in a runtime distribution."""
     engine = destination / "distribution-engine"
     engine.mkdir(parents=True, exist_ok=True)
-    required = ("scripts/build_distributions.py", "scripts/lib/project_model.py")
+    required = ("scripts/build_distributions.py", "scripts/lib/project_model.py", "gpt-project.yaml")
     if any(not (root / relative).is_file() for relative in required):
         raise FileNotFoundError("Canonical distribution engine is incomplete")
-    for folder in ("scripts", "templates"):
+    copy_file(root / "gpt-project.yaml", engine / "gpt-project.yaml")\n    for folder in ("scripts", "templates"):
         for source_file in sorted((root / folder).rglob("*")):
             if not source_file.is_file() or "__pycache__" in source_file.parts or source_file.suffix == ".pyc":
                 continue
