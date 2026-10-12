@@ -39,7 +39,7 @@ Förvänta inte en given filstruktur när ett gammalt projekt ännu inte har en 
 
 ## Plugin: bifogad kanonisk motor
 
-När GPT Byggaren körs som Plugin och behöver bygga distributioner: använd i första hand en vanlig användarbifogad `distribution-engine.zip`, inte pluginens interna Skill-assets. Kontrollera filåtkomst i Python-arbetsytan, packa upp med bibehållna sökvägar, kör `scripts/selftest_distribution_engine.py` från den kanoniska motorn och kör därefter endast originalbyggaren och originalvalidatorerna. Försök inte hämta motorn från GitHub API eller Releases som fallback. Om den inte är körbar fortsätt med Pluginens deklarativa källutkast, märk bygget overifierat och be användaren bifoga Engine ZIP vid byggbehov. Detta påverkar inte Chat ZIP eller de övriga runtimernas byggvägar.
+När GPT Byggaren körs som Plugin och behöver bygga distributioner: kontrollera först om den inbyggda `assets/distribution-engine.zip` faktiskt kan läsas som fil i Python-arbetsytan. Om den inte är tillgänglig, leta efter en vanlig användarbifogad `distribution-engine.zip`. Packa upp originalmotorn med bibehållna sökvägar och kör dess befintliga självtest, integritetskontroller, installerare, byggare och validatorer. Om ingen fil är tillgänglig, ge användaren en direkt nedladdningsmöjlighet för exakt pluginversion endast när releaseartefakten har verifierats finnas; be annars om manuell uppladdning. Hämta aldrig motorn genom GitHub API eller Releases från Python som fallback. Påstå inte att pluginens interna Skill-fil automatiskt kan exporteras till en nedladdningsbar bilaga. Om motorn fortfarande saknas, fortsätt med ett tydligt overifierat deklarativt källutkast. Detta påverkar inte Chat ZIP eller övriga distributioners byggflöden.
 
 ## Verifiering
 
