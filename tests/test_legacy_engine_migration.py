@@ -129,3 +129,29 @@ def test_no_automatic_plugin_repair_without_canonical_source(tmp_path):
         assert _plugin_repair_preflight(project)["status"] == "blocked"
     finally:
         sys.path.pop(0)
+
+
+def test_engine_recovery_only_from_required_declared_python_and_real_selftest(tmp_path):
+    import yaml, sys
+    project = tmp_path / "project"
+    (project / "scripts").mkdir(parents=True)
+    (project / "scripts/worker.py").write_text("print('work')\n")
+    cfg = {"project": {"id": "demo"}, "tools": {"tools": [
+        {"id": "worker", "type": "script", "requirement": "required", "script": "scripts/worker.py"}
+    ]}}
+    (project / "gpt-project.yaml").write_text(yaml.safe_dump(cfg))
+    sys.path.insert(0, str(ROOT / "scripts"))
+    try:
+        from migrate_legacy_copy import _recover_declared_engine
+        no_selftest = _recover_declared_engine(project)
+        assert no_selftest["status"] == "review_required"
+        assert "engine" not in yaml.safe_load((project / "gpt-project.yaml").read_text())
+        (project / "scripts/selftest.py").write_text("print('pass')\n")
+        result = _recover_declared_engine(project)
+        assert result["status"] == "configured_pending_execution"
+        migrated = yaml.safe_load((project / "gpt-project.yaml").read_text())
+        assert migrated["engine"]["enabled"] is True
+        assert "scripts/worker.py" in migrated["engine"]["resources"]
+        assert _recover_declared_engine(project)["status"] == "already_declared"
+    finally:
+        sys.path.pop(0)
