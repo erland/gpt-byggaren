@@ -27,7 +27,7 @@ def assess_hygiene(project: Path, *, engine_version: str | None = None) -> dict:
             versions = set(re.findall(r"(?i)(?:gpt.byggaren.{0,30}?v?)(1\.\d+\.\d+)", content))
             if versions and versions != {engine_version}:
                 stale_versions.append({"file": name, "mentioned_versions": sorted(versions)})
-        for match in re.finditer(r"\\[[^\\]]+\\]\\(([^)]+)\\)", content):
+        for match in re.finditer(r"\[[^]]+\]\(([^)]+)\)", content):
             link = match.group(1).split("#", 1)[0].strip()
             if not link or link.startswith(("http:", "https:", "mailto:", "#", "/")):
                 continue
@@ -35,7 +35,7 @@ def assess_hygiene(project: Path, *, engine_version: str | None = None) -> dict:
             if target.is_relative_to(project.resolve()) and not target.exists():
                 broken_references.append({"file": name, "target": link})
         if name == "docs/development-plan.md":
-            unchecked_migration_steps.extend(re.findall(r"(?m)^\\s*- \\[ \\]\\s+(.+)$", content))
+            unchecked_migration_steps.extend(re.findall(r"(?m)^\s*- \[ \]\s+(.+)$", content))
         if name == "STATUS.md" and re.search(r"(?i)CI\s*#\d+", content):
             stale_ci.append(name)
     for name in LEGACY_VALIDATORS:
