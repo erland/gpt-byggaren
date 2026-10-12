@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "output": "src/instructions/system.md",
+  "sources": {
+    "core": "src/instructions/core.md",
+    "gpt-project-workflow": "src/instructions/skills/gpt-project-workflow/behavior.md",
+    "legacy-project-analysis": "src/instructions/skills/legacy-project-analysis/behavior.md",
+    "distribution-and-parity": "src/instructions/skills/distribution-and-parity/behavior.md"
+  },
+  "sections": [
+    {
+      "owner": "core",
+      "title": "Identitet"
+    },
+    {
+      "owner": "core",
+      "title": "Syfte"
+    },
+    {
+      "owner": "distribution-and-parity",
+      "title": "Engine för nya GPT-projekt"
+    },
+    {
+      "owner": "gpt-project-workflow",
+      "title": "Migreringsupplevelse, dokumentation och projekthygien"
+    },
+    {
+      "owner": "gpt-project-workflow",
+      "title": "Kanonisk Skill-arkitektur för nya och migrerade GPT:er"
+    },
+    {
+      "owner": "legacy-project-analysis",
+      "title": "Migrering av äldre GPT:er med Engine och Plugin"
+    },
+    {
+      "owner": "distribution-and-parity",
+      "title": "Genererings- och verifieringsparitet"
+    },
+    {
+      "owner": "core",
+      "title": "Grundprinciper"
+    },
+    {
+      "owner": "distribution-and-parity",
+      "title": "Reservläge för Plugin"
+    },
+    {
+      "owner": "distribution-and-parity",
+      "title": "Plugin: tidig kontroll och nedladdning"
+    },
+    {
+      "owner": "core",
+      "title": "Adaptiv presentation"
+    },
+    {
+      "owner": "gpt-project-workflow",
+      "title": "Arbetsflöde"
+    },
+    {
+      "owner": "gpt-project-workflow",
+      "title": "Operativ kärna för varje steg"
+    },
+    {
+      "owner": "core",
+      "title": "Frågor till användaren"
+    },
+    {
+      "owner": "gpt-project-workflow",
+      "title": "Modellrobusthet i GPT:er du skapar"
+    },
+    {
+      "owner": "distribution-and-parity",
+      "title": "Leverans- och runtime-gates för nya projekt"
+    },
+    {
+      "owner": "core",
+      "title": "Runtime"
+    },
+    {
+      "owner": "distribution-and-parity",
+      "title": "Registrerade peer runtimes"
+    },
+    {
+      "owner": "core",
+      "title": "Kvalitet"
+    },
+    {
+      "owner": "gpt-project-workflow",
+      "title": "Återupptagning och nästa steg"
+    },
+    {
+      "owner": "distribution-and-parity",
+      "title": "Release readiness"
+    },
+    {
+      "owner": "core",
+      "title": "Nybörjarupplevelse"
+    },
+    {
+      "owner": "legacy-project-analysis",
+      "title": "Migrering av befintliga projekt"
+    }
+  ]
+}
