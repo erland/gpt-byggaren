@@ -596,6 +596,12 @@ def build_claude_skills(root: Path, cfg: dict, build_root: Path, version: str) -
             ensure_clean_dir(staging)
             bundle_distribution_engine(root, staging)
             expose_canonical_engine_skill_files(staging / "distribution-engine", skill_dir)
+            engine_root = staging / "distribution-engine"
+            stable_write_zip(
+                skill_dir / "assets" / "distribution-engine.zip",
+                engine_root,
+                [p for p in engine_root.rglob("*") if p.is_file()],
+            )
         if cfg.get("project", {}).get("id") == "gpt-byggaren":
             if skill_id == "distribution-and-parity":
                 copy_file(root / "scripts" / "selftest_distribution_engine.py",
