@@ -63,3 +63,45 @@ def test_non_identical_assembly_rejected(tmp_path):
     root = _project(tmp_path)
     (root / "canonical/instructions.md").write_text("Different")
     assert mod.activate(root)["status"] == "review_required"
+
+
+def test_grouped_section_assembly_activates_v1616_pattern(tmp_path):
+    root = tmp_path
+    (root / "canonical").mkdir()
+    (root / "skills/write/source").mkdir(parents=True)
+    (root / "skills/revise/source").mkdir(parents=True)
+    core = "# Intro\n\n## Identity\n\nShared requirements.\n\n## Language\n\nUse Swedish.\n\n"
+    write = "## New story\n\nWrite something original.\n\n"
+    revise = "## Revision\n\nPreserve continuity.\n\n"
+    (root / "canonical/core.md").write_text(core)
+    (root / "skills/write/source/instructions.md").write_text(write)
+    (root / "skills/revise/source/instructions.md").write_text(revise)
+    (root / "canonical/instructions.md").write_text(
+        "# Intro\n\n## Identity\n\nShared requirements.\n\n" + write + "## Language\n\nUse Swedish.\n\n" + revise
+    )
+    assembly = {
+        "sources": {
+            "core": "canonical/core.md",
+            "write": "skills/write/source/instructions.md",
+            "revise": "skills/revise/source/instructions.md",
+        },
+        "sections": [
+            {"owner": "core", "title": "Identity"},
+            {"owner": "write", "title": "New story"},
+            {"owner": "core", "title": "Language"},
+            {"owner": "revise", "title": "Revision"},
+        ],
+    }
+    (root / "canonical/assembly.json").write_text(json.dumps(assembly))
+    cfg = {"instructions": {"canonical": "canonical/instructions.md"},
+           "skills": {"definitions": [
+               {"id": "write", "source": "skills/write/SKILL.md"},
+               {"id": "revise", "source": "skills/revise/SKILL.md"}]}}
+    (root / "gpt-project.yaml").write_text(yaml.safe_dump(cfg))
+    outcome = mod.activate(root)
+    assert outcome["status"] == "activated_pending_behavior_review", outcome
+    updated = yaml.safe_load((root / "gpt-project.yaml").read_text())
+    assert updated["instructions"]["mode"] == "modular_skills"
+    assert updated["instructions"]["core"] == "canonical/core.md"
+    assert updated["skills"]["definitions"][0]["source"] == "skills/write/source/instructions.md"
+    assert (root / "canonical/instructions.md").read_text().endswith(revise)
