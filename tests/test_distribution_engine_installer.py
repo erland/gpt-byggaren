@@ -126,7 +126,7 @@ def test_installed_engine_builds_distinct_runtime_archives(tmp_path):
     assert delivery.returncode == 0, delivery.stdout + "\\n" + delivery.stderr
     layouts = []
     for archive in archives:
-        if archive.name.endswith("-project-0.1.0.zip"):
+        if archive == project_archive:
             continue
         with zipfile.ZipFile(archive) as zf:
             layouts.append(frozenset(zf.namelist()))
