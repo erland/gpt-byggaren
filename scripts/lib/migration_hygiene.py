@@ -16,6 +16,8 @@ def assess_hygiene(project: Path, *, engine_version: str | None = None) -> dict:
     stale_versions = []
     stale_ci = []
     legacy_scripts = []
+    broken_references = []
+    unchecked_migration_steps = []
     for name in DOCS:
         path = project / name
         if not path.is_file():
@@ -31,11 +33,13 @@ def assess_hygiene(project: Path, *, engine_version: str | None = None) -> dict:
         if (project / name).is_file():
             legacy_scripts.append(name)
     return {
-        "status": "review_required" if missing_docs or stale_versions or legacy_scripts or stale_ci else "checked_no_known_findings",
+        "status": "review_required" if missing_docs or stale_versions or legacy_scripts or stale_ci or broken_references or unchecked_migration_steps else "checked_no_known_findings",
         "missing_documents": missing_docs,
         "possible_stale_versions": stale_versions,
         "ci_references_to_reconcile": stale_ci,
         "legacy_validator_candidates": legacy_scripts,
+        "broken_document_links": broken_references,
+        "open_development_checklist_items": unchecked_migration_steps,
         "files_deleted": [],
         "documentation_modified": False,
         "required_actions": [
