@@ -73,8 +73,8 @@ def test_embedded_engine_archive_matches_canonical_source(tmp_path):
         ):
             assert z.read(relative) == (ROOT / relative).read_bytes()
     instructions = (plugin / "skills/distribution-and-parity/SKILL.md").read_text(encoding="utf-8")
-    assert "check embedded archive first" in instructions
-    assert "releases/download/v0.0.0-test/distribution-engine.zip" in instructions
+    assert "Plugin engine preflight and user handoff" in instructions
+    assert "ci-distributions" in instructions
     assert "do not pretend to provide it as a download" in instructions
 
 
