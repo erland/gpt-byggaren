@@ -23,6 +23,8 @@ def propose(instruction: str, project_id: str) -> dict:
              "reason": "Candidate responsibility; verify independent workflow and low coupling"}
             for part in topical
         ],
+        "decision_criteria": ["distinct_activation", "cohesive_responsibility", "independent_workflow", "low_coupling"],
+        "duplication_policy": {"canonical_sources": "avoid_repeated_behavior", "generated_distributions": "allow_shared_core_for_standalone_skills", "similarity_threshold": None},
         "approval_required_for_split": True,
         "source_text_preserved": True,
         "source_sections": sections,
