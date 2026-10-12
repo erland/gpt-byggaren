@@ -10,6 +10,7 @@ import shutil
 import sys
 import zipfile
 from pathlib import Path
+from lib.canonical_skill_sources import projected_instruction, skill_instruction, is_modular
 
 SCRIPTS_DIR = Path(__file__).resolve().parent
 if str(SCRIPTS_DIR) not in sys.path:
@@ -213,7 +214,7 @@ def build_chat(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     policies.mkdir(parents=True)
 
     instr_src = root / cfg["instructions"]["canonical"]
-    copy_file(instr_src, assistant / "instructions.md")
+    (assistant / "instructions.md").write_text(projected_instruction(root, cfg, canonical_skill_definitions(cfg)), encoding="utf-8")
     copy_portable_skill_modules(root, cfg, assistant / "skills")
 
     starters_root = root / cfg["structure"]["conversation_starters"]["path"]
@@ -528,7 +529,8 @@ def build_claude(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     instr_src = root / cfg["instructions"]["canonical"]
     instructions_ref = runtime_cfg["project"]["instructions"]
     instructions_path = out / instructions_ref
-    copy_file(instr_src, instructions_path)
+    instructions_path.parent.mkdir(parents=True, exist_ok=True)
+    instructions_path.write_text(projected_instruction(root, cfg, canonical_skill_definitions(cfg)), encoding="utf-8")
     knowledge_root = root / cfg["knowledge_architecture"]["canonical_root"]
     knowledge_ref = runtime_cfg["project"]["knowledge"]
     knowledge_target = out / knowledge_ref
@@ -584,7 +586,7 @@ def build_claude_skills(root: Path, cfg: dict, build_root: Path, version: str) -
     """Build a Claude Skills distribution with the canonical portable resources."""
     out = build_root / "claude-skills"
     ensure_clean_dir(out)
-    canonical_instruction = (root / cfg["instructions"]["canonical"]).read_text(encoding="utf-8")
+    canonical_instruction = projected_instruction(root, cfg, canonical_skill_definitions(cfg))
     built_skills = []
     for skill in canonical_skill_definitions(cfg):
         skill_id = skill["id"]
@@ -613,7 +615,7 @@ def build_claude_skills(root: Path, cfg: dict, build_root: Path, version: str) -
         (skill_dir / "SKILL.md").write_text(
             compile_skill_markdown(
                 compiled,
-                canonical_instruction=canonical_instruction,
+                canonical_instruction=skill_instruction(root, cfg, canonical_skill_definitions(cfg), skill),
                 include_canonical_behavior=True,
                 runtime_requirements=plugin_script_runtime_requirements(cfg),
             ),
@@ -900,7 +902,8 @@ def build_opencode_skills(root: Path, cfg: dict, out: Path) -> list[str]:
         body = compile_skill_markdown(
             skill,
             compatibility="opencode",
-            canonical_instruction=canonical_instruction,
+            canonical_instruction=skill_instruction(root, cfg, canonical_skill_definitions(cfg), skill),
+            include_canonical_behavior=is_modular(cfg),
         )
         skill_dir.mkdir(parents=True, exist_ok=True)
         (skill_dir / "SKILL.md").write_text(body, encoding="utf-8")
@@ -991,7 +994,7 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
         skill_dir.mkdir(parents=True, exist_ok=True)
         skill_markdown = compile_skill_markdown(
             compiled_skill,
-            canonical_instruction=canonical_instruction,
+            canonical_instruction=skill_instruction(root, cfg, canonical_skill_definitions(cfg), skill),
             include_canonical_behavior=True,
             runtime_requirements=plugin_script_runtime_requirements(cfg),
         )
