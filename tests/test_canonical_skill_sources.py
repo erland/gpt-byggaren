@@ -62,3 +62,33 @@ def test_skill_architecture_defaults_to_one_reviewed_skill():
     assert len(proposal["candidate_boundaries"]) == 2
     assert proposal["approval_required_for_split"] is True
     assert proposal["source_text_preserved"] is True
+
+
+def test_real_plugin_and_claude_skill_builds_keep_specialized_sources_separate(tmp_path):
+    import copy
+    import yaml
+    spec = importlib.util.spec_from_file_location("modular_builder_test", ROOT / "scripts/build_distributions.py")
+    builder = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(builder)
+    cfg = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
+    paths = ["docs/canonical-skills-architecture.md", "docs/safe-legacy-migration.md"]
+    skills = [
+        {"id": "architecture", "name": "architecture", "description": "Design canonical Skills",
+         "source": paths[0], "references": [], "assets": [], "scripts": []},
+        {"id": "migration", "name": "migration", "description": "Migrate safely",
+         "source": paths[1], "references": [], "assets": [], "scripts": []},
+    ]
+    cfg["instructions"]["mode"] = "modular_skills"
+    cfg["instructions"]["core"] = cfg["instructions"]["canonical"]
+    cfg["skills"]["definitions"] = skills
+    for build_name, build_fn in (("plugin", builder.build_plugin), ("claude", builder.build_claude_skills)):
+        out = build_fn(ROOT, cfg, tmp_path / build_name, "0.0.0-ci")
+        first = (out / "skills/architecture/SKILL.md").read_text(encoding="utf-8")
+        second = (out / "skills/migration/SKILL.md").read_text(encoding="utf-8")
+        source_a = (ROOT / paths[0]).read_text(encoding="utf-8").strip()
+        source_b = (ROOT / paths[1]).read_text(encoding="utf-8").strip()
+        assert source_a in first
+        assert source_b in second
+        assert source_b not in first
+        assert source_a not in second
+        assert "GPT Byggaren" in first and "GPT Byggaren" in second
