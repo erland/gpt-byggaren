@@ -28,7 +28,9 @@ kan byggaren rekonstruera `src/instructions/system.md` exakt för Chat,
 Claude Projects och OpenCode. Den sammanhängande `system.md` är en
 bakåtkompatibel projektion och regressionsreferens, inte platsen för nya
 beteendeändringar. Vid beteendeändring ska de kanoniska modulerna ändras
-och den sammanhängande instruktionen regenereras samtidigt.
+och den sammanhängande instruktionen regenereras med
+`python scripts/compile_self_canonical_skills.py --write`. Kontrollera med
+`python scripts/compile_self_canonical_skills.py --check` före byggning.
 
 Plugin och Claude Skills får den gemensamma kärnan samt en enda Skills
 specialiserade beteende. Att gemensamma regler kopieras till flera
