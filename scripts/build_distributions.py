@@ -1029,7 +1029,7 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
                 "At the first actual GPT project creation or resumption, run a "
                 "one-time, non-blocking engine access preflight. Do not check on "
                 "unrelated questions or repeatedly on every turn. Test whether "
-                "a user-attached `gpt-byggaren-engine.zip` is a real readable "
+                f"a user-attached `gpt-byggaren-engine-{version}.zip` is a real readable "
                 "file in the Python workspace. "
                 "If accessible, run the unchanged canonical integrity checks and "
                 "self-test and reuse the engine in the current workspace. "
