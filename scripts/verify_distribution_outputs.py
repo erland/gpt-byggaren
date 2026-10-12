@@ -29,6 +29,8 @@ def expected_files(cfg: dict, version: str) -> list[str]:
             .replace("<project-id>", project_id)
             .replace("<version>", version)
         )
+    if cfg.get("engine", {}).get("enabled") and "plugin" in cfg.get("build_system", {}).get("targets", []) and cfg.get("runtime", {}).get("plugin", {}).get("enabled"):
+        files.append(f"{project_id}-engine.zip")
     files.extend(["SHA256SUMS.txt", "DELIVERY-MANIFEST.json"])
     return files
 
