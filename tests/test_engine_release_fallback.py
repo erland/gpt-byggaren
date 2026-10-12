@@ -17,7 +17,7 @@ def test_plugin_prefers_attached_engine_and_never_github_fallback(tmp_path):
     plugin = builder.build_plugin(ROOT, cfg, tmp_path, "0.0.0-test")
     skill = plugin / "skills/distribution-and-parity"
     instructions = (skill / "SKILL.md").read_text(encoding="utf-8")
-    assert "gpt-byggaren-engine.zip" in instructions
+    assert "gpt-byggaren-engine-0.0.0-test.zip" in instructions
     assert "attach" in instructions
     assert "Never use a " in instructions
     assert (skill / "scripts/selftest_distribution_engine.py").is_file()
@@ -30,7 +30,7 @@ def test_plugin_is_thin_and_claude_skills_resources_remain(tmp_path):
     claude = builder.build_claude_skills(ROOT, cfg, tmp_path, "0.0.0-test")
     assert not (plugin / "distribution-engine").exists()
     plugin_skill = plugin / "skills/distribution-and-parity"
-    assert not (plugin_skill / "assets/gpt-byggaren-engine.zip").exists()
+    assert not (plugin_skill / "assets/gpt-byggaren-engine-0.0.0-test.zip").exists()
     assert not (plugin_skill / "scripts/canonical-engine").exists()
     assert not (plugin_skill / "assets/canonical-engine").exists()
     assert (claude / "skills/distribution-and-parity/assets/gpt-byggaren-engine.zip").is_file()
@@ -65,6 +65,6 @@ def test_released_plugin_direct_link_uses_exact_version(tmp_path):
     cfg = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
     plugin = builder.build_plugin(ROOT, cfg, tmp_path, "2.9.7")
     skill = (plugin / "skills/distribution-and-parity/SKILL.md").read_text(encoding="utf-8")
-    assert "https://github.com/erland/gpt-byggaren/releases/download/v2.9.7/gpt-byggaren-engine.zip" in skill
+    assert "https://github.com/erland/gpt-byggaren/releases/download/v2.9.7/gpt-byggaren-engine-2.9.7.zip" in skill
     assert "Do not use latest or a different release version" in skill
     assert "ci-distributions" not in skill

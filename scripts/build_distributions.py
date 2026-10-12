@@ -1011,13 +1011,13 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
             is_ci_version = version == "0.0.0-ci" or version.endswith("-ci")
             release_link = (
                 "https://github.com/erland/gpt-byggaren/releases/download/"
-                f"v{version}/gpt-byggaren-engine.zip"
+                f"v{version}/gpt-byggaren-engine-{version}.zip"
             )
             delivery_instruction = (
                 "This is a CI/test Plugin version. Do not reference GitHub Actions, "
                 "CI artifacts or pretend a Release asset exists. If an actual downloadable "
                 "file cannot be exported, simply ask the user to attach "
-                "`gpt-byggaren-engine.zip` and continue in source-only fallback."
+                f"`gpt-byggaren-engine-{version}.zip` and continue in source-only fallback."
                 if is_ci_version else
                 "For a released Plugin, present this exact-version direct download "
                 "link to the Engine ZIP in the corresponding GitHub Release: "
@@ -1029,7 +1029,7 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
                 "At the first actual GPT project creation or resumption, run a "
                 "one-time, non-blocking engine access preflight. Do not check on "
                 "unrelated questions or repeatedly on every turn. Test whether "
-                "a user-attached `gpt-byggaren-engine.zip` is a real readable "
+                f"a user-attached `gpt-byggaren-engine-{version}.zip` is a real readable "
                 "file in the Python workspace. "
                 "If accessible, run the unchanged canonical integrity checks and "
                 "self-test and reuse the engine in the current workspace. "
@@ -1048,7 +1048,7 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
         if cfg.get("project", {}).get("id") != "gpt-byggaren":
             from lib.engine_package import engine_config, engine_filename
             if engine_config(cfg):
-                engine_name = engine_filename(cfg)
+                engine_name = engine_filename(cfg, version)
                 is_test = version.endswith("-ci") or version.startswith("0.0.0-")
                 engine_cfg = cfg["engine"]
                 release_repo = engine_cfg.get("release_repository")
@@ -1359,7 +1359,7 @@ def write_checksums(dist: Path) -> None:
 
 def artifact_type_for_distribution(cfg: dict, filename: str, version: str) -> str:
     project_id = cfg["project"]["id"]
-    if filename == f"{project_id}-project.zip":
+    if filename == f"{project_id}-project-{version}.zip":
         return "project_zip"
 
     for target_cfg in (cfg.get("build_system", {}).get("runtime_targets") or {}).values():
@@ -1493,7 +1493,7 @@ def main() -> int:
             )
 
     if "project" in targets:
-        project_zip = dist / f"{project_id}-project.zip"
+        project_zip = dist / f"{project_id}-project-{version}.zip"
         stable_write_zip(project_zip, root, project_files(root))
 
     from lib.engine_package import package_engine

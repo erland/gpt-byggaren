@@ -16,8 +16,8 @@ def engine_config(cfg: dict) -> dict | None:
     return value
 
 
-def engine_filename(cfg: dict) -> str:
-    return f"{cfg['project']['id']}-engine.zip"
+def engine_filename(cfg: dict, version: str) -> str:
+    return f"{cfg['project']['id']}-engine-{version}.zip"
 
 
 def engine_paths(root: Path, cfg: dict) -> list[Path]:
@@ -54,7 +54,7 @@ def package_engine(root: Path, cfg: dict, version: str, dist: Path) -> Path | No
     if engine is None:
         return None
     files = engine_paths(root, cfg)
-    output = dist / engine_filename(cfg)
+    output = dist / engine_filename(cfg, version)
     manifest = {
         "schema_version": 1,
         "engine_id": cfg["project"]["id"],

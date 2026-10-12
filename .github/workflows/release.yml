@@ -64,4 +64,4 @@ jobs:
             --project-root . \
             --version "${{ steps.version.outputs.version }}" \
             --print-files)
-          gh release upload "${{ github.event.release.tag_name }}" "${FILES[@]}" dist/gpt-byggaren-engine.zip --clobber
+          gh release upload "${{ github.event.release.tag_name }}" "${FILES[@]}" dist/gpt-byggaren-engine-"${{ steps.version.outputs.version }}".zip --clobber

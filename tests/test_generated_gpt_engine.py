@@ -34,7 +34,7 @@ def test_opted_in_engine_manifest_and_plugin_handoff(tmp_path):
     }
     from lib.engine_package import package_engine
     archive = package_engine(root, cfg, "1.2.3", root / "dist")
-    assert archive.name == "sample-script-gpt-engine.zip"
+    assert archive.name == "sample-script-gpt-engine-1.2.3.zip"
     with zipfile.ZipFile(archive) as z:
         manifest = json.loads(z.read("engine-package.json"))
         assert manifest["engine_id"] == "sample-script-gpt"
@@ -46,8 +46,8 @@ def test_opted_in_engine_manifest_and_plugin_handoff(tmp_path):
     plugin = builder.build_plugin(ROOT, cfg, tmp_path / "build", "1.2.3")
     skill_files = list(plugin.glob("skills/*/SKILL.md"))
     assert skill_files
-    assert all("sample-script-gpt-engine.zip" in p.read_text() for p in skill_files)
-    assert all(not (p.parent / "assets/sample-script-gpt-engine.zip").exists() for p in skill_files)
+    assert all("sample-script-gpt-engine-1.2.3.zip" in p.read_text() for p in skill_files)
+    assert all(not (p.parent / "assets/sample-script-gpt-engine-1.2.3.zip").exists() for p in skill_files)
 
 
 def test_text_only_gpt_has_no_engine_archive(tmp_path):

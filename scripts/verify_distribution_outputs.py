@@ -14,7 +14,7 @@ def load_config(root: Path) -> dict:
 
 def expected_files(cfg: dict, version: str) -> list[str]:
     project_id = cfg["project"]["id"]
-    files = [f"{project_id}-project.zip"]
+    files = [f"{project_id}-project-{version}.zip"]
     for target in cfg.get("build_system", {}).get("targets", []):
         if target == "project":
             continue
@@ -30,7 +30,7 @@ def expected_files(cfg: dict, version: str) -> list[str]:
             .replace("<version>", version)
         )
     if cfg.get("engine", {}).get("enabled") and "plugin" in cfg.get("build_system", {}).get("targets", []) and cfg.get("runtime", {}).get("plugin", {}).get("enabled"):
-        files.append(f"{project_id}-engine.zip")
+        files.append(f"{project_id}-engine-{version}.zip")
     files.extend(["SHA256SUMS.txt", "DELIVERY-MANIFEST.json"])
     return files
 
