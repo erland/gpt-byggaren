@@ -18,8 +18,8 @@ def test_plugin_prefers_attached_engine_and_never_github_fallback(tmp_path):
     skill = plugin / "skills/distribution-and-parity"
     instructions = (skill / "SKILL.md").read_text(encoding="utf-8")
     assert "distribution-engine.zip" in instructions
-    assert "user-attached" in instructions
-    assert "Do not use GitHub API or GitHub Releases" in instructions
+    assert "normal chat upload" in instructions
+    assert "Do not fetch GitHub Releases" in instructions
     assert (skill / "scripts/selftest_distribution_engine.py").is_file()
     assert not (skill / "scripts/fetch_distribution_engine.py").exists()
 
