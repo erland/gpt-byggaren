@@ -14,7 +14,7 @@ spec.loader.exec_module(module)
 
 def test_manifest_and_archive_integrity(tmp_path):
     output = module.package(root=ROOT, version="2.4.6", output=tmp_path / module.ARCHIVE_NAME)
-    assert output.name == "gpt-byggaren-engine.zip"
+    assert output.name == "gpt-byggaren-engine-2.4.6.zip"
     with zipfile.ZipFile(output) as z:
         assert z.testzip() is None
         manifest = json.loads(z.read("engine-package.json"))
@@ -38,6 +38,6 @@ def test_archive_build_is_reproducible(tmp_path):
 def test_workflows_publish_matching_engine_filename():
     for name in ("ci.yml", "release.yml"):
         text = (ROOT / ".github/workflows" / name).read_text()
-        assert "gpt-byggaren-engine.zip" in text
+        assert "gpt-byggaren-engine-" in text
         assert "dist/distribution-engine.zip" not in text
         assert "scripts/package_distribution_engine.py --version" in text
