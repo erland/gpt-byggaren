@@ -63,3 +63,13 @@ men gör inte automatiskt en semantisk uppdelning eller godkänner funktionell p
 Verifiera att varje avsnitt i legacy-källan återfinns i core eller rätt Skill,
 att olika Skills inte får varandras specialbeteende och att samtliga fem
 distributioner fortfarande byggs och kan användas enligt sina kontrakt.
+
+## Beslutsregel: separation och duplicering
+
+Välj det minsta antal Skills som ger tydliga självständiga ansvarsområden, aktiveringsvillkor och arbetsflöden. Rubriker och arbetslägen är kandidater, inte automatiskt egna Skills. Motivera varje föreslagen Skill utifrån sammanhållning och låg koppling.
+
+**Kanonisk källduplicering** är upprepade beteenderegler i core och i flera specialiserade källor, eller i två specialiserade källor. Den ska i regel elimineras genom att gemensamma regler ligger i `core.md`.
+
+**Genererad distributionsduplicering** är när byggmotorn kopierar samma gemensamma kärna till flera självständiga distribuerade Skills. Det är tillåtet och ofta önskvärt för portabilitet. En hög textlikhet mellan färdiga `SKILL.md` är inte i sig ett fel och ska inte användas som gränsvärde för att slå ihop Skills.
+
+Exempel: en skrivassistent kan motivera separata Skills för ny text, fortsättning och revision även om gemensamma språk-, kvalitets- och målgruppsregler utgör merparten av varje genererat paket. Bedöm skillnader i arbetsflöde och aktivering, inte procenten gemensam text efter release.

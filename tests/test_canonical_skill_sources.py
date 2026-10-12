@@ -103,3 +103,17 @@ def test_duplicate_canonical_sources_are_rejected(tmp_path):
     skills[1]["source"] = cfg["instructions"]["core"]
     with pytest.raises(ValueError, match="duplicates"):
         module.projected_instruction(tmp_path, cfg, skills)
+
+
+def test_skill_proposal_separates_source_and_distribution_duplication():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("skill_architecture_analysis", ROOT / "scripts/lib/skill_architecture_analysis.py")
+    analyzer = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(analyzer)
+    proposal = analyzer.propose("## Skrivande\\nSkriv ny text\\n## Revision\\nRedigera text", "novellskaparen")
+    policy = proposal["duplication_policy"]
+    assert policy["canonical_sources"] == "avoid_repeated_behavior"
+    assert policy["generated_distributions"] == "allow_shared_core_for_standalone_skills"
+    assert policy["similarity_threshold"] is None
+    assert "distinct_activation" in proposal["decision_criteria"]
+    assert "low_coupling" in proposal["decision_criteria"]
