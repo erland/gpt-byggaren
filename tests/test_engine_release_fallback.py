@@ -33,7 +33,7 @@ def test_plugin_is_thin_and_claude_skills_resources_remain(tmp_path):
     assert not (plugin_skill / "assets/gpt-byggaren-engine-0.0.0-test.zip").exists()
     assert not (plugin_skill / "scripts/canonical-engine").exists()
     assert not (plugin_skill / "assets/canonical-engine").exists()
-    assert (claude / "skills/distribution-and-parity/assets/gpt-byggaren-engine-0.0.0-test.zip").is_file()
+    assert (claude / "skills/distribution-and-parity/assets/gpt-byggaren-engine.zip").is_file()
 
 def test_chat_zip_still_bundles_original_engine(tmp_path):
     cfg = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
