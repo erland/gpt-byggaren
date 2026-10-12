@@ -1016,27 +1016,39 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
                 "never claim self-test success or invent an alternative packager.\\n"
             )
         if cfg.get("project", {}).get("id") == "gpt-byggaren":
-            engine_url = (
+            is_ci_version = version == "0.0.0-ci" or version.endswith("-ci")
+            release_link = (
                 "https://github.com/erland/gpt-byggaren/releases/download/"
                 f"v{version}/distribution-engine.zip"
             )
+            delivery_instruction = (
+                "This is a CI/test Plugin version. Do not reference GitHub Actions, "
+                "CI artifacts or pretend a Release asset exists. If an actual downloadable "
+                "file cannot be exported, simply ask the user to attach "
+                "`distribution-engine.zip` and continue in source-only fallback."
+                if is_ci_version else
+                "For a released Plugin, present this exact-version direct download "
+                "link to the Engine ZIP in the corresponding GitHub Release: "
+                + release_link
+                + " . Do not use latest or a different release version."
+            )
             skill_markdown += (
-                "\n## Canonical engine: check embedded archive first\n\n"
-                "At the first build requirement, test whether "
-                "`assets/distribution-engine.zip` is a real Python-readable file. "
-                "If readable, unpack it preserving paths, validate required scripts "
-                "and run the canonical self-test. If the host cannot read or export "
-                "its bytes, do not pretend to provide it as a download. Ask the user "
-                "to attach `distribution-engine.zip` as a normal chat upload. "
-                "For convenience, offer this exact-version browser download candidate: "
-                + engine_url
-                + " . Verify that the asset actually exists before calling the link "
-                  "available; do not silently select latest. The browser download "
-                  "does not require Python network access. Do not fetch GitHub Releases "
-                  "from the Python workspace. Run the canonical installer, builder "
-                  "and validation only after successful materialization and SHA-256 "
-                  "verification. If no file is available, continue only in the "
-                  "Plugin declarative source-draft fallback, not a substitute builder.\n"
+                "\n## Plugin engine preflight and handoff\n\n"
+                "At the first actual GPT project creation or resumption, run a "
+                "one-time, non-blocking engine access preflight. Do not check on "
+                "unrelated questions or repeatedly on every turn. Test whether "
+                "the embedded `assets/distribution-engine.zip` is a real readable "
+                "file in the Python workspace, then check user-attached files. "
+                "If accessible, run the unchanged canonical integrity checks and "
+                "self-test and reuse the engine in the current workspace. "
+                "If internal archive bytes are readable but the engine cannot be "
+                "used directly, copy the exact bytes to a downloadable file and "
+                "offer the real attachment. Never invent a sandbox path or claim "
+                "an inaccessible Skill asset was exported. "
+                + delivery_instruction
+                + " If the user does not attach the file, continue with explicitly "
+                  "unverified declarative source-only fallback. Never use a "
+                  "GitHub Python downloader, alternative packager or MCP.\n"
             )
             if skill_id == "distribution-and-parity":
                 copy_file(root / "scripts" / "selftest_distribution_engine.py",

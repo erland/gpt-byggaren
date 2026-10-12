@@ -18,8 +18,8 @@ def test_plugin_prefers_attached_engine_and_never_github_fallback(tmp_path):
     skill = plugin / "skills/distribution-and-parity"
     instructions = (skill / "SKILL.md").read_text(encoding="utf-8")
     assert "distribution-engine.zip" in instructions
-    assert "normal chat upload" in instructions
-    assert "Do not fetch GitHub Releases" in instructions
+    assert "attach" in instructions
+    assert "Never use a " in instructions
     assert (skill / "scripts/selftest_distribution_engine.py").is_file()
     assert not (skill / "scripts/fetch_distribution_engine.py").exists()
 
@@ -73,6 +73,25 @@ def test_embedded_engine_archive_matches_canonical_source(tmp_path):
         ):
             assert z.read(relative) == (ROOT / relative).read_bytes()
     instructions = (plugin / "skills/distribution-and-parity/SKILL.md").read_text(encoding="utf-8")
-    assert "check embedded archive first" in instructions
-    assert "releases/download/v0.0.0-test/distribution-engine.zip" in instructions
-    assert "do not pretend to provide it as a download" in instructions
+    assert "Plugin engine preflight and handoff" in instructions
+    assert "Never invent a sandbox path" in instructions
+
+
+def test_ci_plugin_does_not_reference_actions_artifacts_or_release_url(tmp_path):
+    cfg = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
+    plugin = builder.build_plugin(ROOT, cfg, tmp_path, "0.0.0-ci")
+    skill = (plugin / "skills/distribution-and-parity/SKILL.md").read_text(encoding="utf-8")
+    assert "one-time, non-blocking engine access preflight" in skill
+    assert "Do not reference GitHub Actions" in skill
+    assert "CI artifacts" in skill
+    assert "releases/download/v0.0.0-ci/" not in skill
+    assert "simply ask the user to attach" in skill
+
+
+def test_released_plugin_direct_link_uses_exact_version(tmp_path):
+    cfg = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
+    plugin = builder.build_plugin(ROOT, cfg, tmp_path, "2.9.7")
+    skill = (plugin / "skills/distribution-and-parity/SKILL.md").read_text(encoding="utf-8")
+    assert "https://github.com/erland/gpt-byggaren/releases/download/v2.9.7/distribution-engine.zip" in skill
+    assert "Do not use latest or a different release version" in skill
+    assert "ci-distributions" not in skill
