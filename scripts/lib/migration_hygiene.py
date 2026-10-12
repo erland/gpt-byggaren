@@ -42,11 +42,11 @@ def assess_hygiene(project: Path, *, engine_version: str | None = None) -> dict:
     migration_checklists = []
     status_text = (project / "STATUS.md").read_text(encoding="utf-8") if (project / "STATUS.md").is_file() else ""
     unresolved_status_claims = []
-    if re.search(r"(?i)migrationen (?:genomförs|pågår) i PR\\s*#\\d+", status_text):
+    if re.search(r"(?i)migrationen (?:genomförs|pågår) i PR\s*#\d+", status_text):
         unresolved_status_claims.append("STATUS.md still describes migration as ongoing in a PR")
     for path in migration_docs:
         content = path.read_text(encoding="utf-8")
-        open_items = re.findall(r"(?m)^\\s*- \\[ \\]\\s+(.+)$", content)
+        open_items = re.findall(r"(?m)^\s*- \[ \]\s+(.+)$", content)
         if open_items:
             migration_checklists.append({"file": path.relative_to(project).as_posix(), "open_items": open_items})
     for name in LEGACY_VALIDATORS:
