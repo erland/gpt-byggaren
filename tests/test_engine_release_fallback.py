@@ -73,21 +73,25 @@ def test_embedded_engine_archive_matches_canonical_source(tmp_path):
         ):
             assert z.read(relative) == (ROOT / relative).read_bytes()
     instructions = (plugin / "skills/distribution-and-parity/SKILL.md").read_text(encoding="utf-8")
-    assert "Plugin engine preflight and user handoff" in instructions
-    assert "ci-distributions" in instructions
-    assert "do not pretend to provide it as a download" in instructions
+    assert "Plugin engine preflight and handoff" in instructions
+    assert "Never invent a sandbox path" in instructions
 
 
-def test_early_engine_preflight_and_ci_handoff(tmp_path):
+def test_ci_plugin_does_not_reference_actions_artifacts_or_release_url(tmp_path):
     cfg = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
     plugin = builder.build_plugin(ROOT, cfg, tmp_path, "0.0.0-ci")
     skill = (plugin / "skills/distribution-and-parity/SKILL.md").read_text(encoding="utf-8")
-    assert "At the beginning of the first GPT project creation or resumption" in skill
-    assert "one-time, non-blocking access preflight" in skill
-    assert "copy those bytes unchanged" in skill
-    assert "ci-distributions" in skill
-    assert "GitHub Actions" in skill
-    assert "do not invent one" in skill
-    assert "never guess a release for" in skill
-    assert "0.0.0-ci" in skill
-    assert "unverified declarative source draft" in skill
+    assert "one-time, non-blocking engine access preflight" in skill
+    assert "Do not reference GitHub Actions" in skill
+    assert "CI artifacts" in skill
+    assert "releases/download/v0.0.0-ci/" not in skill
+    assert "simply ask the user to attach" in skill
+
+
+def test_released_plugin_direct_link_uses_exact_version(tmp_path):
+    cfg = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
+    plugin = builder.build_plugin(ROOT, cfg, tmp_path, "2.9.7")
+    skill = (plugin / "skills/distribution-and-parity/SKILL.md").read_text(encoding="utf-8")
+    assert "https://github.com/erland/gpt-byggaren/releases/download/v2.9.7/distribution-engine.zip" in skill
+    assert "Do not use latest or a different release version" in skill
+    assert "ci-distributions" not in skill
