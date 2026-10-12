@@ -62,3 +62,24 @@ def test_copy_migration_reports_engine_without_modifying_source(tmp_path):
     assert report["engine_migration"]["engine_required"] == "needs_review"
     assert report["engine_migration"]["plugin_repair_status"] == "legacy_plugin_requires_mapping"
     assert (source / "gpt-project.yaml").read_bytes() == before
+
+
+def test_opt_in_upgrade_blocks_incomplete_project_without_touching_source(tmp_path):
+    import sys, subprocess, yaml
+    source = tmp_path / "legacy"
+    source.mkdir()
+    (source / "gpt-project.yaml").write_text(
+        yaml.safe_dump({"project": {"id": "legacy"}, "runtime": {"plugin": {"enabled": True}}}),
+        encoding="utf-8")
+    original = (source / "gpt-project.yaml").read_bytes()
+    out = tmp_path / "upgraded"
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts/migrate_legacy_copy.py"), "--source",
+         str(source), "--destination", str(out), "--upgrade-build", "--version", "0.1.0"],
+        text=True, capture_output=True)
+    assert result.returncode == 0, result.stderr
+    report = json.loads((out / "MIGRATION-REPORT.json").read_text())
+    assert report["canonical_build_upgrade"]["status"] == "blocked"
+    assert report["canonical_build_upgrade"]["stage"] == "canonical_engine_install"
+    assert report["canonical_build_upgrade"]["release_ready"] is False
+    assert (source / "gpt-project.yaml").read_bytes() == original
