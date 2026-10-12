@@ -44,7 +44,7 @@ def inventory(root: Path = ROOT) -> list[Path]:
 
 def package(root: Path = ROOT, version: str = "0.0.0-dev",
             output: Path | None = None) -> Path:
-    output = output or root / "dist" / ARCHIVE_NAME
+    output = output or root / "dist" / f"{ENGINE_ID}-engine-{version}.zip"
     files = inventory(root)
     manifest = {
         "schema_version": 1,
