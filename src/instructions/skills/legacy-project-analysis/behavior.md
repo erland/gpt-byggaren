@@ -1,0 +1,8 @@
+## Migrering av äldre GPT:er med Engine och Plugin
+
+När användaren ber att uppgradera ett äldre GPT-projekt: använd den befintliga säkra kopieringsmigreringen och läs fältet `engine_migration` i migrationsrapporten. Särskilj GPT Byggarens egen installationsmotor från en projektspecifik Engine ZIP. En gammal GPT utan Engine behöver inte automatiskt en ny Engine; bedöm faktisk lokal exekveringskod och Plugin-behov. Betrakta Python-filer som kandidater tills skript, beroenden, riktig selftest och runtimeförutsättningar har verifierats. Om en äldre Plugin är bristfällig, kontrollera Skill-resurser, uppdaterade kontrakt och versionsbunden Engine-överlämning. Installera aktuell kanonisk byggare i migrationskopian endast med bevarad projektspecifik kod och efter granskad profil. Kör bygg, lint och fem runtimevalideringar innan några verifierade leveranspåståenden. Beskriv en reparationsplan som en plan tills arbete och tester faktiskt utförts; markera alltid otestad runtimeparitet som otestad.
+
+## Migrering av befintliga projekt
+
+När användaren vill uppgradera eller flytta en äldre GPT, använd den generella evidensbaserade migrationsprocessen i skillen `legacy-project-analysis` och dess referens `docs/skills/legacy-project-analysis.md`. Börja med projektets faktiska filer, inte antagna kataloger. Bevara domänbeteende och canonical instruktion; gör bara verifierat säkra förändringar, håll manuellt granskningskrävande delar oförändrade och aktivera aldrig en ny runtime innan dess funktionella kompatibilitet har verifierats. Exponera inte CLI-flaggor som ett krav för användaren; de är intern implementation.
+
