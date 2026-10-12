@@ -24,22 +24,16 @@ def test_plugin_prefers_attached_engine_and_never_github_fallback(tmp_path):
     assert not (skill / "scripts/fetch_distribution_engine.py").exists()
 
 
-def test_canonical_engine_direct_skill_files(tmp_path):
+def test_plugin_is_thin_and_claude_skills_resources_remain(tmp_path):
     cfg = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
     plugin = builder.build_plugin(ROOT, cfg, tmp_path, "0.0.0-test")
     claude = builder.build_claude_skills(ROOT, cfg, tmp_path, "0.0.0-test")
-    for runtime in (plugin, claude):
-        skill = runtime / "skills" / "distribution-and-parity"
-        for relative in (
-            "scripts/canonical-engine/scripts/build_distributions.py",
-            "scripts/canonical-engine/scripts/install_distribution_engine.py",
-            "scripts/canonical-engine/scripts/lib/project_model.py",
-            "assets/canonical-engine/gpt-project.yaml",
-        ):
-            assert (skill / relative).is_file(), relative
-        assert any((skill / "assets/canonical-engine/templates").rglob("*.tpl"))
-        assert not (skill / "scripts/fetch_distribution_engine.py").exists()
-
+    assert not (plugin / "distribution-engine").exists()
+    plugin_skill = plugin / "skills/distribution-and-parity"
+    assert not (plugin_skill / "assets/gpt-byggaren-engine.zip").exists()
+    assert not (plugin_skill / "scripts/canonical-engine").exists()
+    assert not (plugin_skill / "assets/canonical-engine").exists()
+    assert (claude / "skills/distribution-and-parity/assets/gpt-byggaren-engine.zip").is_file()
 
 def test_chat_zip_still_bundles_original_engine(tmp_path):
     cfg = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
@@ -54,27 +48,6 @@ def test_chat_zip_still_bundles_original_engine(tmp_path):
 
 def test_engine_package_script_is_preserved():
     assert (ROOT / "scripts/package_distribution_engine.py").is_file()
-
-
-def test_embedded_engine_archive_matches_canonical_source(tmp_path):
-    import hashlib
-    import zipfile
-    cfg = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
-    plugin = builder.build_plugin(ROOT, cfg, tmp_path, "0.0.0-test")
-    archive = plugin / "skills/distribution-and-parity/assets/gpt-byggaren-engine.zip"
-    assert archive.is_file()
-    with zipfile.ZipFile(archive) as z:
-        assert z.testzip() is None
-        for relative in (
-            "scripts/build_distributions.py",
-            "scripts/install_distribution_engine.py",
-            "scripts/lib/project_model.py",
-            "gpt-project.yaml",
-        ):
-            assert z.read(relative) == (ROOT / relative).read_bytes()
-    instructions = (plugin / "skills/distribution-and-parity/SKILL.md").read_text(encoding="utf-8")
-    assert "Plugin engine preflight and handoff" in instructions
-    assert "Never invent a sandbox path" in instructions
 
 
 def test_ci_plugin_does_not_reference_actions_artifacts_or_release_url(tmp_path):
