@@ -568,7 +568,15 @@ def migrate(source: Path, destination: Path, upgrade_build: bool = False, versio
             upgrade_canonical_build(project, version) if load_cfg(project) is not None
             else {"status": "blocked", "reason": "Missing reviewed project profile", "release_ready": False}
         )
+    from lib.migration_hygiene import assess_hygiene, migration_steps
     report["generic_discovery"] = discover(project)
+    report["project_hygiene"] = assess_hygiene(project, engine_version=version if upgrade_build else None)
+    report["migration_steps"] = migration_steps(report)
+    report["next_step"] = next(
+        ({"id": step["id"], "title": step["title"]}
+         for step in report["migration_steps"] if step["status"] not in {"completed", "checked"}),
+        {"id": "review", "title": "Granska migrationsrapport och releaseberedskap"},
+    )
     (destination / "MIGRATION-REPORT.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
