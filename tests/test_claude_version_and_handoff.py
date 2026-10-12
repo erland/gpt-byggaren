@@ -19,4 +19,4 @@ def test_release_engine_handoff_describes_download_and_upload():
     instruction = (ROOT / "src/instructions/system.md").read_text(encoding="utf-8")
     assert "ladda ned Engine ZIP" in instruction
     assert "bifoga den nedladdade ZIP-filen" in instruction
-    assert "gpt-byggaren-engine-<VERSION>.zip" in instruction
+    assert "gpt-byggaren-engine.zip" in instruction
