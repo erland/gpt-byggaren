@@ -18,8 +18,8 @@ def test_plugin_prefers_attached_engine_and_never_github_fallback(tmp_path):
     skill = plugin / "skills/distribution-and-parity"
     instructions = (skill / "SKILL.md").read_text(encoding="utf-8")
     assert "distribution-engine.zip" in instructions
-    assert "normal chat upload" in instructions
-    assert "never fetch an engine from GitHub inside Python" in instructions.lower() || "Never fetch an engine from GitHub inside Python" in instructions
+    assert "Ask the user to attach the downloaded ZIP" in instructions
+    assert "Never fetch an engine from GitHub inside Python" in instructions
     assert (skill / "scripts/selftest_distribution_engine.py").is_file()
     assert not (skill / "scripts/fetch_distribution_engine.py").exists()
 
