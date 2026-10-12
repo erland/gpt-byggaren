@@ -567,10 +567,24 @@ def migrate(source: Path, destination: Path, upgrade_build: bool = False, versio
     from lib.legacy_engine_assessment import inspect_engine_migration
     report["engine_migration"] = inspect_engine_migration(project, load_cfg(project))
     if upgrade_build:
-        report["canonical_build_upgrade"] = (
-            upgrade_canonical_build(project, version) if load_cfg(project) is not None
-            else {"status": "blocked", "reason": "Missing reviewed project profile", "release_ready": False}
-        )
+        if activate_modular_skills and report.get("modular_skill_activation", {}).get("status") not in ("already_enabled", "activated_pending_behavior_review"):
+            report["canonical_build_upgrade"] = {"status": "blocked", "reason": "Modular Skill activation did not complete", "release_ready": False}
+        else:
+            report["canonical_build_upgrade"] = (
+                upgrade_canonical_build(project, version) if load_cfg(project) is not None
+                else {"status": "blocked", "reason": "Missing reviewed project profile", "release_ready": False}
+            )
+    if activate_modular_skills:
+        from lib.verify_modular_migration import inspect
+        current = load_cfg(project)
+        if isinstance(current, dict):
+            build = report.get("canonical_build_upgrade") or {}
+            report["modular_distribution_verification"] = inspect(
+                project, current, version if build.get("status") == "built_pending_host_acceptance" else None
+            )
+        else:
+            report["modular_distribution_verification"] = {"status": "blocked", "reason": "Missing project profile", "release_ready": False}
+        report["modular_release_ready"] = False
     from lib.migration_hygiene import assess_hygiene, migration_steps
     report["generic_discovery"] = discover(project)
     report["project_hygiene"] = assess_hygiene(project, engine_version=version if upgrade_build else None)
