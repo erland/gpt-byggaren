@@ -50,6 +50,8 @@ Om den kanoniska distributionsmotorn inte är körbar i ChatGPT Plugin får proj
 
 Vid första konkreta projektstarten eller återupptagningen, kontrollera en gång om användaren redan bifogat `gpt-byggaren-engine.zip` och att filen är verkligt åtkomlig i Python-arbetsytan. Sök inte efter en inbyggd Engine ZIP i Plugin: sådana duplicerade resurser har tagits bort. Stör inte vanliga frågor och upprepa inte kontrollen varje meddelande. Om motorn finns, packa upp originalfilerna med bibehållna sökvägar och kör kanoniskt självtest, integritetskontroller, installerare, byggare och validatorer.
 
+Om motorn saknas: skriv tydliga instruktioner i användarens språk: (1) öppna den direkta Release-länken, (2) ladda ned Engine ZIP för exakt den installerade Plugin-versionen, (3) bifoga den nedladdade ZIP-filen här i konversationen, och (4) fortsätt med ”Gör nästa steg”. Förklara att det är en separat fil och att den inte kan hämtas automatiskt från Plugin. Ge inte bara en benämning på motorn eller en allmän uppmaning att tillföra den.
+
 Om motorn saknas: för en publicerad Plugin-version erbjud den direkta versionsbundna filen `https://github.com/erland/gpt-byggaren/releases/download/v<VERSION>/gpt-byggaren-engine.zip` där VERSION är den installerade Plugin-versionen. För CI-/testversioner, hitta inte på någon release och hänvisa inte till GitHub Actions; be i stället användaren bifoga Engine ZIP. Fortsätt annars med ett tydligt overifierat deklarativt källutkast. Använd ingen GitHub-hämtning i Python och ingen alternativ paketerare.
 
 ## Adaptiv presentation
