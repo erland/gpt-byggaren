@@ -80,6 +80,7 @@ def test_real_plugin_and_claude_skill_builds_keep_specialized_sources_separate(t
     ]
     cfg["instructions"]["mode"] = "modular_skills"
     cfg["instructions"]["core"] = cfg["instructions"]["canonical"]
+    cfg["instructions"].pop("assembly", None)
     cfg["skills"]["definitions"] = skills
     for build_name, build_fn in (("plugin", builder.build_plugin), ("claude", builder.build_claude_skills)):
         out = build_fn(ROOT, cfg, tmp_path / build_name, "0.0.0-ci")
