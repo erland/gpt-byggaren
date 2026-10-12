@@ -19,7 +19,7 @@ def test_plugin_prefers_attached_engine_and_never_github_fallback(tmp_path):
     instructions = (skill / "SKILL.md").read_text(encoding="utf-8")
     assert "distribution-engine.zip" in instructions
     assert "normal chat upload" in instructions
-    assert "Do not fetch GitHub Releases" in instructions
+    assert "never fetch an engine from GitHub inside Python" in instructions.lower() || "Never fetch an engine from GitHub inside Python" in instructions
     assert (skill / "scripts/selftest_distribution_engine.py").is_file()
     assert not (skill / "scripts/fetch_distribution_engine.py").exists()
 
@@ -76,3 +76,18 @@ def test_embedded_engine_archive_matches_canonical_source(tmp_path):
     assert "check embedded archive first" in instructions
     assert "releases/download/v0.0.0-test/distribution-engine.zip" in instructions
     assert "do not pretend to provide it as a download" in instructions
+
+
+def test_early_engine_preflight_and_ci_handoff(tmp_path):
+    cfg = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
+    plugin = builder.build_plugin(ROOT, cfg, tmp_path, "0.0.0-ci")
+    skill = (plugin / "skills/distribution-and-parity/SKILL.md").read_text(encoding="utf-8")
+    assert "At the beginning of the first GPT project creation or resumption" in skill
+    assert "one-time, non-blocking access preflight" in skill
+    assert "copy those bytes unchanged" in skill
+    assert "ci-distributions" in skill
+    assert "GitHub Actions" in skill
+    assert "do not invent one" in skill
+    assert "never guess a release for" in skill
+    assert "0.0.0-ci" in skill
+    assert "unverified declarative source draft" in skill
