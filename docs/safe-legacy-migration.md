@@ -81,3 +81,12 @@ med ett konkret installations- eller byggfel; verktyget uppfinner inte
 runtime-kontrakt. Om bygget lyckas får rapporten
 `built_pending_host_acceptance`: det är **inte** ett verifierat
 värdmiljötest eller ett releasegodkännande. Originalprojektet ändras aldrig.
+
+När `--upgrade-build` används får en modern Plugin med befintlig, entydig
+canonical instruktion en enkel Skill-deklaration om sådan saknas. Befintliga
+Skills bevaras. Om `tools.tools` deklarerar nödvändiga Python-skript och
+`scripts/selftest.py` redan finns kan `engine` deklareras med dessa
+befintliga filer. Utan dokumenterat självtest aktiveras ingen Engine; en
+`review_required`-status kvarstår. En lyckad arkivbyggnad verifierar Plugin
+Skills och Engine-artefakten strukturellt, men är ännu inte ett funktionellt
+värdmiljötest och innebär inte releasegodkännande.
