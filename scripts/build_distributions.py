@@ -597,8 +597,6 @@ def build_claude_skills(root: Path, cfg: dict, build_root: Path, version: str) -
             bundle_distribution_engine(root, staging)
             expose_canonical_engine_skill_files(staging / "distribution-engine", skill_dir)
         if cfg.get("project", {}).get("id") == "gpt-byggaren":
-            copy_file(root / "scripts" / "fetch_distribution_engine.py",
-                      skill_dir / "scripts" / "fetch_distribution_engine.py")
             if skill_id == "distribution-and-parity":
                 copy_file(root / "scripts" / "selftest_distribution_engine.py",
                           skill_dir / "scripts" / "selftest_distribution_engine.py")
@@ -1007,21 +1005,17 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
             )
         if cfg.get("project", {}).get("id") == "gpt-byggaren":
             skill_markdown += (
-                "\n## Canonical distribution engine resolution\n\n"
-                "Before a distribution build, use the bundled original engine if accessible. "
-                "If the bundled asset is unreadable, execute the included "
-                "`scripts/fetch_distribution_engine.py` using the installed plugin version "
-                "from `VERSION` or `plugin.json`. It fetches the GitHub Release asset "
-                "`distribution-engine.zip` from the matching version first; only a missing "
-                "release or missing asset permits fallback to the latest published release. "
-                "Verify its SHA-256 digest and original engine structure. "
-                "Use the downloaded canonical scripts, templates and installer unchanged. "
-                "If code execution, HTTPS access or integrity verification fails, BLOCK the "
-                "distribution build. Never improvise a replacement packager. "
-                "Report the selected release tag, especially when fallback was used.\n"
+                "\n## Canonical distribution engine: uploaded file first\n\n"
+                "Use a user-attached `distribution-engine.zip` as the preferred original "
+                "engine source. Confirm the attachment is accessible as a real file in "
+                "the Python workspace, extract it with original relative paths, verify "
+                "the required canonical scripts and run the bundled "
+                "`scripts/selftest_distribution_engine.py` before building. "
+                "Do not use GitHub API or GitHub Releases as an engine download fallback. "
+                "If no accessible attached archive or complete runnable local source "
+                "exists, continue only as an explicitly unverified source draft "
+                "under the Plugin declarative fallback policy. Never invent a packager.\n"
             )
-            copy_file(root / "scripts" / "fetch_distribution_engine.py",
-                      skill_dir / "scripts" / "fetch_distribution_engine.py")
             if skill_id == "distribution-and-parity":
                 copy_file(root / "scripts" / "selftest_distribution_engine.py",
                           skill_dir / "scripts" / "selftest_distribution_engine.py")
@@ -1032,8 +1026,8 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
                 "under `scripts/canonical-engine/scripts/`; config and templates are under "
                 "`assets/canonical-engine/`. When exposed by the host, reconstruct "
                 "these original relative paths in a writable project workspace and run "
-                "the unchanged canonical installer and builder. Prefer direct bundled "
-                "files over network retrieval; if neither source is accessible, BLOCK "
+                "the unchanged canonical installer and builder. Prefer uploaded archive "
+                "files over inaccessible mounted Skill assets; if neither source is accessible, BLOCK "
                 "rather than invent a replacement.\n"
             )
         (skill_dir / "SKILL.md").write_text(skill_markdown, encoding="utf-8")
