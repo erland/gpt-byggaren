@@ -10,7 +10,15 @@ import shutil
 import sys
 import zipfile
 from pathlib import Path
-from lib.canonical_skill_sources import projected_instruction, skill_instruction, is_modular
+# Support CLI execution and direct importlib loading used by regression tests.
+import importlib.util as _skill_importlib
+_skill_module_path = Path(__file__).resolve().parent / "lib" / "canonical_skill_sources.py"
+_skill_spec = _skill_importlib.spec_from_file_location("canonical_skill_sources", _skill_module_path)
+_skill_module = _skill_importlib.module_from_spec(_skill_spec)
+_skill_spec.loader.exec_module(_skill_module)
+projected_instruction = _skill_module.projected_instruction
+skill_instruction = _skill_module.skill_instruction
+is_modular = _skill_module.is_modular
 
 SCRIPTS_DIR = Path(__file__).resolve().parent
 if str(SCRIPTS_DIR) not in sys.path:
