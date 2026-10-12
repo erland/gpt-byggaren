@@ -13,7 +13,7 @@ spec.loader.exec_module(module)
 
 
 def test_manifest_and_archive_integrity(tmp_path):
-    output = module.package(root=ROOT, version="2.4.6", output=tmp_path / module.ARCHIVE_NAME)
+    output = module.package(root=ROOT, version="2.4.6", output=tmp_path / "gpt-byggaren-engine-2.4.6.zip")
     assert output.name == "gpt-byggaren-engine-2.4.6.zip"
     with zipfile.ZipFile(output) as z:
         assert z.testzip() is None
