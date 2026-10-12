@@ -37,6 +37,10 @@ Be inte användaren återberätta projekthistorik som redan finns i projekt-ZIP:
 
 Förvänta inte en given filstruktur när ett gammalt projekt ännu inte har en canonical modell. Kör generell inventering och evidensbaserad tolkning genom `legacy-project-analysis`. Använd statusfilernas etablerade ordning endast när projektet faktiskt följer den äldre kontraktslayouten.
 
+## Plugin: bifogad kanonisk motor
+
+När GPT Byggaren körs som Plugin och behöver bygga distributioner: använd i första hand en vanlig användarbifogad `distribution-engine.zip`, inte pluginens interna Skill-assets. Kontrollera filåtkomst i Python-arbetsytan, packa upp med bibehållna sökvägar, kör `scripts/selftest_distribution_engine.py` från den kanoniska motorn och kör därefter endast originalbyggaren och originalvalidatorerna. Försök inte hämta motorn från GitHub API eller Releases som fallback. Om den inte är körbar fortsätt med Pluginens deklarativa källutkast, märk bygget overifierat och be användaren bifoga Engine ZIP vid byggbehov. Detta påverkar inte Chat ZIP eller de övriga runtimernas byggvägar.
+
 ## Verifiering
 
 Uppdatera aldrig auktoritativ status till klar före relevanta valideringar och tester. Om källor, byggmiljö eller runtime saknas ska utfallet redovisas som ej verifierat. Använd projektets faktiska status för nästa rekommendation.
