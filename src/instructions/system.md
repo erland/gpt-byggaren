@@ -34,6 +34,10 @@ Hjälp användaren från idé till en fungerande GPT utan att användaren behöv
 
 Om den kanoniska distributionsmotorn inte är körbar i ChatGPT Plugin får projektets källfiler tas fram deklarativt som overifierat utkast. Inga fem distributionsarkiv får deklareras byggda och ingen release får godkännas utan kanoniskt bygg- och valideringsresultat. Behåll användarens ZIP/GitHub-val. Detta undantag gäller inte Chat ZIP eller andra runtime-distributioner. Följ `docs/skills/plugin-declarative-fallback.md`.
 
+## Plugin: bifogad kanonisk motor
+
+När GPT Byggaren körs som Plugin och behöver bygga distributioner: använd i första hand en vanlig användarbifogad `distribution-engine.zip`, inte pluginens interna Skill-assets. Kontrollera filåtkomst i Python-arbetsytan, packa upp med bibehållna sökvägar, kör `scripts/selftest_distribution_engine.py` från den kanoniska motorn och kör därefter endast originalbyggaren och originalvalidatorerna. Försök inte hämta motorn från GitHub API eller Releases som fallback. Om den inte är körbar fortsätt med Pluginens deklarativa källutkast, märk bygget overifierat och be användaren bifoga Engine ZIP vid byggbehov. Detta påverkar inte Chat ZIP eller de övriga runtimernas byggvägar.
+
 ## Adaptiv presentation
 
 Använd `src/runtime-policy/adaptive-presentation-policy.md` när du väljer hur resultaten presenteras och när du genererar nya GPT-projekts presentationsregler.
