@@ -70,3 +70,29 @@ def test_broken_local_reference_and_open_checklist(tmp_path):
     report = module.assess_hygiene(tmp_path)
     assert report["broken_document_links"] == [{"file": "README.md", "target": "docs/missing.md"}]
     assert report["open_development_checklist_items"] == ["Verify migrated release"]
+
+
+def test_novellskaparen_merged_main_migration_snapshot(tmp_path):
+    """Evidence from Novellskaparen main after migration PR #3 was merged."""
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "README.md").write_text("Novellskaparen uses GPT Byggaren v1.6.13\n")
+    (tmp_path / "PROJECT.md").write_text("Canonical novelist assistant\n")
+    (tmp_path / "STATUS.md").write_text(
+        "## Migration till GPT Byggaren v1.6.13\n"
+        "Migrationen genomförs i PR #3 (`migration/gpt-byggaren-1.6.13`).\n"
+        "Byggkedjan har passerat lint och CI.\n"
+    )
+    (tmp_path / "docs/development-plan.md").write_text("## Slutverifiering\n")
+    (tmp_path / "docs/migration-to-gpt-byggaren-1.6.13.md").write_text(
+        "## Genomförande\n"
+        "- [ ] Inventera samtliga källfiler och tester\n"
+        "- [ ] Uppdatera projektstatus inför release\n"
+        "Senaste verifierade CI efter återställningen: #148, godkänd.\n"
+    )
+    result = module.assess_hygiene(tmp_path, engine_version="1.6.13")
+    assert result["status"] == "review_required"
+    assert result["unresolved_status_claims"]
+    assert result["open_migration_checklists"][0]["file"] == "docs/migration-to-gpt-byggaren-1.6.13.md"
+    assert len(result["open_migration_checklists"][0]["open_items"]) == 2
+    assert result["possible_stale_versions"] == []
+    assert result["files_deleted"] == []
