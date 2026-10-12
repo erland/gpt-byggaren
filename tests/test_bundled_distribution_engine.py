@@ -7,7 +7,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_chat_and_plugin_bundle_engine(tmp_path):
+def test_chat_bundles_engine_but_plugin_does_not(tmp_path):
     result = subprocess.run(
         [sys.executable, str(ROOT / "scripts/build_distributions.py"),
          "--project-root", str(ROOT), "--version", "0.0.0-test",
@@ -20,6 +20,11 @@ def test_chat_and_plugin_bundle_engine(tmp_path):
         assert archives, f"No archive for {target}"
         with zipfile.ZipFile(archives[0]) as archive:
             names = set(archive.namelist())
+            if target == "plugin":
+                assert not any(n.startswith("distribution-engine/") for n in names)
+                assert not any("/canonical-engine/" in n for n in names)
+                assert not any(n.endswith("gpt-byggaren-engine.zip") for n in names)
+                continue
             assert "distribution-engine/gpt-project.yaml" in names
             assert "distribution-engine/scripts/build_distributions.py" in names
             assert "distribution-engine/scripts/install_distribution_engine.py" in names
@@ -38,7 +43,7 @@ def test_bundled_engine_installs_and_builds_five_runtimes(tmp_path):
         capture_output=True, text=True,
     )
     assert result.returncode == 0, result.stdout + result.stderr
-    archives = list((ROOT / "dist").glob(f"*plugin*{version}.zip"))
+    archives = list((ROOT / "dist").glob(f"*chat*{version}.zip"))
     assert len(archives) == 1
     extracted = tmp_path / "extracted"
     with zipfile.ZipFile(archives[0]) as archive:
