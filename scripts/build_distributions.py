@@ -1016,34 +1016,39 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
                 "never claim self-test success or invent an alternative packager.\\n"
             )
         if cfg.get("project", {}).get("id") == "gpt-byggaren":
+            is_ci_version = version == "0.0.0-ci" or version.endswith("-ci")
+            release_link = (
+                "https://github.com/erland/gpt-byggaren/releases/download/"
+                f"v{version}/distribution-engine.zip"
+            )
+            delivery_instruction = (
+                "This is a CI/test Plugin version. Do not reference GitHub Actions, "
+                "CI artifacts or pretend a Release asset exists. If an actual downloadable "
+                "file cannot be exported, simply ask the user to attach "
+                "`distribution-engine.zip` and continue in source-only fallback."
+                if is_ci_version else
+                "For a released Plugin, present this exact-version direct download "
+                "link to the Engine ZIP in the corresponding GitHub Release: "
+                + release_link
+                + " . Do not use latest or a different release version."
+            )
             skill_markdown += (
-                "\n## Plugin engine preflight and user handoff\n\n"
-                "At the beginning of the first GPT project creation or resumption, "
-                "run a one-time, non-blocking access preflight, before substantial "
-                "project generation. Do not run this on unrelated questions or "
-                "repeat it every turn. Check whether the embedded "
-                "`assets/distribution-engine.zip` is Python-readable; then check "
-                "ordinary attached files for `distribution-engine.zip`. "
-                "If one is readable, materialize original paths and run the "
-                "canonical self-test. Track success for the current workspace; "
-                "rerun only if the workspace, archive, or version changes. "
-                "If the embedded archive is unavailable but its exact bytes can "
-                "actually be read, copy those bytes unchanged to a downloadable "
-                "file in the workspace and provide that file to the user. "
-                "Do NOT imply that model-readable Skill documentation means the "
-                "archive bytes are available. If exporting is impossible, explain "
-                "briefly and give a concrete browser route: GitHub Actions > "
-                "successful CI run for the installed commit/version > "
-                "`ci-distributions` artifact > `distribution-engine.zip`. "
-                "A direct version-pinned GitHub Release asset link may be offered "
-                "only after verifying it exists; never guess a release for "
-                "`0.0.0-ci` or silently fall back to latest. CI artifact links "
-                "are not permanent direct ZIP links; do not invent one. "
-                "Ask the user to attach the downloaded ZIP only once. "
-                "If the user does not provide it, proceed with an explicitly "
-                "unverified declarative source draft without pestering them. "
-                "Never fetch an engine from GitHub inside Python and never "
-                "invent replacement packaging logic.\n"
+                "\n## Plugin engine preflight and handoff\n\n"
+                "At the first actual GPT project creation or resumption, run a "
+                "one-time, non-blocking engine access preflight. Do not check on "
+                "unrelated questions or repeatedly on every turn. Test whether "
+                "the embedded `assets/distribution-engine.zip` is a real readable "
+                "file in the Python workspace, then check user-attached files. "
+                "If accessible, run the unchanged canonical integrity checks and "
+                "self-test and reuse the engine in the current workspace. "
+                "If internal archive bytes are readable but the engine cannot be "
+                "used directly, copy the exact bytes to a downloadable file and "
+                "offer the real attachment. Never invent a sandbox path or claim "
+                "an inaccessible Skill asset was exported. "
+                + delivery_instruction
+                + " If the user does not attach the file, continue with explicitly "
+                  "unverified declarative source-only fallback. Never use a "
+                  "GitHub Python downloader, alternative packager or MCP.\n"
             )
             if skill_id == "distribution-and-parity":
                 copy_file(root / "scripts" / "selftest_distribution_engine.py",
