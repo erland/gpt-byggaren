@@ -10,6 +10,7 @@ import argparse
 import copy
 import json
 import shutil
+import subprocess
 import sys
 import zipfile
 
@@ -363,7 +364,34 @@ def create_legacy_plugin_migration_plan(project: Path) -> dict:
     return {"result": proposal["result"], "plan": target.relative_to(project).as_posix()}
 
 
-def migrate(source: Path, destination: Path) -> dict:
+def upgrade_canonical_build(project: Path, version: str) -> dict:
+    """Opt-in upgrade of a schema-complete migration copy; never alter source."""
+    source_engine = Path(__file__).resolve().parents[1]
+    installer = source_engine / "scripts/install_distribution_engine.py"
+    install = subprocess.run(
+        [sys.executable, str(installer), "--source", str(source_engine),
+         "--project-root", str(project)], capture_output=True, text=True,
+    )
+    if install.returncode:
+        return {"status": "blocked", "stage": "canonical_engine_install",
+                "detail": (install.stderr or install.stdout).strip()[-2000:],
+                "runtime_parity_status": "unverified", "release_ready": False}
+    build = subprocess.run(
+        [sys.executable, str(project / "scripts/build_distributions.py"),
+         "--project-root", str(project), "--version", version],
+        capture_output=True, text=True,
+    )
+    if build.returncode:
+        return {"status": "blocked", "stage": "canonical_distribution_build",
+                "detail": (build.stderr or build.stdout).strip()[-2000:],
+                "runtime_parity_status": "unverified", "release_ready": False}
+    archives = sorted(p.name for p in (project / "dist").glob("*.zip"))
+    return {"status": "built_pending_host_acceptance", "stage": "canonical_distribution_build",
+            "archives": archives, "runtime_parity_status": "structural_build_only",
+            "release_ready": False}
+
+
+def migrate(source: Path, destination: Path, upgrade_build: bool = False, version: str = "0.0.0-migration") -> dict:
     source, destination = source.resolve(), destination.resolve()
     if not source.exists():
         raise FileNotFoundError(source)
@@ -406,6 +434,11 @@ def migrate(source: Path, destination: Path) -> dict:
         report["apply"] = {"result": "changed" if changed or retired["result"] == "changed" else "no_changes"}
     from lib.legacy_engine_assessment import inspect_engine_migration
     report["engine_migration"] = inspect_engine_migration(project, load_cfg(project))
+    if upgrade_build:
+        report["canonical_build_upgrade"] = (
+            upgrade_canonical_build(project, version) if load_cfg(project) is not None
+            else {"status": "blocked", "reason": "Missing reviewed project profile", "release_ready": False}
+        )
     report["generic_discovery"] = discover(project)
     (destination / "MIGRATION-REPORT.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
@@ -417,9 +450,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Migrate a legacy GPT project without modifying the source")
     parser.add_argument("--source", required=True)
     parser.add_argument("--destination", required=True)
+    parser.add_argument("--upgrade-build", action="store_true", help="Opt-in canonical engine install and five-runtime build in migration copy")
+    parser.add_argument("--version", default="0.0.0-migration")
     args = parser.parse_args()
     try:
-        report = migrate(Path(args.source), Path(args.destination))
+        report = migrate(Path(args.source), Path(args.destination), upgrade_build=args.upgrade_build, version=args.version)
     except (ValueError, OSError, zipfile.BadZipFile) as exc:
         print(f"Migration failed: {exc}", file=sys.stderr)
         return 1
