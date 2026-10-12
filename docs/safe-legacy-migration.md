@@ -64,3 +64,20 @@ Den säkra kopieringsmigreringen installerar **inte** automatiskt en ny motor
 kanonisk lint, fem distributionsbyggen, Engine-integritetskontroll (om aktiv),
 och värdmiljöspecifik Plugin-acceptans. Alla dessa statusar förblir
 `unverified`/icke releaseklara tills kontrollen verkligen utförts.
+
+### Valfri bygguppgradering i migrationskopian
+
+Om projektprofilen redan har kompletta fem canonical runtime-mål kan den
+aktuella distributionsmotorn installeras och distributionsbygget provas i den
+separata migrationskopian:
+
+```bash
+python scripts/migrate_legacy_copy.py --source old-project.zip \\
+  --destination upgraded-project --upgrade-build --version 0.1.0
+```
+
+Om projektprofilen är ofullständig får `canonical_build_upgrade.status=blocked`
+med ett konkret installations- eller byggfel; verktyget uppfinner inte
+runtime-kontrakt. Om bygget lyckas får rapporten
+`built_pending_host_acceptance`: det är **inte** ett verifierat
+värdmiljötest eller ett releasegodkännande. Originalprojektet ändras aldrig.
