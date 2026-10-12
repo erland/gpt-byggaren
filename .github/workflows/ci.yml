@@ -96,11 +96,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -s dist/gpt-byggaren-engine.zip
+          test -s dist/gpt-byggaren-engine-0.0.0-ci.zip
           python - <<'PY'
           from pathlib import Path
           import zipfile
-          archive = Path("dist/gpt-byggaren-engine.zip")
+          archive = Path("dist/gpt-byggaren-engine-0.0.0-ci.zip")
           required = {
               "gpt-project.yaml",
               "scripts/install_distribution_engine.py",
