@@ -59,3 +59,14 @@ def test_migration_copy_reports_next_step_without_changing_source(tmp_path):
     assert len(report["migration_steps"]) == 6
     assert report["next_step"]["id"] in {row["id"] for row in report["migration_steps"]}
     assert (source / "gpt-project.yaml").read_bytes() == original
+
+
+def test_broken_local_reference_and_open_checklist(tmp_path):
+    (tmp_path / "README.md").write_text("[Missing](docs/missing.md)\n")
+    (tmp_path / "PROJECT.md").write_text("Project\n")
+    (tmp_path / "STATUS.md").write_text("Status\n")
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs/development-plan.md").write_text("- [ ] Verify migrated release\n")
+    report = module.assess_hygiene(tmp_path)
+    assert report["broken_document_links"] == [{"file": "README.md", "target": "docs/missing.md"}]
+    assert report["open_development_checklist_items"] == ["Verify migrated release"]
