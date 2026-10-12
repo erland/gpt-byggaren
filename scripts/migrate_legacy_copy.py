@@ -520,7 +520,7 @@ def upgrade_canonical_build(project: Path, version: str) -> dict:
             "runtime_parity_status": "structural_build_only", "release_ready": False}
 
 
-def migrate(source: Path, destination: Path, upgrade_build: bool = False, version: str = "0.0.0-migration") -> dict:
+def migrate(source: Path, destination: Path, upgrade_build: bool = False, version: str = "0.0.0-migration", activate_modular_skills: bool = False) -> dict:
     source, destination = source.resolve(), destination.resolve()
     if not source.exists():
         raise FileNotFoundError(source)
@@ -561,6 +561,9 @@ def migrate(source: Path, destination: Path, upgrade_build: bool = False, versio
         report["existing_project_assessment"] = assess_existing_project(project)
         report["legacy_plugin_plan"] = create_legacy_plugin_migration_plan(project)
         report["apply"] = {"result": "changed" if changed or retired["result"] == "changed" else "no_changes"}
+    if activate_modular_skills:
+        from lib.activate_modular_skills import activate
+        report["modular_skill_activation"] = activate(project)
     from lib.legacy_engine_assessment import inspect_engine_migration
     report["engine_migration"] = inspect_engine_migration(project, load_cfg(project))
     if upgrade_build:
@@ -587,11 +590,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Migrate a legacy GPT project without modifying the source")
     parser.add_argument("--source", required=True)
     parser.add_argument("--destination", required=True)
+    parser.add_argument("--activate-modular-skills", action="store_true", help="Activate reviewed modular source ownership (requires canonical/assembly.json)")
     parser.add_argument("--upgrade-build", action="store_true", help="Opt-in canonical engine install and five-runtime build in migration copy")
     parser.add_argument("--version", default="0.0.0-migration")
     args = parser.parse_args()
     try:
-        report = migrate(Path(args.source), Path(args.destination), upgrade_build=args.upgrade_build, version=args.version)
+        report = migrate(Path(args.source), Path(args.destination), upgrade_build=args.upgrade_build, version=args.version, activate_modular_skills=args.activate_modular_skills)
     except (ValueError, OSError, zipfile.BadZipFile) as exc:
         print(f"Migration failed: {exc}", file=sys.stderr)
         return 1
