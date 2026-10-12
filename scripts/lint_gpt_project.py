@@ -67,6 +67,25 @@ def lint(root: Path) -> dict:
         return {"result": "fail", "summary": {"errors": 1, "warnings": 0, "findings": 1},
                 "findings": [finding("GP002", "error", f"Invalid gpt-project.yaml: {exc}", "gpt-project.yaml")]}
 
+    instructions = cfg.get("instructions") or {}
+    if instructions.get("mode") == "modular_skills":
+        try:
+            import importlib.util
+            helper_path = Path(__file__).resolve().parent / "lib/canonical_skill_sources.py"
+            spec = importlib.util.spec_from_file_location("canonical_skill_sources", helper_path)
+            helper = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(helper)
+            definitions = (cfg.get("skills") or {}).get("definitions") or []
+            helper.modules(root, cfg, definitions)
+            if any(str(item.get("source", "")).endswith("/SKILL.md") for item in definitions):
+                findings.append(finding("GPMS002", "error", "Modular Skill source points to a packaging SKILL.md instead of canonical behavior.md"))
+            manifest = root / "portable-skills.json"
+            if manifest.is_file():
+                portable = json.loads(manifest.read_text(encoding="utf-8"))
+                if portable.get("core") == instructions.get("canonical") and instructions.get("canonical") != instructions.get("core"):
+                    findings.append(finding("GPMS003", "error", "Portable skill core points at legacy full instruction instead of modular core"))
+        except (ValueError, OSError, TypeError, KeyError) as exc:
+            findings.append(finding("GPMS001", "error", f"Invalid modular Skill sources: {exc}"))
     instr_ref = cfg.get("instructions", {}).get("canonical")
     if not instr_ref:
         findings.append(finding("GP010", "error", "Canonical instruction is not configured"))
