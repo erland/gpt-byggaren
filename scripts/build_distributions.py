@@ -1022,7 +1022,7 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
                 "For a released Plugin, present this exact-version direct download "
                 "link to the Engine ZIP in the corresponding GitHub Release: "
                 + release_link
-                + " . Do not use latest or a different release version."
+                + " . Tell the user explicitly to open this link, download the ZIP, attach the downloaded file in this conversation, then say Gör nästa steg. Do not use latest or a different release version."
             )
             skill_markdown += (
                 "\n## Plugin engine preflight and handoff\n\n"
@@ -1031,6 +1031,7 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
                 "unrelated questions or repeatedly on every turn. Test whether "
                 "a user-attached `gpt-byggaren-engine.zip` is a real readable "
                 "file in the Python workspace. "
+                "If the file is missing, explain the actual download-and-attach steps plainly in Swedish when conversing in Swedish; do not merely name the engine. "
                 "If accessible, run the unchanged canonical integrity checks and "
                 "self-test and reuse the engine in the current workspace. "
                 "The Engine ZIP is distributed separately through the matching "
