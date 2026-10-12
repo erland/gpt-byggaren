@@ -56,6 +56,10 @@ def test_installed_engine_builds_distinct_runtime_archives(tmp_path):
     config = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
     config["project"]["id"] = "generated-smoke"
     config["project"]["name"] = "Generated Smoke"
+    # Avoid inheriting Builder-only verifier references in this minimal smoke GPT.
+    config.pop("testing", None)
+    config.pop("linting", None)
+    config.get("model_robustness", {}).pop("model_compatibility", None)
     config.pop("reference_profiles", None)  # Builder-only profile definitions are not inherited.
     config["skills"]["definitions"] = []
     config["tools"]["tools"] = []
