@@ -11,7 +11,7 @@ Varje runtime har ett eget installationskontrakt: Chat ZIP med assistant-instruk
 
 ## Plugin-reservläge
 
-Om originalmotorn inte kan köras i OpenAI Plugin, följ `docs/skills/plugin-declarative-fallback.md` för ett overifierat källutkast. Bygg inte egna distributionsarkiv. Denna reservväg gäller inte Chat ZIP.
+Om originalmotorn inte kan köras i OpenAI Plugin, följ `docs/skills/plugin-declarative-fallback.md` för ett overifierat källutkast. Sätt generation.mode till declarative_fallback, build.status till pending_canonical_verification och build.release_ready till false. Behåll delivery.mode. Skapa inte distributionsarkiv utan körd kanonisk byggare. Denna reservväg gäller inte Chat ZIP.
 
 ## Arbetsgång
 1. Utgå från samma canonical instruktioner, förmågor, resurs- och verktygskontrakt.
