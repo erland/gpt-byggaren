@@ -90,3 +90,24 @@ befintliga filer. Utan dokumenterat självtest aktiveras ingen Engine; en
 `review_required`-status kvarstår. En lyckad arkivbyggnad verifierar Plugin
 Skills och Engine-artefakten strukturellt, men är ännu inte ett funktionellt
 värdmiljötest och innebär inte releasegodkännande.
+
+## Stegvis migrationsupplevelse och hygiengranskning
+
+Migrationsrapporten innehåller `migration_steps` (inventering, modell,
+Engine, distributioner, dokumentationshygien och slutverifiering), `next_step`
+och `project_hygiene`. Stegstatusen är uttryckligt skiljd från
+värdmiljöverifiering. Dessa strukturer kan visas som intelligent UI där värden
+stöder det, och läsbara textsteg annars.
+
+Hygiengranskningen identifierar saknade huvudokument, möjliga inaktuella
+GPT Byggaren-versioner, historiska CI-numren i STATUS och äldre
+valideringsskript som kandidater till borttagning. Den raderar **inga** filer
+och ändrar inte dokumentationen automatiskt: först ska anrop, funktioner,
+historik och tester jämföras med ersättningen. Migrationsassistenten ska
+sedan genomföra dokumentationsuppdatering och säker städning som del av
+arbetsflödet, inte invänta en extra användaruppmaning. Slutligt
+merge-/releasebeslut kräver reviderad dokumentation och verifierad CI.
+
+En specifik versionslåst GPT Byggaren-release som byggberoende i ett
+migrerat projekts GitHub Actions är ett godtagbart upplägg. Ange både
+projektversion och motorversion så att leveransen kan reproduceras.
