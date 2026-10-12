@@ -405,6 +405,43 @@ def _plugin_repair_preflight(project: Path) -> dict:
             "behavior_source": ref, "host_verified": False}
 
 
+def _recover_declared_engine(project: Path) -> dict:
+    """Activate Engine only with explicit Python runtime tools and real selftest."""
+    cfg = load_cfg(project)
+    if not isinstance(cfg, dict):
+        return {"status": "blocked", "reason": "Missing project profile"}
+    existing = cfg.get("engine") or {}
+    if existing.get("enabled"):
+        return {"status": "already_declared"}
+    tools = (cfg.get("tools") or {}).get("tools") or []
+    scripts = sorted({
+        tool["script"] for tool in tools
+        if isinstance(tool, dict) and tool.get("type") == "script"
+        and isinstance(tool.get("script"), str) and tool["script"].endswith(".py")
+        and tool.get("requirement") == "required"
+    })
+    if not scripts:
+        return {"status": "not_required_or_not_proven"}
+    for name in scripts:
+        p = Path(name)
+        if p.is_absolute() or ".." in p.parts or not (project / p).is_file():
+            return {"status": "review_required", "reason": "Invalid or missing required script", "script": name}
+    test = "scripts/selftest.py"
+    if not (project / test).is_file():
+        return {"status": "review_required", "reason": "Required Python scripts found, but no real scripts/selftest.py"}
+    updated = copy.deepcopy(cfg)
+    updated["engine"] = {
+        "enabled": True, "resources": sorted({*scripts, test}),
+        "selftest": test, "required_files": scripts, "python_dependencies": [],
+    }
+    (project / "gpt-project.yaml").write_text(
+        yaml.safe_dump(updated, sort_keys=False, allow_unicode=True), encoding="utf-8"
+    )
+    return {"status": "configured_pending_execution",
+            "resources": updated["engine"]["resources"], "selftest": test,
+            "executed": False}
+
+
 def _verify_migration_archives(project: Path, version: str) -> dict:
     """Compare actual deliverables against declared targets and inspect Plugin."""
     from verify_distribution_outputs import expected_files
@@ -456,10 +493,11 @@ def upgrade_canonical_build(project: Path, version: str) -> dict:
         return {"status": "blocked", "stage": "canonical_engine_install",
                 "detail": (install.stderr or install.stdout).strip()[-2000:],
                 "runtime_parity_status": "unverified", "release_ready": False}
+    engine_recovery = _recover_declared_engine(project)
     repair = _plugin_repair_preflight(project)
     if repair["status"] == "blocked":
         return {"status": "blocked", "stage": "plugin_repair",
-                "plugin_repair": repair, "release_ready": False}
+                "plugin_repair": repair, "engine_recovery": engine_recovery, "release_ready": False}
     build = subprocess.run(
         [sys.executable, str(project / "scripts/build_distributions.py"),
          "--project-root", str(project), "--version", version],
@@ -468,16 +506,17 @@ def upgrade_canonical_build(project: Path, version: str) -> dict:
     if build.returncode:
         return {"status": "blocked", "stage": "canonical_distribution_build",
                 "detail": (build.stderr or build.stdout).strip()[-2000:],
-                "plugin_repair": repair,
+                "plugin_repair": repair, "engine_recovery": engine_recovery,
                 "runtime_parity_status": "unverified", "release_ready": False}
     archives = sorted(p.name for p in (project / "dist").glob("*.zip"))
     verified = _verify_migration_archives(project, version)
     if verified["status"] == "blocked":
         return {"status": "blocked", "stage": "artifact_verification",
-                "artifacts": verified, "plugin_repair": repair,
+                "artifacts": verified, "plugin_repair": repair, "engine_recovery": engine_recovery,
                 "runtime_parity_status": "unverified", "release_ready": False}
     return {"status": "built_pending_host_acceptance", "stage": "canonical_distribution_build",
             "archives": archives, "artifacts": verified, "plugin_repair": repair,
+            "engine_recovery": engine_recovery,
             "runtime_parity_status": "structural_build_only", "release_ready": False}
 
 
