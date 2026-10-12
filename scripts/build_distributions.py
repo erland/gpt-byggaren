@@ -977,7 +977,6 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     out = build_root / "plugin"
     ensure_clean_dir(out)
     write_plugin_manifest(out, cfg, version)
-    bundle_distribution_engine(root, out)
 
     canonical_instruction = (root / cfg["instructions"]["canonical"]).read_text(encoding="utf-8")
     built_skills: list[str] = []
@@ -986,15 +985,6 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
         skill_dir = out / "skills" / skill_id
         resources = resolve_plugin_skill_resources(root, cfg, skill)
         _copy_skill_resources(root, skill_dir, resources)
-        if cfg.get("project", {}).get("id") == "gpt-byggaren" and skill_id == "distribution-and-parity":
-            from package_distribution_engine import package as package_engine
-            expose_canonical_engine_skill_files(out / "distribution-engine", skill_dir)
-            engine_root = out / "distribution-engine"
-            package_engine(
-                root=root,
-                version=version,
-                output=skill_dir / "assets" / "gpt-byggaren-engine.zip",
-            )
 
         compiled_skill = dict(skill)
         compiled_skill.update(resources)
@@ -1006,7 +996,6 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
             runtime_requirements=plugin_script_runtime_requirements(cfg),
         )
         if cfg.get("project", {}).get("id") == "gpt-byggaren" and skill_id == "distribution-and-parity":
-            from package_distribution_engine import package as package_engine
             skill_markdown += (
                 "\\n## Mandatory engine access self-test\\n\\n"
                 "Before building a generated GPT, run "
@@ -1040,14 +1029,13 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
                 "At the first actual GPT project creation or resumption, run a "
                 "one-time, non-blocking engine access preflight. Do not check on "
                 "unrelated questions or repeatedly on every turn. Test whether "
-                "the embedded `assets/gpt-byggaren-engine.zip` is a real readable "
-                "file in the Python workspace, then check user-attached files. "
+                "a user-attached `gpt-byggaren-engine.zip` is a real readable "
+                "file in the Python workspace. "
                 "If accessible, run the unchanged canonical integrity checks and "
                 "self-test and reuse the engine in the current workspace. "
-                "If internal archive bytes are readable but the engine cannot be "
-                "used directly, copy the exact bytes to a downloadable file and "
-                "offer the real attachment. Never invent a sandbox path or claim "
-                "an inaccessible Skill asset was exported. "
+                "The Engine ZIP is distributed separately through the matching "
+                "release, not embedded in this Plugin. Never invent a sandbox "
+                "download or claim an inaccessible file was exported. "
                 + delivery_instruction
                 + " If the user does not attach the file, continue with explicitly "
                   "unverified declarative source-only fallback. Never use a "
@@ -1056,18 +1044,6 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
             if skill_id == "distribution-and-parity":
                 copy_file(root / "scripts" / "selftest_distribution_engine.py",
                           skill_dir / "scripts" / "selftest_distribution_engine.py")
-        if cfg.get("project", {}).get("id") == "gpt-byggaren":
-            skill_markdown += (
-                "\n## Direct canonical engine Skill resources\n\n"
-                "The original builder scripts are also installed as ordinary Skill files "
-                "under `scripts/canonical-engine/scripts/`; config and templates are under "
-                "`assets/canonical-engine/`. When exposed by the host, reconstruct "
-                "these original relative paths in a writable project workspace and run "
-                "the unchanged canonical installer and builder. Prefer uploaded archive "
-                "files over inaccessible mounted Skill assets; if neither is executable, "
-                "continue only with a clearly unverified declarative source draft, "
-                "never a replacement packager.\n"
-            )
         (skill_dir / "SKILL.md").write_text(skill_markdown, encoding="utf-8")
         built_skills.append(skill_id)
 
