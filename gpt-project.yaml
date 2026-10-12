@@ -230,6 +230,7 @@ skills:
   - id: gpt-project-workflow
     name: gpt-project-workflow
     description: Planera, återuppta och fortsätt ett GPT Byggaren-projekt utifrån faktisk projektstatus.
+    source: src/instructions/skills/gpt-project-workflow/behavior.md
     references:
     - docs/dynamic-planning.md
     - docs/resume-flow.md
@@ -239,12 +240,14 @@ skills:
   - id: legacy-project-analysis
     name: legacy-project-analysis
     description: Inventera, tolka och rekonstruera äldre GPT-projekt evidensbaserat utan att aktivera runtime.
+    source: src/instructions/skills/legacy-project-analysis/behavior.md
     references:
     - docs/skills/legacy-project-analysis.md
     - docs/generic-legacy-interpretation.md
   - id: distribution-and-parity
     name: distribution-and-parity
     description: Bygg och verifiera GPT-distributioner med spårbarhet, skriptkrav och runtimeparitet.
+    source: src/instructions/skills/distribution-and-parity/behavior.md
     references:
     - docs/skills/distribution-and-parity.md
     - docs/portable-skills-contract.md
@@ -608,7 +611,9 @@ file_classification:
 instructions:
   architecture: docs/instruction-architecture.md
   schema: schemas/instruction-architecture.schema.json
+  mode: modular_skills
   canonical: src/instructions/system.md
+  core: src/instructions/core.md
   policies:
     include:
     - src/runtime-policy/*.md
