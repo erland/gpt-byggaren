@@ -6,7 +6,7 @@ import zipfile
 
 
 def inspect(root: Path, cfg: dict, version: str | None = None) -> dict:
-    from canonical_skill_sources import is_modular, modules, projected_instruction, skill_instruction
+    from .canonical_skill_sources import is_modular, modules, projected_instruction, skill_instruction
     definitions = (cfg.get("skills") or {}).get("definitions") or []
     if not is_modular(cfg):
         return {"status": "blocked", "reason": "instructions.mode is not modular_skills", "release_ready": False}
