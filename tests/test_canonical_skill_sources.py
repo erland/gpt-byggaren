@@ -92,3 +92,14 @@ def test_real_plugin_and_claude_skill_builds_keep_specialized_sources_separate(t
         assert source_b not in first
         assert source_a not in second
         assert "GPT Byggaren" in first and "GPT Byggaren" in second
+
+
+def test_duplicate_canonical_sources_are_rejected(tmp_path):
+    import pytest
+    cfg, skills = _fixture(tmp_path)
+    skills[1]["source"] = skills[0]["source"]
+    with pytest.raises(ValueError, match="duplicates"):
+        module.projected_instruction(tmp_path, cfg, skills)
+    skills[1]["source"] = cfg["instructions"]["core"]
+    with pytest.raises(ValueError, match="duplicates"):
+        module.projected_instruction(tmp_path, cfg, skills)
