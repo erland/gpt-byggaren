@@ -43,10 +43,63 @@ def modules(root: Path, cfg: dict, definitions: list[dict]) -> tuple[str, list[t
     return _read(root, core), parts
 
 
+
+
+def assembled_instruction(root: Path, cfg: dict, definitions: list[dict]) -> str:
+    """Reassemble interleaved canonical sections without changing legacy behavior."""
+    import json
+    import re
+
+    relative = (cfg.get("instructions") or {}).get("assembly")
+    if not isinstance(relative, str):
+        raise ValueError("instructions.assembly is required for section assembly")
+    p = Path(relative)
+    manifest_path = (root / p).resolve()
+    if p.is_absolute() or ".." in p.parts or not manifest_path.is_relative_to(root.resolve()):
+        raise ValueError("Unsafe assembly manifest path")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    sources = {"core": cfg["instructions"]["core"]}
+    sources.update({item["id"]: item["source"] for item in definitions})
+    if sources != manifest.get("sources"):
+        raise ValueError("Assembly sources disagree with canonical Skill definitions")
+    section_re = re.compile(r"^## (.+)$", re.MULTILINE)
+    sections = {}
+    header = ""
+    for owner, source in sources.items():
+        p = Path(source)
+        file_path = (root / p).resolve()
+        if p.is_absolute() or ".." in p.parts or not file_path.is_relative_to(root.resolve()):
+            raise ValueError("Unsafe canonical assembly source")
+        raw = file_path.read_text(encoding="utf-8")
+        hits = list(section_re.finditer(raw))
+        if owner == "core":
+            header = raw[:hits[0].start()] if hits else raw
+        found = {}
+        for i, m in enumerate(hits):
+            title = m.group(1)
+            if title in found:
+                raise ValueError(f"Duplicate section heading: {owner}/{title}")
+            found[title] = raw[m.start():hits[i + 1].start() if i + 1 < len(hits) else None]
+        sections[owner] = found
+    sequence = []
+    seen = set()
+    for entry in manifest.get("sections", []):
+        key = (entry["owner"], entry["title"])
+        if key in seen or key[0] not in sections or key[1] not in sections[key[0]]:
+            raise ValueError(f"Duplicate or missing assembly section: {key}")
+        sequence.append(sections[key[0]][key[1]])
+        seen.add(key)
+    available = {(o, title) for o, section in sections.items() for title in section}
+    if available != seen:
+        raise ValueError(f"Unmapped canonical sections: {available ^ seen}")
+    return header + "".join(sequence)
+
 def projected_instruction(root: Path, cfg: dict, definitions: list[dict]) -> str:
     core, parts = modules(root, cfg, definitions)
     if not is_modular(cfg):
         return (root / cfg["instructions"]["canonical"]).read_text(encoding="utf-8")
+    if (cfg.get("instructions") or {}).get("assembly"):
+        return assembled_instruction(root, cfg, definitions)
     return core + "\n\n" + "\n\n".join(
         f"## Skill: {item['id']}\n\n{body}" for item, body in parts
     ) + "\n"
