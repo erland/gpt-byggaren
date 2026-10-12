@@ -24,7 +24,7 @@ def test_direct_build():
     files = {a["file"] for a in manifest["artifacts"]}
 
     cfg = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
-    expected = {"gpt-byggaren-project-0.0.0-test.zip", "SHA256SUMS.txt"}
+    expected = {"gpt-byggaren-project-0.0.0-testdirect.zip", "SHA256SUMS.txt"}
     for target in cfg["build_system"]["targets"]:
         if target == "project":
             continue
