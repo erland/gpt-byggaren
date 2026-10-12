@@ -15,8 +15,6 @@ SCRIPTS_DIR = Path(__file__).resolve().parent
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-from package_distribution_engine import package as package_engine
-
 from lib.project_model import (
     normalize_capability_contract,
     capability_level,
@@ -594,6 +592,7 @@ def build_claude_skills(root: Path, cfg: dict, build_root: Path, version: str) -
         resources = resolve_plugin_skill_resources(root, cfg, skill)
         _copy_skill_resources(root, skill_dir, resources)
         if cfg.get("project", {}).get("id") == "gpt-byggaren" and skill_id == "distribution-and-parity":
+            from package_distribution_engine import package as package_engine
             staging = build_root / "claude-skills-engine"
             ensure_clean_dir(staging)
             bundle_distribution_engine(root, staging)
@@ -988,6 +987,7 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
         resources = resolve_plugin_skill_resources(root, cfg, skill)
         _copy_skill_resources(root, skill_dir, resources)
         if cfg.get("project", {}).get("id") == "gpt-byggaren" and skill_id == "distribution-and-parity":
+            from package_distribution_engine import package as package_engine
             expose_canonical_engine_skill_files(out / "distribution-engine", skill_dir)
             engine_root = out / "distribution-engine"
             package_engine(
@@ -1006,6 +1006,7 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
             runtime_requirements=plugin_script_runtime_requirements(cfg),
         )
         if cfg.get("project", {}).get("id") == "gpt-byggaren" and skill_id == "distribution-and-parity":
+            from package_distribution_engine import package as package_engine
             skill_markdown += (
                 "\\n## Mandatory engine access self-test\\n\\n"
                 "Before building a generated GPT, run "
