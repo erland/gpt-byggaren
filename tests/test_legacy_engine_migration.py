@@ -83,3 +83,49 @@ def test_opt_in_upgrade_blocks_incomplete_project_without_touching_source(tmp_pa
     assert report["canonical_build_upgrade"]["stage"] == "canonical_engine_install"
     assert report["canonical_build_upgrade"]["release_ready"] is False
     assert (source / "gpt-project.yaml").read_bytes() == original
+
+
+def test_plugin_repair_from_authoritative_canonical_instructions(tmp_path):
+    import yaml, subprocess, sys, json
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "src/instructions").mkdir(parents=True)
+    (project / "src/instructions/system.md").write_text("Summarize faithfully.\n")
+    cfg = {"project": {"id": "summary", "description": "Summarize Swedish texts"},
+           "runtime": {"plugin": {"enabled": True}},
+           "instructions": {"canonical": "src/instructions/system.md"}}
+    (project / "gpt-project.yaml").write_text(yaml.safe_dump(cfg))
+    spec = importlib.util.spec_from_file_location(
+        "migration_copy_test", ROOT / "scripts/migrate_legacy_copy.py"
+    )
+    import sys as _sys
+    _sys.path.insert(0, str(ROOT / "scripts"))
+    try:
+        migration = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(migration)
+    finally:
+        _sys.path.pop(0)
+    repair = migration._plugin_repair_preflight(project)
+    assert repair["status"] == "repaired_from_canonical"
+    assert repair["host_verified"] is False
+    migrated_cfg = yaml.safe_load((project / "gpt-project.yaml").read_text())
+    assert migrated_cfg["skills"]["definitions"][0]["id"] == "summary"
+    assert (project / "src/instructions/system.md").read_text() == "Summarize faithfully.\n"
+    assert migration._plugin_repair_preflight(project)["status"] == "already_declared"
+
+
+def test_no_automatic_plugin_repair_without_canonical_source(tmp_path):
+    import yaml
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "gpt-project.yaml").write_text(yaml.safe_dump({
+        "project": {"id": "legacy"},
+        "runtime": {"plugin": {"enabled": True}},
+        "instructions": {"canonical": "src/instructions/missing.md"}}))
+    import sys
+    sys.path.insert(0, str(ROOT / "scripts"))
+    try:
+        from migrate_legacy_copy import _plugin_repair_preflight
+        assert _plugin_repair_preflight(project)["status"] == "blocked"
+    finally:
+        sys.path.pop(0)
