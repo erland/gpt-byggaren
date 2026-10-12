@@ -627,7 +627,7 @@ def build_claude_skills(root: Path, cfg: dict, build_root: Path, version: str) -
         "does not verify host execution.\\n",
         encoding="utf-8",
     )
-    (out / "VERSION").write_text(version + "\\n", encoding="utf-8")
+    (out / "VERSION").write_text(version + "\n", encoding="utf-8")
     (out / "runtime-contract.json").write_text(
         json.dumps(claude_skills_runtime_contract(cfg, built_skills), ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
