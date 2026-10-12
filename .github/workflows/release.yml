@@ -50,7 +50,7 @@ jobs:
         run: python scripts/assess_release_readiness.py --project-root . --include-build-state
 
       - name: Package canonical distribution engine
-        run: python scripts/package_distribution_engine.py
+        run: python scripts/package_distribution_engine.py --version "${{ steps.version.outputs.version }}"
 
       - name: Verify release filenames
         run: python scripts/verify_distribution_outputs.py --project-root . --version "${{ steps.version.outputs.version }}"
@@ -64,4 +64,4 @@ jobs:
             --project-root . \
             --version "${{ steps.version.outputs.version }}" \
             --print-files)
-          gh release upload "${{ github.event.release.tag_name }}" "${FILES[@]}" dist/distribution-engine.zip --clobber
+          gh release upload "${{ github.event.release.tag_name }}" "${FILES[@]}" dist/gpt-byggaren-engine.zip --clobber

@@ -90,17 +90,17 @@ jobs:
         run: python scripts/verify_distribution_outputs.py --project-root . --version 0.0.0-ci
 
       - name: Package canonical distribution engine
-        run: python scripts/package_distribution_engine.py
+        run: python scripts/package_distribution_engine.py --version 0.0.0-ci
 
       - name: Verify canonical engine artifact
         shell: bash
         run: |
           set -euo pipefail
-          test -s dist/distribution-engine.zip
+          test -s dist/gpt-byggaren-engine.zip
           python - <<'PY'
           from pathlib import Path
           import zipfile
-          archive = Path("dist/distribution-engine.zip")
+          archive = Path("dist/gpt-byggaren-engine.zip")
           required = {
               "gpt-project.yaml",
               "scripts/install_distribution_engine.py",

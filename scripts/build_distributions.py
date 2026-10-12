@@ -592,15 +592,16 @@ def build_claude_skills(root: Path, cfg: dict, build_root: Path, version: str) -
         resources = resolve_plugin_skill_resources(root, cfg, skill)
         _copy_skill_resources(root, skill_dir, resources)
         if cfg.get("project", {}).get("id") == "gpt-byggaren" and skill_id == "distribution-and-parity":
+            from package_distribution_engine import package as package_engine
             staging = build_root / "claude-skills-engine"
             ensure_clean_dir(staging)
             bundle_distribution_engine(root, staging)
             expose_canonical_engine_skill_files(staging / "distribution-engine", skill_dir)
             engine_root = staging / "distribution-engine"
-            stable_write_zip(
-                skill_dir / "assets" / "distribution-engine.zip",
-                engine_root,
-                [p for p in engine_root.rglob("*") if p.is_file()],
+            package_engine(
+                root=root,
+                version=version,
+                output=skill_dir / "assets" / "gpt-byggaren-engine.zip",
             )
         if cfg.get("project", {}).get("id") == "gpt-byggaren":
             if skill_id == "distribution-and-parity":
@@ -986,12 +987,13 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
         resources = resolve_plugin_skill_resources(root, cfg, skill)
         _copy_skill_resources(root, skill_dir, resources)
         if cfg.get("project", {}).get("id") == "gpt-byggaren" and skill_id == "distribution-and-parity":
+            from package_distribution_engine import package as package_engine
             expose_canonical_engine_skill_files(out / "distribution-engine", skill_dir)
             engine_root = out / "distribution-engine"
-            stable_write_zip(
-                skill_dir / "assets" / "distribution-engine.zip",
-                engine_root,
-                [p for p in engine_root.rglob("*") if p.is_file()],
+            package_engine(
+                root=root,
+                version=version,
+                output=skill_dir / "assets" / "gpt-byggaren-engine.zip",
             )
 
         compiled_skill = dict(skill)
@@ -1004,6 +1006,7 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
             runtime_requirements=plugin_script_runtime_requirements(cfg),
         )
         if cfg.get("project", {}).get("id") == "gpt-byggaren" and skill_id == "distribution-and-parity":
+            from package_distribution_engine import package as package_engine
             skill_markdown += (
                 "\\n## Mandatory engine access self-test\\n\\n"
                 "Before building a generated GPT, run "
@@ -1019,13 +1022,13 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
             is_ci_version = version == "0.0.0-ci" or version.endswith("-ci")
             release_link = (
                 "https://github.com/erland/gpt-byggaren/releases/download/"
-                f"v{version}/distribution-engine.zip"
+                f"v{version}/gpt-byggaren-engine.zip"
             )
             delivery_instruction = (
                 "This is a CI/test Plugin version. Do not reference GitHub Actions, "
                 "CI artifacts or pretend a Release asset exists. If an actual downloadable "
                 "file cannot be exported, simply ask the user to attach "
-                "`distribution-engine.zip` and continue in source-only fallback."
+                "`gpt-byggaren-engine.zip` and continue in source-only fallback."
                 if is_ci_version else
                 "For a released Plugin, present this exact-version direct download "
                 "link to the Engine ZIP in the corresponding GitHub Release: "
@@ -1037,7 +1040,7 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
                 "At the first actual GPT project creation or resumption, run a "
                 "one-time, non-blocking engine access preflight. Do not check on "
                 "unrelated questions or repeatedly on every turn. Test whether "
-                "the embedded `assets/distribution-engine.zip` is a real readable "
+                "the embedded `assets/gpt-byggaren-engine.zip` is a real readable "
                 "file in the Python workspace, then check user-attached files. "
                 "If accessible, run the unchanged canonical integrity checks and "
                 "self-test and reuse the engine in the current workspace. "
