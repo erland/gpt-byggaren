@@ -1049,8 +1049,9 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
                 "`assets/canonical-engine/`. When exposed by the host, reconstruct "
                 "these original relative paths in a writable project workspace and run "
                 "the unchanged canonical installer and builder. Prefer uploaded archive "
-                "files over inaccessible mounted Skill assets; if neither source is accessible, BLOCK "
-                "rather than invent a replacement.\n"
+                "files over inaccessible mounted Skill assets; if neither is executable, "
+                "continue only with a clearly unverified declarative source draft, "
+                "never a replacement packager.\n"
             )
         (skill_dir / "SKILL.md").write_text(skill_markdown, encoding="utf-8")
         built_skills.append(skill_id)
