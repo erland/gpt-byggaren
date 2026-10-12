@@ -91,6 +91,10 @@ def diagnose(source: Path) -> dict:
             cfg["project"]["id"] = "engine-selftest"
             cfg["project"]["name"] = "Engine Selftest"
             cfg.pop("reference_profiles", None)
+            # A synthetic smoke GPT must not inherit Builder-only lint/test declarations.
+            cfg.pop("testing", None)
+            cfg.pop("linting", None)
+            cfg.get("model_robustness", {}).pop("model_compatibility", None)
             cfg["tools"]["tools"] = []
             cfg["skills"]["definitions"] = []
             cfg["runtime"]["opencode"]["skills"]["definitions"] = []

@@ -13,6 +13,7 @@ ENGINE_FILES = (
     "scripts/build_distributions.py",
     "scripts/lib/project_model.py",
     "scripts/lib/engine_package.py",
+    "scripts/lib/project_resource_audit.py",
     "scripts/validate_distributions.py",
     "scripts/validate_portable_skills.py",
 )
