@@ -12,6 +12,7 @@ from pathlib import Path
 ENGINE_FILES = (
     "scripts/build_distributions.py",
     "scripts/lib/project_model.py",
+    "scripts/lib/canonical_skill_sources.py",
     "scripts/lib/engine_package.py",
     "scripts/lib/project_resource_audit.py",
     "scripts/validate_distributions.py",
