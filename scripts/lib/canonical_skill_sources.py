@@ -4,7 +4,7 @@ from pathlib import Path
 
 def _read(root: Path, relative: str) -> str:
     p = Path(relative)
-    if p.is_absolute() or ".." in p.parts or not (root / p).is_file():
+    if p.is_absolute() or ".." in p.parts or not (root / p).resolve().is_relative_to(root.resolve()) or not (root / p).is_file():
         raise ValueError(f"Unsafe or missing canonical source: {relative}")
     result = (root / p).read_text(encoding="utf-8").strip()
     if not result:
@@ -41,7 +41,7 @@ def modules(root: Path, cfg: dict, definitions: list[dict]) -> tuple[str, list[t
 def projected_instruction(root: Path, cfg: dict, definitions: list[dict]) -> str:
     core, parts = modules(root, cfg, definitions)
     if not is_modular(cfg):
-        return core + "\n"
+        return (root / cfg["instructions"]["canonical"]).read_text(encoding="utf-8")
     return core + "\n\n" + "\n\n".join(
         f"## Skill: {item['id']}\n\n{body}" for item, body in parts
     ) + "\n"
