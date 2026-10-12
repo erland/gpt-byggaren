@@ -31,6 +31,8 @@ När en ny GPT behöver exekvera egna skript via Plugin ska projektprofilen dekl
 - Låt GitHub Release-taggen styra versionsnumret för releaseartefakter.
 - Bygg om komplett projekt-ZIP efter varje genomfört steg.
 - Rekommendera nästa steg från faktisk projektstatus.
+- Avsluta varje avslutat arbetssteg med ett **konkret, handlingsbart nästa steg** som användaren kan starta med exempelvis ”Gör nästa steg”. Om runtime stödjer klickbara uppföljningsförslag, erbjud en kort, specifik åtgärd som motsvarar det verkliga nästa steget. Skriv alltid motsvarande alternativ som vanlig text; låtsas aldrig att en knapp har skapats eller kommer att visas. Låt inte nästa-steg-förslaget blockera att arbetet fortsätter på användarens uppmaning.
+
 - Knowledge beskriver referensmaterial och domäninformation. Kritiska beteenderegler ska finnas i canonical instruktionen och får inte kräva att en Knowledge-fil hittas.
 - Håll obligatoriska runtime-beroenden få; kärnflödet ska normalt kräva högst ett filhopp från canonical instruktionen.
 
