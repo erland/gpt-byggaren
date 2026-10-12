@@ -47,3 +47,34 @@ Utöver skript ingår mallar, schema- och konfigurationsmaterial. Samma
 paketerare bygger `gpt-byggaren-engine.zip` för CI, release och
 eventuell Plugin-/Skill-resurs. Chat ZIP:s existerande
 `distribution-engine/`-layout ska inte ändras av namngivningen.
+
+## Automatisering i genererade GPT-projekt
+
+För GPT:er som behöver körbara Plugin-skript deklareras i `gpt-project.yaml`:
+
+```yaml
+engine:
+  enabled: true
+  resources:
+    - scripts/worker.py
+    - scripts/selftest.py
+  selftest: scripts/selftest.py
+  required_files:
+    - scripts/worker.py
+  python_dependencies: []
+  release_repository: owner/repository
+```
+
+Den kanoniska distributionsbyggaren skapar då `<project-id>-engine.zip`
+vid ett normalt bygge där Plugin ingår, och tar med paketet i
+`SHA256SUMS.txt` och `DELIVERY-MANIFEST.json`. Den ordinarie CI-uppladdningen
+måste inkludera `dist/*.zip`. En GitHub Release för ett genererat projekt
+ska ladda upp artefaktlistan från
+`scripts/verify_distribution_outputs.py --print-files` efter bygget, så
+Engine ZIP publiceras i **samma** release som Plugin-versionen. Ingen separat
+paketerare, GitHub API-hämtning eller inbyggd Engine ZIP i Plugin behövs.
+
+För en GPT med enbart text, instruktioner eller referensmaterial ska
+`engine` utelämnas eller `enabled: false`; då skapas inget Engine ZIP.
+Engine ZIP kan inte ge stöd för externa processer, databaser eller nätverkstjänster
+som saknas i den aktuella Python-miljön. Dessa krav måste bedömas särskilt.

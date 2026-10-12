@@ -1044,6 +1044,38 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
             if skill_id == "distribution-and-parity":
                 copy_file(root / "scripts" / "selftest_distribution_engine.py",
                           skill_dir / "scripts" / "selftest_distribution_engine.py")
+        # Generic Engine handoff for generated GPT projects; no embedded scripts.
+        if cfg.get("project", {}).get("id") != "gpt-byggaren":
+            from lib.engine_package import engine_config, engine_filename
+            if engine_config(cfg):
+                engine_name = engine_filename(cfg)
+                is_test = version.endswith("-ci") or version.startswith("0.0.0-")
+                engine_cfg = cfg["engine"]
+                release_repo = engine_cfg.get("release_repository")
+                link = (
+                    f"https://github.com/{release_repo}/releases/download/v{version}/{engine_name}"
+                    if isinstance(release_repo, str) and "/" in release_repo and not is_test
+                    else None
+                )
+                handoff = (
+                    f"Direct Engine ZIP download for this exact release: {link}. "
+                    if link else
+                    "No verified release download link is configured for this build. "
+                )
+                skill_markdown += (
+                    "\n## Executable Engine ZIP preflight\n\n"
+                    "At the first task requiring executable scripts, check once "
+                    f"for a real user-attached `{engine_name}` file in the Python workspace. "
+                    "The Plugin does not embed the executable engine. "
+                    + handoff +
+                    "If missing, ask once for the Engine ZIP and permit non-executable "
+                    "work without falsely claiming a completed build. "
+                    "Before execution, verify engine-package.json, expected engine_id "
+                    f"({cfg['project']['id']}), version ({version}), file hashes, "
+                    "and safe relative paths; execute only the declared selftest "
+                    f"({engine_cfg['selftest']}) in a compatible workspace. "
+                    "Never invent an archive, link, test result or replacement engine.\n"
+                )
         (skill_dir / "SKILL.md").write_text(skill_markdown, encoding="utf-8")
         built_skills.append(skill_id)
 
@@ -1459,6 +1491,10 @@ def main() -> int:
     if "project" in targets:
         project_zip = dist / f"{project_id}-project.zip"
         stable_write_zip(project_zip, root, project_files(root))
+
+    from lib.engine_package import package_engine
+    if "plugin" in targets and cfg.get("runtime", {}).get("plugin", {}).get("enabled"):
+        package_engine(root, cfg, version, dist)
 
     write_checksums(dist)
     write_delivery_manifest(dist, cfg, version)
