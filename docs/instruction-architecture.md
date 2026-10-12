@@ -14,6 +14,28 @@ Grundprincip:
 
 > Canonical instruktion ska vara sanningskällan. Distributionsspecifika instruktioner ska genereras eller härledas.
 
+## GPT Byggarens egna kanoniska Skills
+
+GPT Byggaren använder numera `instructions.mode: modular_skills`. De verkliga beteendekällorna är:
+
+- `src/instructions/core.md` – gemensam identitet, prioritering och tvärgående regler
+- `src/instructions/skills/gpt-project-workflow/behavior.md` – projektets steg och återupptagning
+- `src/instructions/skills/legacy-project-analysis/behavior.md` – analys och migrering av äldre GPT
+- `src/instructions/skills/distribution-and-parity/behavior.md` – Engine, byggning, leveranser och validering
+
+`src/instructions/assembly.json` bevarar den historiska rubrikordningen. Därmed
+kan byggaren rekonstruera `src/instructions/system.md` exakt för Chat,
+Claude Projects och OpenCode. Den sammanhängande `system.md` är en
+bakåtkompatibel projektion och regressionsreferens, inte platsen för nya
+beteendeändringar. Vid beteendeändring ska de kanoniska modulerna ändras
+och den sammanhängande instruktionen regenereras samtidigt.
+
+Plugin och Claude Skills får den gemensamma kärnan samt en enda Skills
+specialiserade beteende. Att gemensamma regler kopieras till flera
+distributionspaket är avsiktligt och skapar inte extra underhållskällor.
+Skill-definitionernas dokumentationsreferenser är kompletterande material,
+inte en andra kanonisk beteendekälla.
+
 ## Tre nivåer
 
 ### 1. Canonical huvudinstruktion
