@@ -102,7 +102,7 @@ def test_installed_engine_builds_distinct_runtime_archives(tmp_path):
     assert len(archives) == 6
     assert (project / ".gitignore").is_file()
     assert not list(project.glob("*custom-gpt*.zip"))
-    project_archive = project / "dist/generated-smoke-project.zip"
+    project_archive = project / "dist/generated-smoke-project-0.1.0.zip"
     with zipfile.ZipFile(project_archive) as zf:
         names = zf.namelist()
         assert ".gitignore" in names
@@ -119,14 +119,14 @@ def test_installed_engine_builds_distinct_runtime_archives(tmp_path):
     delivery = subprocess.run(
         [sys.executable, str(ROOT / "scripts/validate_generated_delivery.py"),
          "--project-root", str(project),
-         "--project-zip", str(project / "dist/generated-smoke-project.zip"),
+         "--project-zip", str(project / "dist/generated-smoke-project-0.1.0.zip"),
          "--dist-dir", str(project / "dist")],
         capture_output=True, text=True,
     )
     assert delivery.returncode == 0, delivery.stdout + "\\n" + delivery.stderr
     layouts = []
     for archive in archives:
-        if archive.name.endswith("-project.zip"):
+        if archive.name.endswith("-project-0.1.0.zip"):
             continue
         with zipfile.ZipFile(archive) as zf:
             layouts.append(frozenset(zf.namelist()))
