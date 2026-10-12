@@ -627,7 +627,7 @@ def build_claude_skills(root: Path, cfg: dict, build_root: Path, version: str) -
         "does not verify host execution.\\n",
         encoding="utf-8",
     )
-    (out / "VERSION").write_text(version + "\\n", encoding="utf-8")
+    (out / "VERSION").write_text(version + "\n", encoding="utf-8")
     (out / "runtime-contract.json").write_text(
         json.dumps(claude_skills_runtime_contract(cfg, built_skills), ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
@@ -1022,7 +1022,7 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
                 "For a released Plugin, present this exact-version direct download "
                 "link to the Engine ZIP in the corresponding GitHub Release: "
                 + release_link
-                + " . Do not use latest or a different release version."
+                + " . Tell the user to open this link, download the Engine ZIP, attach the ZIP in this conversation, and then say Gör nästa steg. Do not use latest or a different release version."
             )
             skill_markdown += (
                 "\n## Plugin engine preflight and handoff\n\n"
@@ -1031,6 +1031,7 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
                 "unrelated questions or repeatedly on every turn. Test whether "
                 f"a user-attached `gpt-byggaren-engine-{version}.zip` is a real readable "
                 "file in the Python workspace. "
+                "If missing, explain the actual download-and-attach steps in the conversation language, not merely the Engine name. "
                 "If accessible, run the unchanged canonical integrity checks and "
                 "self-test and reuse the engine in the current workspace. "
                 "The Engine ZIP is distributed separately through the matching "
