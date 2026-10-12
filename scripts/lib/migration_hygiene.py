@@ -38,17 +38,30 @@ def assess_hygiene(project: Path, *, engine_version: str | None = None) -> dict:
             unchecked_migration_steps.extend(re.findall(r"(?m)^\s*- \[ \]\s+(.+)$", content))
         if name == "STATUS.md" and re.search(r"(?i)CI\s*#\d+", content):
             stale_ci.append(name)
+    migration_docs = sorted((project / "docs").glob("migration*.md")) if (project / "docs").is_dir() else []
+    migration_checklists = []
+    status_text = (project / "STATUS.md").read_text(encoding="utf-8") if (project / "STATUS.md").is_file() else ""
+    unresolved_status_claims = []
+    if re.search(r"(?i)migrationen (?:genomförs|pågår) i PR\\s*#\\d+", status_text):
+        unresolved_status_claims.append("STATUS.md still describes migration as ongoing in a PR")
+    for path in migration_docs:
+        content = path.read_text(encoding="utf-8")
+        open_items = re.findall(r"(?m)^\\s*- \\[ \\]\\s+(.+)$", content)
+        if open_items:
+            migration_checklists.append({"file": path.relative_to(project).as_posix(), "open_items": open_items})
     for name in LEGACY_VALIDATORS:
         if (project / name).is_file():
             legacy_scripts.append(name)
     return {
-        "status": "review_required" if missing_docs or stale_versions or legacy_scripts or stale_ci or broken_references or unchecked_migration_steps else "checked_no_known_findings",
+        "status": "review_required" if missing_docs or stale_versions or legacy_scripts or stale_ci or broken_references or unchecked_migration_steps or migration_checklists or unresolved_status_claims else "checked_no_known_findings",
         "missing_documents": missing_docs,
         "possible_stale_versions": stale_versions,
         "ci_references_to_reconcile": stale_ci,
         "legacy_validator_candidates": legacy_scripts,
         "broken_document_links": broken_references,
         "open_development_checklist_items": unchecked_migration_steps,
+        "open_migration_checklists": migration_checklists,
+        "unresolved_status_claims": unresolved_status_claims,
         "files_deleted": [],
         "documentation_modified": False,
         "required_actions": [
