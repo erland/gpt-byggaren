@@ -90,6 +90,10 @@ def diagnose(source: Path) -> dict:
             cfg = yaml.safe_load((materialized / "gpt-project.yaml").read_text(encoding="utf-8"))
             cfg["project"]["id"] = "engine-selftest"
             cfg["project"]["name"] = "Engine Selftest"
+            # Synthetic assistants use the supported legacy single-instruction format.
+            cfg["instructions"].pop("mode", None)
+            cfg["instructions"].pop("core", None)
+            cfg["instructions"].pop("assembly", None)
             cfg.pop("reference_profiles", None)
             # A synthetic smoke GPT must not inherit Builder-only lint/test declarations.
             cfg.pop("testing", None)
