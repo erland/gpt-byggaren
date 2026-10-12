@@ -69,7 +69,7 @@ def activate(project: Path) -> dict:
         portable = json.loads(portable_path.read_text(encoding="utf-8"))
         if isinstance(portable, dict) and portable.get("core") == original:
             portable["core"] = "canonical/core.md"
-            portable_path.write_text(json.dumps(portable, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+            portable_path.write_text(json.dumps(portable, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     profile.write_text(yaml.safe_dump(new_cfg, allow_unicode=True, sort_keys=False), encoding="utf-8")
     return {"status": "activated_pending_behavior_review", "core": "canonical/core.md",
             "skills": sorted(ids), "original_instruction_preserved": True,
