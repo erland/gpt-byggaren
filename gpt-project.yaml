@@ -614,6 +614,7 @@ instructions:
   mode: modular_skills
   canonical: src/instructions/system.md
   core: src/instructions/core.md
+  assembly: src/instructions/assembly.json
   policies:
     include:
     - src/runtime-policy/*.md
