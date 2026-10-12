@@ -89,6 +89,34 @@ jobs:
       - name: Verify expected build outputs
         run: python scripts/verify_distribution_outputs.py --project-root . --version 0.0.0-ci
 
+      - name: Package canonical distribution engine
+        run: python scripts/package_distribution_engine.py
+
+      - name: Verify canonical engine artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s dist/distribution-engine.zip
+          python - <<'PY'
+          from pathlib import Path
+          import zipfile
+          archive = Path("dist/distribution-engine.zip")
+          required = {
+              "gpt-project.yaml",
+              "scripts/install_distribution_engine.py",
+              "scripts/build_distributions.py",
+              "scripts/lib/project_model.py",
+              "scripts/validate_distributions.py",
+              "scripts/validate_portable_skills.py",
+          }
+          with zipfile.ZipFile(archive) as z:
+              names = set(z.namelist())
+              missing = required - names
+              assert not missing, f"Missing canonical engine files: {sorted(missing)}"
+              assert z.testzip() is None, "Engine archive is corrupt"
+          print(f"Verified {archive}")
+          PY
+
       - name: Verify project hygiene
         shell: bash
         run: |
@@ -100,7 +128,7 @@ jobs:
             exit 1
           fi
 
-      - name: Upload CI distributions
+      - name: Upload CI distributions and canonical engine
         uses: actions/upload-artifact@v4
         with:
           name: ci-distributions
