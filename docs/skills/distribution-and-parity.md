@@ -9,6 +9,10 @@ Generera **inte** ett förenklat projektspecifikt `build_distributions.py` som l
 
 Varje runtime har ett eget installationskontrakt: Chat ZIP med assistant-instruktioner och portabla moduler, OpenAI Plugin med pluginmanifest och Skills, Claude Projects med projektinstruktioner och kunskap, Claude Skills med Skills och resurser, OpenCode med `AGENTS.md`, `.opencode/skills` och relevanta verktyg. Bygg och validera var och en med befintliga runtime-specifika funktioner. En identisk fillista i alla fem runtime-ZIP-filerna är ett regressionsfel.
 
+## Plugin-reservläge
+
+Om originalmotorn inte kan köras i OpenAI Plugin, följ `docs/skills/plugin-declarative-fallback.md` för ett overifierat källutkast. Sätt generation.mode till declarative_fallback, build.status till pending_canonical_verification och build.release_ready till false. Behåll delivery.mode. Skapa inte distributionsarkiv utan körd kanonisk byggare. Denna reservväg gäller inte Chat ZIP.
+
 ## Arbetsgång
 1. Utgå från samma canonical instruktioner, förmågor, resurs- och verktygskontrakt.
 2. Kontrollera skriptens hostkrav och fallback; tillgång till filerna är inte bevis för körbarhet.
