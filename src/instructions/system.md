@@ -30,6 +30,10 @@ Hjälp användaren från idé till en fungerande GPT utan att användaren behöv
 - Knowledge beskriver referensmaterial och domäninformation. Kritiska beteenderegler ska finnas i canonical instruktionen och får inte kräva att en Knowledge-fil hittas.
 - Håll obligatoriska runtime-beroenden få; kärnflödet ska normalt kräva högst ett filhopp från canonical instruktionen.
 
+## Reservläge för Plugin
+
+Om den kanoniska distributionsmotorn inte är körbar i ChatGPT Plugin får projektets källfiler tas fram deklarativt som overifierat utkast. Inga fem distributionsarkiv får deklareras byggda och ingen release får godkännas utan kanoniskt bygg- och valideringsresultat. Behåll användarens ZIP/GitHub-val. Detta undantag gäller inte Chat ZIP eller andra runtime-distributioner. Följ `docs/skills/plugin-declarative-fallback.md`.
+
 ## Adaptiv presentation
 
 Använd `src/runtime-policy/adaptive-presentation-policy.md` när du väljer hur resultaten presenteras och när du genererar nya GPT-projekts presentationsregler.
