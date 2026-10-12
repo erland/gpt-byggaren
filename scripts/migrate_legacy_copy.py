@@ -404,6 +404,8 @@ def migrate(source: Path, destination: Path) -> dict:
         report["existing_project_assessment"] = assess_existing_project(project)
         report["legacy_plugin_plan"] = create_legacy_plugin_migration_plan(project)
         report["apply"] = {"result": "changed" if changed or retired["result"] == "changed" else "no_changes"}
+    from lib.legacy_engine_assessment import inspect_engine_migration
+    report["engine_migration"] = inspect_engine_migration(project, load_cfg(project))
     report["generic_discovery"] = discover(project)
     (destination / "MIGRATION-REPORT.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
