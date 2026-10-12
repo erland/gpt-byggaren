@@ -881,7 +881,7 @@ def build_opencode_skills(root: Path, cfg: dict, out: Path) -> list[str]:
         return []
 
     skill_root = out / skills_cfg.get("directory", ".opencode/skills")
-    canonical_instruction = (root / cfg["instructions"]["canonical"]).read_text(encoding="utf-8")
+    canonical_instruction = projected_instruction(root, cfg, canonical_skill_definitions(cfg))
     built: list[str] = []
 
     for skill in canonical_skill_definitions(cfg):
@@ -981,7 +981,7 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     ensure_clean_dir(out)
     write_plugin_manifest(out, cfg, version)
 
-    canonical_instruction = (root / cfg["instructions"]["canonical"]).read_text(encoding="utf-8")
+    canonical_instruction = projected_instruction(root, cfg, canonical_skill_definitions(cfg))
     built_skills: list[str] = []
     for skill in canonical_skill_definitions(cfg):
         skill_id = skill["id"]
@@ -1232,7 +1232,7 @@ def build_opencode(root: Path, cfg: dict, build_root: Path, version: str) -> Pat
 
     runtime_cfg = cfg["runtime"]["opencode"]
 
-    canonical_instruction = (root / cfg["instructions"]["canonical"]).read_text(encoding="utf-8")
+    canonical_instruction = projected_instruction(root, cfg, canonical_skill_definitions(cfg))
     agents_path = out / runtime_cfg["layout"]["instructions"]
     agents_path.write_text(
         canonical_instruction.rstrip()
