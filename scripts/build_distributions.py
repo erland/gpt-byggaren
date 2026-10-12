@@ -1063,7 +1063,7 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
                     "No verified release download link is configured for this build. "
                 )
                 skill_markdown += (
-                    "\\n## Executable Engine ZIP preflight\\n\\n"
+                    "\n## Executable Engine ZIP preflight\n\n"
                     "At the first task requiring executable scripts, check once "
                     f"for a real user-attached `{engine_name}` file in the Python workspace. "
                     "The Plugin does not embed the executable engine. "
@@ -1074,7 +1074,7 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
                     f"({cfg['project']['id']}), version ({version}), file hashes, "
                     "and safe relative paths; execute only the declared selftest "
                     f"({engine_cfg['selftest']}) in a compatible workspace. "
-                    "Never invent an archive, link, test result or replacement engine.\\n"
+                    "Never invent an archive, link, test result or replacement engine.\n"
                 )
         (skill_dir / "SKILL.md").write_text(skill_markdown, encoding="utf-8")
         built_skills.append(skill_id)
