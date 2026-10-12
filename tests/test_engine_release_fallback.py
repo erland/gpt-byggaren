@@ -18,8 +18,8 @@ def test_plugin_prefers_attached_engine_and_never_github_fallback(tmp_path):
     skill = plugin / "skills/distribution-and-parity"
     instructions = (skill / "SKILL.md").read_text(encoding="utf-8")
     assert "distribution-engine.zip" in instructions
-    assert "user-attached" in instructions
-    assert "Do not use GitHub API or GitHub Releases" in instructions
+    assert "normal chat upload" in instructions
+    assert "Do not fetch GitHub Releases" in instructions
     assert (skill / "scripts/selftest_distribution_engine.py").is_file()
     assert not (skill / "scripts/fetch_distribution_engine.py").exists()
 
@@ -54,3 +54,25 @@ def test_chat_zip_still_bundles_original_engine(tmp_path):
 
 def test_engine_package_script_is_preserved():
     assert (ROOT / "scripts/package_distribution_engine.py").is_file()
+
+
+def test_embedded_engine_archive_matches_canonical_source(tmp_path):
+    import hashlib
+    import zipfile
+    cfg = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
+    plugin = builder.build_plugin(ROOT, cfg, tmp_path, "0.0.0-test")
+    archive = plugin / "skills/distribution-and-parity/assets/distribution-engine.zip"
+    assert archive.is_file()
+    with zipfile.ZipFile(archive) as z:
+        assert z.testzip() is None
+        for relative in (
+            "scripts/build_distributions.py",
+            "scripts/install_distribution_engine.py",
+            "scripts/lib/project_model.py",
+            "gpt-project.yaml",
+        ):
+            assert z.read(relative) == (ROOT / relative).read_bytes()
+    instructions = (plugin / "skills/distribution-and-parity/SKILL.md").read_text(encoding="utf-8")
+    assert "check embedded archive first" in instructions
+    assert "releases/download/v0.0.0-test/distribution-engine.zip" in instructions
+    assert "do not pretend to provide it as a download" in instructions

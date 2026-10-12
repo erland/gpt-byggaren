@@ -596,6 +596,12 @@ def build_claude_skills(root: Path, cfg: dict, build_root: Path, version: str) -
             ensure_clean_dir(staging)
             bundle_distribution_engine(root, staging)
             expose_canonical_engine_skill_files(staging / "distribution-engine", skill_dir)
+            engine_root = staging / "distribution-engine"
+            stable_write_zip(
+                skill_dir / "assets" / "distribution-engine.zip",
+                engine_root,
+                [p for p in engine_root.rglob("*") if p.is_file()],
+            )
         if cfg.get("project", {}).get("id") == "gpt-byggaren":
             if skill_id == "distribution-and-parity":
                 copy_file(root / "scripts" / "selftest_distribution_engine.py",
@@ -981,6 +987,12 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
         _copy_skill_resources(root, skill_dir, resources)
         if cfg.get("project", {}).get("id") == "gpt-byggaren" and skill_id == "distribution-and-parity":
             expose_canonical_engine_skill_files(out / "distribution-engine", skill_dir)
+            engine_root = out / "distribution-engine"
+            stable_write_zip(
+                skill_dir / "assets" / "distribution-engine.zip",
+                engine_root,
+                [p for p in engine_root.rglob("*") if p.is_file()],
+            )
 
         compiled_skill = dict(skill)
         compiled_skill.update(resources)
@@ -1004,17 +1016,27 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
                 "never claim self-test success or invent an alternative packager.\\n"
             )
         if cfg.get("project", {}).get("id") == "gpt-byggaren":
+            engine_url = (
+                "https://github.com/erland/gpt-byggaren/releases/download/"
+                f"v{version}/distribution-engine.zip"
+            )
             skill_markdown += (
-                "\n## Canonical distribution engine: uploaded file first\n\n"
-                "Use a user-attached `distribution-engine.zip` as the preferred original "
-                "engine source. Confirm the attachment is accessible as a real file in "
-                "the Python workspace, extract it with original relative paths, verify "
-                "the required canonical scripts and run the bundled "
-                "`scripts/selftest_distribution_engine.py` before building. "
-                "Do not use GitHub API or GitHub Releases as an engine download fallback. "
-                "If no accessible attached archive or complete runnable local source "
-                "exists, continue only as an explicitly unverified source draft "
-                "under the Plugin declarative fallback policy. Never invent a packager.\n"
+                "\n## Canonical engine: check embedded archive first\n\n"
+                "At the first build requirement, test whether "
+                "`assets/distribution-engine.zip` is a real Python-readable file. "
+                "If readable, unpack it preserving paths, validate required scripts "
+                "and run the canonical self-test. If the host cannot read or export "
+                "its bytes, do not pretend to provide it as a download. Ask the user "
+                "to attach `distribution-engine.zip` as a normal chat upload. "
+                "For convenience, offer this exact-version browser download candidate: "
+                + engine_url
+                + " . Verify that the asset actually exists before calling the link "
+                  "available; do not silently select latest. The browser download "
+                  "does not require Python network access. Do not fetch GitHub Releases "
+                  "from the Python workspace. Run the canonical installer, builder "
+                  "and validation only after successful materialization and SHA-256 "
+                  "verification. If no file is available, continue only in the "
+                  "Plugin declarative source-draft fallback, not a substitute builder.\n"
             )
             if skill_id == "distribution-and-parity":
                 copy_file(root / "scripts" / "selftest_distribution_engine.py",
