@@ -26,6 +26,7 @@ def modules(root: Path, cfg: dict, definitions: list[dict]) -> tuple[str, list[t
         raise ValueError("modular_skills requires at least one canonical Skill")
     parts = []
     seen = set()
+    source_paths = set()
     for skill in definitions:
         name = skill.get("id")
         source = skill.get("source")
@@ -33,7 +34,11 @@ def modules(root: Path, cfg: dict, definitions: list[dict]) -> tuple[str, list[t
             raise ValueError("Canonical Skill IDs must be unique and nonempty")
         if not isinstance(source, str):
             raise ValueError(f"Canonical Skill {name} requires source")
+        resolved_source = (root / source).resolve()
+        if resolved_source == (root / core).resolve() or resolved_source in source_paths:
+            raise ValueError(f"Canonical Skill {name} duplicates a core/Skill source")
         seen.add(name)
+        source_paths.add(resolved_source)
         parts.append((skill, _read(root, source)))
     return _read(root, core), parts
 
