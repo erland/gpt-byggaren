@@ -1436,6 +1436,10 @@ def main() -> int:
             "Reconstructed project is not release-ready: complete and verify "
             "runtime parity before distribution build or validation"
         )
+    from lib.project_resource_audit import validate_project_resources
+    missing_resources = validate_project_resources(root, cfg)
+    if missing_resources:
+        raise SystemExit("Incomplete declared GPT project resources:\n" + "\n".join(missing_resources))
     build_root = root / "build"
     dist = root / "dist"
     build_root.mkdir(exist_ok=True)
