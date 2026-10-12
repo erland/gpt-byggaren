@@ -10,6 +10,7 @@ import argparse
 import copy
 import json
 import shutil
+import subprocess
 import sys
 import zipfile
 
@@ -363,7 +364,163 @@ def create_legacy_plugin_migration_plan(project: Path) -> dict:
     return {"result": proposal["result"], "plan": target.relative_to(project).as_posix()}
 
 
-def migrate(source: Path, destination: Path) -> dict:
+def _plugin_repair_preflight(project: Path) -> dict:
+    """Only repair unambiguous modern Plugin projects; never infer legacy behavior."""
+    cfg = load_cfg(project)
+    if not isinstance(cfg, dict):
+        return {"status": "blocked", "reason": "Missing canonical project profile"}
+    runtime = cfg.get("runtime") or {}
+    if "openai_plugin" in runtime and "plugin" not in runtime:
+        return {"status": "review_required", "reason": "Legacy Plugin runtime mapping requires review"}
+    plugin = runtime.get("plugin") or {}
+    if not isinstance(plugin, dict) or not plugin.get("enabled"):
+        return {"status": "not_applicable", "reason": "Modern Plugin not enabled"}
+    ref = (cfg.get("instructions") or {}).get("canonical")
+    if not isinstance(ref, str) or not ref or Path(ref).is_absolute() or ".." in Path(ref).parts:
+        return {"status": "blocked", "reason": "No safe canonical instruction path"}
+    source = project / ref
+    if not source.is_file() or not source.read_text(encoding="utf-8").strip():
+        return {"status": "blocked", "reason": "Missing canonical instruction source"}
+    skills = cfg.get("skills") or {}
+    if isinstance(skills.get("definitions"), list) and skills["definitions"]:
+        return {"status": "already_declared", "skill_count": len(skills["definitions"])}
+    project_id = (cfg.get("project") or {}).get("id")
+    if not isinstance(project_id, str) or not project_id.strip():
+        return {"status": "blocked", "reason": "Missing project identifier"}
+    # The canonical Plugin builder already supports an inferred single Skill.
+    # Materialize that one *declaration* only when authoritative behavior exists.
+    # This never substitutes guessed instructions or activates an old runtime.
+    proposed = {
+        "id": project_id, "name": project_id,
+        "description": (cfg.get("project") or {}).get("description") or
+                       f"Use {project_id} according to its canonical instructions.",
+        "references": [], "assets": [], "scripts": [],
+    }
+    updated = copy.deepcopy(cfg)
+    updated.setdefault("skills", {})["definitions"] = [proposed]
+    (project / "gpt-project.yaml").write_text(
+        yaml.safe_dump(updated, sort_keys=False, allow_unicode=True), encoding="utf-8"
+    )
+    return {"status": "repaired_from_canonical", "skill_count": 1,
+            "behavior_source": ref, "host_verified": False}
+
+
+def _recover_declared_engine(project: Path) -> dict:
+    """Activate Engine only with explicit Python runtime tools and real selftest."""
+    cfg = load_cfg(project)
+    if not isinstance(cfg, dict):
+        return {"status": "blocked", "reason": "Missing project profile"}
+    existing = cfg.get("engine") or {}
+    if existing.get("enabled"):
+        return {"status": "already_declared"}
+    tools = (cfg.get("tools") or {}).get("tools") or []
+    scripts = sorted({
+        tool["script"] for tool in tools
+        if isinstance(tool, dict) and tool.get("type") == "script"
+        and isinstance(tool.get("script"), str) and tool["script"].endswith(".py")
+        and tool.get("requirement") == "required"
+    })
+    if not scripts:
+        return {"status": "not_required_or_not_proven"}
+    for name in scripts:
+        p = Path(name)
+        if p.is_absolute() or ".." in p.parts or not (project / p).is_file():
+            return {"status": "review_required", "reason": "Invalid or missing required script", "script": name}
+    test = "scripts/selftest.py"
+    if not (project / test).is_file():
+        return {"status": "review_required", "reason": "Required Python scripts found, but no real scripts/selftest.py"}
+    updated = copy.deepcopy(cfg)
+    updated["engine"] = {
+        "enabled": True, "resources": sorted({*scripts, test}),
+        "selftest": test, "required_files": scripts, "python_dependencies": [],
+    }
+    (project / "gpt-project.yaml").write_text(
+        yaml.safe_dump(updated, sort_keys=False, allow_unicode=True), encoding="utf-8"
+    )
+    return {"status": "configured_pending_execution",
+            "resources": updated["engine"]["resources"], "selftest": test,
+            "executed": False}
+
+
+def _verify_migration_archives(project: Path, version: str) -> dict:
+    """Compare actual deliverables against declared targets and inspect Plugin."""
+    from verify_distribution_outputs import expected_files
+    cfg = load_cfg(project)
+    dist = project / "dist"
+    expected = expected_files(cfg, version)
+    missing = sorted(name for name in expected if not (dist / name).is_file())
+    if missing:
+        return {"status": "blocked", "missing_artifacts": missing}
+    plugin_cfg = (cfg.get("runtime") or {}).get("plugin") or {}
+    if not plugin_cfg.get("enabled"):
+        return {"status": "verified_build_only", "plugin": "disabled"}
+    target = ((cfg.get("build_system") or {}).get("runtime_targets") or {}).get("plugin") or {}
+    pattern = target.get("filename_pattern")
+    if not isinstance(pattern, str):
+        return {"status": "blocked", "reason": "Missing Plugin filename pattern"}
+    filename = pattern.replace("<project-id>", cfg["project"]["id"]).replace("<version>", version)
+    with zipfile.ZipFile(dist / filename) as archive:
+        names = archive.namelist()
+        skills = sorted(name for name in names if name.startswith("skills/") and name.endswith("/SKILL.md"))
+        has_manifest = "plugin.json" in names
+    if not has_manifest or not skills:
+        return {"status": "blocked", "reason": "Plugin archive missing manifest or Skills"}
+    engine = cfg.get("engine") or {}
+    engine_filename = f"{cfg['project']['id']}-engine-{version}.zip"
+    if engine.get("enabled") and not (dist / engine_filename).is_file():
+        return {"status": "blocked", "reason": "Declared Engine archive is missing"}
+    return {"status": "verified_build_only", "plugin": "structurally_verified",
+            "plugin_skills": skills, "engine_archive": engine_filename if engine.get("enabled") else None}
+
+
+def upgrade_canonical_build(project: Path, version: str) -> dict:
+    """Opt-in canonical upgrade; source untouched and release never auto-approved."""
+    # Do not mutate a legacy Plugin profile whose semantics are unresolved.
+    cfg = load_cfg(project)
+    if isinstance(cfg, dict):
+        runtime = cfg.get("runtime") or {}
+        if "openai_plugin" in runtime and "plugin" not in runtime:
+            return {"status": "blocked", "stage": "plugin_mapping_review",
+                    "reason": "Review legacy Plugin semantics before enabling modern Plugin",
+                    "release_ready": False}
+    source_engine = Path(__file__).resolve().parents[1]
+    installer = source_engine / "scripts/install_distribution_engine.py"
+    install = subprocess.run(
+        [sys.executable, str(installer), "--source", str(source_engine),
+         "--project-root", str(project)], capture_output=True, text=True,
+    )
+    if install.returncode:
+        return {"status": "blocked", "stage": "canonical_engine_install",
+                "detail": (install.stderr or install.stdout).strip()[-2000:],
+                "runtime_parity_status": "unverified", "release_ready": False}
+    engine_recovery = _recover_declared_engine(project)
+    repair = _plugin_repair_preflight(project)
+    if repair["status"] == "blocked":
+        return {"status": "blocked", "stage": "plugin_repair",
+                "plugin_repair": repair, "engine_recovery": engine_recovery, "release_ready": False}
+    build = subprocess.run(
+        [sys.executable, str(project / "scripts/build_distributions.py"),
+         "--project-root", str(project), "--version", version],
+        capture_output=True, text=True,
+    )
+    if build.returncode:
+        return {"status": "blocked", "stage": "canonical_distribution_build",
+                "detail": (build.stderr or build.stdout).strip()[-2000:],
+                "plugin_repair": repair, "engine_recovery": engine_recovery,
+                "runtime_parity_status": "unverified", "release_ready": False}
+    archives = sorted(p.name for p in (project / "dist").glob("*.zip"))
+    verified = _verify_migration_archives(project, version)
+    if verified["status"] == "blocked":
+        return {"status": "blocked", "stage": "artifact_verification",
+                "artifacts": verified, "plugin_repair": repair, "engine_recovery": engine_recovery,
+                "runtime_parity_status": "unverified", "release_ready": False}
+    return {"status": "built_pending_host_acceptance", "stage": "canonical_distribution_build",
+            "archives": archives, "artifacts": verified, "plugin_repair": repair,
+            "engine_recovery": engine_recovery,
+            "runtime_parity_status": "structural_build_only", "release_ready": False}
+
+
+def migrate(source: Path, destination: Path, upgrade_build: bool = False, version: str = "0.0.0-migration") -> dict:
     source, destination = source.resolve(), destination.resolve()
     if not source.exists():
         raise FileNotFoundError(source)
@@ -404,6 +561,13 @@ def migrate(source: Path, destination: Path) -> dict:
         report["existing_project_assessment"] = assess_existing_project(project)
         report["legacy_plugin_plan"] = create_legacy_plugin_migration_plan(project)
         report["apply"] = {"result": "changed" if changed or retired["result"] == "changed" else "no_changes"}
+    from lib.legacy_engine_assessment import inspect_engine_migration
+    report["engine_migration"] = inspect_engine_migration(project, load_cfg(project))
+    if upgrade_build:
+        report["canonical_build_upgrade"] = (
+            upgrade_canonical_build(project, version) if load_cfg(project) is not None
+            else {"status": "blocked", "reason": "Missing reviewed project profile", "release_ready": False}
+        )
     report["generic_discovery"] = discover(project)
     (destination / "MIGRATION-REPORT.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
@@ -415,9 +579,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Migrate a legacy GPT project without modifying the source")
     parser.add_argument("--source", required=True)
     parser.add_argument("--destination", required=True)
+    parser.add_argument("--upgrade-build", action="store_true", help="Opt-in canonical engine install and five-runtime build in migration copy")
+    parser.add_argument("--version", default="0.0.0-migration")
     args = parser.parse_args()
     try:
-        report = migrate(Path(args.source), Path(args.destination))
+        report = migrate(Path(args.source), Path(args.destination), upgrade_build=args.upgrade_build, version=args.version)
     except (ValueError, OSError, zipfile.BadZipFile) as exc:
         print(f"Migration failed: {exc}", file=sys.stderr)
         return 1

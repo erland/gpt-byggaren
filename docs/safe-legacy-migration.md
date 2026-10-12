@@ -41,3 +41,52 @@ När en äldre distributions-ZIP entydigt innehåller instruktioner från Chat Z
 ## Evidensbaserad beroendeinventering
 
 `MIGRATION-REPORT.json` innehåller `dependency_inventory` med återfunna Knowledge-/referens-/asset-filer, tänkbara skriptverktyg och integrationsmanifest (inklusive historiska `mcp.json`). Detta är en inventering av **källmaterial**, inte ett beslut att aktivera externa verktyg. `tools_verified=false` och `knowledge_completeness_verified=false` gäller tills faktisk funktion och fullständighet har verifierats. Befintlig `mcp.json` i en äldre käll-ZIP får bevaras i den isolerade migrationskopian för spårbarhet men får inte kopieras till en ny plugin-distribution.
+
+## Engine- och Plugin-reparation vid migrering
+
+Migrationskopian rapporterar nu `engine_migration` i `MIGRATION-REPORT.json` med
+`engine_required`, `engine_status`, `plugin_repair_status`,
+`runtime_parity_status`, kandidatskript och kvarstående åtgärder.
+För en textbaserad GPT utan exekverbara resurser ska Engine inte aktiveras.
+Python-filer är **kandidater**, inte bevis för att Plugin behöver Engine:
+byggskript, testskript och lokal körkod måste särskiljas före aktivering.
+
+För ett gammalt Plugin-kontrakt måste den migrerade GPT:n få uppdaterad
+`runtime.plugin`, verifierade Skill-resurser och en ombyggnad genom den aktuella
+kanoniska byggaren. Om dess Plugin-förmågor kräver verklig lokal exekvering
+måste `engine.resources`, `engine.selftest`, versionsbunden Engine ZIP och
+instruktion om nedladdning/bifogning etableras. Ingen selftest får fabriceras,
+och gamla Plugin-resurser får inte antas fungera utan värdmiljötest.
+
+Den säkra kopieringsmigreringen installerar **inte** automatiskt en ny motor
+över äldre projektspecifika filer och intygar inte att fem runtime-versioner
+är byggbara. Det ska göras först efter schema-/resurskontroll och följas av
+kanonisk lint, fem distributionsbyggen, Engine-integritetskontroll (om aktiv),
+och värdmiljöspecifik Plugin-acceptans. Alla dessa statusar förblir
+`unverified`/icke releaseklara tills kontrollen verkligen utförts.
+
+### Valfri bygguppgradering i migrationskopian
+
+Om projektprofilen redan har kompletta fem canonical runtime-mål kan den
+aktuella distributionsmotorn installeras och distributionsbygget provas i den
+separata migrationskopian:
+
+```bash
+python scripts/migrate_legacy_copy.py --source old-project.zip \\
+  --destination upgraded-project --upgrade-build --version 0.1.0
+```
+
+Om projektprofilen är ofullständig får `canonical_build_upgrade.status=blocked`
+med ett konkret installations- eller byggfel; verktyget uppfinner inte
+runtime-kontrakt. Om bygget lyckas får rapporten
+`built_pending_host_acceptance`: det är **inte** ett verifierat
+värdmiljötest eller ett releasegodkännande. Originalprojektet ändras aldrig.
+
+När `--upgrade-build` används får en modern Plugin med befintlig, entydig
+canonical instruktion en enkel Skill-deklaration om sådan saknas. Befintliga
+Skills bevaras. Om `tools.tools` deklarerar nödvändiga Python-skript och
+`scripts/selftest.py` redan finns kan `engine` deklareras med dessa
+befintliga filer. Utan dokumenterat självtest aktiveras ingen Engine; en
+`review_required`-status kvarstår. En lyckad arkivbyggnad verifierar Plugin
+Skills och Engine-artefakten strukturellt, men är ännu inte ett funktionellt
+värdmiljötest och innebär inte releasegodkännande.
