@@ -54,6 +54,10 @@ def test_bundled_engine_installs_and_builds_five_runtimes(tmp_path):
     cfg = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
     cfg["project"]["id"] = "offline-test"
     cfg["project"]["name"] = "Offline Test"
+    # This minimal fixture does not inherit Builder-only verification declarations.
+    cfg.pop("testing", None)
+    cfg.pop("linting", None)
+    cfg.get("model_robustness", {}).pop("model_compatibility", None)
     (project / "gpt-project.yaml").write_text(
         yaml.safe_dump(cfg, allow_unicode=True), encoding="utf-8"
     )
