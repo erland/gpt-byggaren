@@ -180,3 +180,21 @@ def test_builder_plugin_bundles_original_engine_for_work(tmp_path):
     assert "writable project workspace" in instruction
     assert "Only fall back to the separately released Engine ZIP" in instruction
     assert (out / "distribution-engine").exists() is False
+
+
+
+def test_packaged_engine_runtime_detector_is_executable(tmp_path):
+    import subprocess
+    import sys
+    cfg = load_cfg()
+    out = build_distributions.build_plugin(ROOT, cfg, tmp_path, "1.2.3")
+    engine = out / "skills/distribution-and-parity/scripts/distribution-engine"
+    detector = engine / "scripts/detect_plugin_engine_runtime.py"
+    completed = subprocess.run(
+        [sys.executable, str(detector), "--engine-root", str(engine)],
+        capture_output=True, text=True,
+    )
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+    report = json.loads(completed.stdout)
+    assert report["mode"] == "direct"
+    assert not report["missing"]
