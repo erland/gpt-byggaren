@@ -31,3 +31,20 @@ The project-wide runtime contract remains unchanged and describes total project
 capabilities. This prevents non-executable workflow Skills from advertising
 Python execution as their own requirement. Skills without scripts still retain
 their canonical behavior and explicit handoff instructions.
+
+
+## Explicit resource ownership for new modular projects
+
+For newly generated projects with multiple canonical Skills, declare
+`skills.resource_policy: explicit` and specify `references`, `assets` and
+`scripts` on **every** Skill. Use `[]` for unused resource classes. The
+distribution builder rejects missing lists instead of silently copying every
+project-level resource into each Skill. This avoids accidental duplicated
+scripts and references in Plugin and Claude Skills. A Skill may still select a
+shared dependency intentionally by listing its path.
+
+Existing projects that omit `skills.resource_policy` retain the legacy
+inheritance rules. Do not apply the explicit setting to a migrated project
+until each Skill's actual dependencies have been inventoried and declared.
+The policy is a build-time structural check; it does not establish executable
+runtime parity or automatic inter-Skill activation.
