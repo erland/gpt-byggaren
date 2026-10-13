@@ -615,8 +615,26 @@ def build_claude_skills(root: Path, cfg: dict, build_root: Path, version: str) -
             )
         if cfg.get("project", {}).get("id") == "gpt-byggaren":
             if skill_id == "distribution-and-parity":
+                # Work can execute original source files from installed Skills.
+                bundle_distribution_engine(root, skill_dir / "scripts")
                 copy_file(root / "scripts" / "selftest_distribution_engine.py",
                           skill_dir / "scripts" / "selftest_distribution_engine.py")
+                skill_markdown += (
+                    "\n## Direct installed engine execution (preferred)\n\n"
+                    "Before requesting an Engine ZIP, check whether the original "
+                    "`scripts/distribution-engine/scripts/selftest_distribution_engine.py` "
+                    "is available as an actual file relative to this installed Skill. "
+                    "Use `scripts/distribution-engine/` as the engine root. "
+                    "If Python and the file are accessible, execute that original "
+                    "self-test with `--source` pointing to the engine root and "
+                    "record real stdout, stderr and exit code. On success use the "
+                    "original installer and build scripts, with all project writes "
+                    "in a separate writable workspace outside the plugin cache. "
+                    "Do not copy or reconstruct scripts and do not simulate results. "
+                    "Only use the Engine ZIP fallback when direct file access or "
+                    "execution is unavailable. If execution actually fails, "
+                    "report the real failing stage instead of masking it.\n"
+                )
         compiled = dict(skill)
         compiled.update(resources)
         skill_dir.mkdir(parents=True, exist_ok=True)
@@ -1037,7 +1055,9 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
             )
             skill_markdown += (
                 "\n## Plugin engine preflight and handoff\n\n"
-                "At the first actual GPT project creation or resumption, run a "
+                "At the first actual GPT project creation or resumption, first " 
+                "try the original packaged engine in `scripts/distribution-engine/`. "
+                "Only if direct execution is unavailable, run a "
                 "one-time, non-blocking engine access preflight. Do not check on "
                 "unrelated questions or repeatedly on every turn. Test whether "
                 f"a user-attached `gpt-byggaren-engine-{version}.zip` is a real readable "
@@ -1045,7 +1065,7 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
                 "If missing, explain the actual download-and-attach steps in the conversation language, not merely the Engine name. "
                 "If accessible, run the unchanged canonical integrity checks and "
                 "self-test and reuse the engine in the current workspace. "
-                "The Engine ZIP is distributed separately through the matching "
+                "The fallback Engine ZIP is distributed separately through the matching "
                 "release, not embedded in this Plugin. Never invent a sandbox "
                 "download or claim an inaccessible file was exported. "
                 + delivery_instruction
