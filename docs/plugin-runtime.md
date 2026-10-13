@@ -176,6 +176,12 @@ Följande ingår inte:
 
 Dessa funktioner kan införas senare när ett konkret use case motiverar dem.
 
+## Direkt exekvering av medföljande originalmotor i Work
+
+GPT Byggarens egen Plugin-distribution packar den kanoniska motorn under `skills/distribution-and-parity/scripts/distribution-engine/`. Detta återanvänder `bundle_distribution_engine` och inkluderar `gpt-project.yaml`, scripts, scriptbibliotek och mallar med bevarad intern katalogstruktur. Work kan, när dess exekveringsmiljö exponerar installerade Skill-filer som riktiga filer, starta självtestet direkt från den observerade platsen. Detta är en förmågekontroll, inte en gissning baserad på produktnamnet Work.
+
+Första exekverbara uppgiften: kontrollera filåtkomst, kör originalets självtest och kontrollera stdout/stderr/exitkod. Arbeta i separat skrivbar projektkatalog; modifiera inte installerad plugin-cache. Om originalskriptet inte är exponerat som fil eller exekvering saknas används den befintliga versionsbundna Engine ZIP:en. Ett verkligt fel från självtestet är ett fel, inte anledning till tyst fallback. Chat ZIP ändras inte av denna optimering. Direktkörning av hela motorn måste verifieras i Work innan runtimeparitet kan markeras som godkänd.
+
 ## Installation och användning
 
 Den färdiga pluginartefakten ska vara självinstruerande via sin README.
