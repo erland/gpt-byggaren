@@ -1037,7 +1037,9 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
             )
             skill_markdown += (
                 "\n## Plugin engine preflight and handoff\n\n"
-                "At the first actual GPT project creation or resumption, run a "
+                "At the first actual GPT project creation or resumption, first " 
+                "try the original packaged engine in `scripts/distribution-engine/`. "
+                "Only if direct execution is unavailable, run a "
                 "one-time, non-blocking engine access preflight. Do not check on "
                 "unrelated questions or repeatedly on every turn. Test whether "
                 f"a user-attached `gpt-byggaren-engine-{version}.zip` is a real readable "
@@ -1045,7 +1047,7 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
                 "If missing, explain the actual download-and-attach steps in the conversation language, not merely the Engine name. "
                 "If accessible, run the unchanged canonical integrity checks and "
                 "self-test and reuse the engine in the current workspace. "
-                "The Engine ZIP is distributed separately through the matching "
+                "The fallback Engine ZIP is distributed separately through the matching "
                 "release, not embedded in this Plugin. Never invent a sandbox "
                 "download or claim an inaccessible file was exported. "
                 + delivery_instruction
@@ -1054,8 +1056,37 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
                   "GitHub Python downloader, alternative packager or MCP.\n"
             )
             if skill_id == "distribution-and-parity":
+                # Reuse canonical packaging to expose original scripts as Work files.
+                bundle_distribution_engine(root, skill_dir / "scripts")
                 copy_file(root / "scripts" / "selftest_distribution_engine.py",
                           skill_dir / "scripts" / "selftest_distribution_engine.py")
+                skill_markdown += (
+                    "\n## Direct installed engine execution (preferred)\n\n"
+                    "If the installed Skill scripts are exposed as real files, run the original "
+                    "`scripts/distribution-engine/scripts/detect_plugin_engine_runtime.py` "
+                    "as a file with `--engine-root` set to the observed installed "
+                    "Skill's `scripts/distribution-engine/` and optionally "
+                    "`--fallback-zip` pointing at an actual attached ZIP. "
+                    "If the detector itself is inaccessible, do NOT copy or simulate it: "
+                    "use the existing attached Engine ZIP preflight directly. "
+                    "Read the JSON mode when the detector actually runs: direct, "
+                    "zip_fallback, or blocked. A zip_fallback result only proves "
+                    "file presence: validate archive identity, version, hashes, "
+                    "safe paths and original self-test before declaring success. "
+                    "Direct means files are present, NOT that self-test passed. "
+                    "Do not silently fall back when a real self-test fails. "
+                    "Then check whether "
+                    "`scripts/distribution-engine/scripts/selftest_distribution_engine.py` "
+                    "is a real file relative to the installed Skill. The engine root "
+                    "is `scripts/distribution-engine/`. Execute the original "
+                    "self-test with `--source` set to that engine root, and record "
+                    "actual stdout, stderr and exit code. Run the original canonical "
+                    "installer and builders only after a PASS, with a separate "
+                    "writable project workspace outside the plugin cache. "
+                    "Never simulate execution or reconstruct scripts. Only fall "
+                    "back to the separately released Engine ZIP if direct file "
+                    "access or execution is unavailable; report actual test errors.\n"
+                )
         # Generic Engine handoff for generated GPT projects; no embedded scripts.
         if cfg.get("project", {}).get("id") != "gpt-byggaren":
             from lib.engine_package import engine_config, engine_filename
