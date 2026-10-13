@@ -800,9 +800,17 @@ def resolve_plugin_skill_resources(root: Path, cfg: dict, skill: dict) -> dict[s
         "scripts": _declared_runtime_script_refs(cfg),
     }
 
+    # New modular projects can opt into explicit resource ownership.
+    # The default retains legacy project-wide inheritance for existing projects.
+    explicit = (cfg.get("skills") or {}).get("resource_policy") == "explicit"
     resolved: dict[str, list[str]] = {}
     for key in ("references", "assets", "scripts"):
         declared = skill.get(key)
+        if explicit and not isinstance(declared, list):
+            raise ValueError(
+                f"Skill {skill.get('id', '<unknown>')} must declare {key} "
+                "(use [] when no resources are needed)"
+            )
         values = list(declared) if isinstance(declared, list) else list(fallback[key])
         unique = sorted(dict.fromkeys(str(value) for value in values))
         for ref in unique:
