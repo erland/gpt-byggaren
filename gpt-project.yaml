@@ -231,6 +231,9 @@ skills:
     name: gpt-project-workflow
     description: Planera, återuppta och fortsätt ett GPT Byggaren-projekt utifrån faktisk projektstatus.
     source: src/instructions/skills/gpt-project-workflow/behavior.md
+    requires_skills:
+    - distribution-and-parity
+    scripts: []
     references:
     - docs/dynamic-planning.md
     - docs/resume-flow.md
@@ -241,6 +244,7 @@ skills:
     name: legacy-project-analysis
     description: Inventera, tolka och rekonstruera äldre GPT-projekt evidensbaserat utan att aktivera runtime.
     source: src/instructions/skills/legacy-project-analysis/behavior.md
+    scripts: []
     references:
     - docs/skills/legacy-project-analysis.md
     - docs/generic-legacy-interpretation.md
