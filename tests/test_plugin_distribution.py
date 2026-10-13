@@ -198,3 +198,38 @@ def test_packaged_engine_runtime_detector_is_executable(tmp_path):
     report = json.loads(completed.stdout)
     assert report["mode"] == "direct"
     assert not report["missing"]
+
+
+def test_explicit_empty_resources_do_not_trigger_project_script_fallback(tmp_path):
+    cfg = load_cfg()
+    root = ROOT
+    skill = {"id": "isolated", "name": "isolated", "description": "Isolated", "references": [], "assets": [], "scripts": []}
+    resources = build_distributions.resolve_plugin_skill_resources(root, cfg, skill)
+    assert resources == {"references": [], "assets": [], "scripts": []}
+    inherited = build_distributions.resolve_plugin_skill_resources(
+        root, cfg, {"id": "legacy", "name": "legacy", "description": "Legacy"}
+    )
+    assert inherited["scripts"]  # Legacy projects retain the missing-field fallback.
+
+
+def test_skill_handoff_rejects_missing_and_cyclic_dependencies():
+    check = build_distributions.validate_skill_dependencies
+    check([{"id": "workflow", "requires_skills": ["distribution"]}, {"id": "distribution"}])
+    import pytest
+    with pytest.raises(ValueError, match="Unknown"):
+        check([{"id": "workflow", "requires_skills": ["missing"]}])
+    with pytest.raises(ValueError, match="Cyclic"):
+        check([{"id": "a", "requires_skills": ["b"]}, {"id": "b", "requires_skills": ["a"]}])
+
+
+def test_canonical_skill_script_isolation_and_engine_preservation(tmp_path):
+    cfg = load_cfg()
+    plugin = build_distributions.build_plugin(ROOT, cfg, tmp_path, "1.6.20-test")
+    for skill_id in ("gpt-project-workflow", "legacy-project-analysis"):
+        assert not (plugin / "skills" / skill_id / "scripts").exists()
+    workflow = (plugin / "skills" / "gpt-project-workflow" / "SKILL.md").read_text()
+    assert "## Skill dependencies" in workflow
+    assert "`distribution-and-parity`" in workflow
+    engine = plugin / "skills" / "distribution-and-parity" / "scripts" / "distribution-engine"
+    assert (engine / "scripts" / "build_distributions.py").is_file()
+    assert (engine / "scripts" / "detect_plugin_engine_runtime.py").is_file()
