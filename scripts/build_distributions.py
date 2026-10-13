@@ -190,7 +190,15 @@ def copy_portable_skill_modules(root: Path, cfg: dict, target: Path) -> list[str
                 copy_file(source, destination / category / source.name)
         destination.mkdir(parents=True, exist_ok=True)
         (destination / "SKILL.md").write_text(
-            compile_skill_markdown(skill, compatibility="portable-reference"),
+            compile_skill_markdown(
+                skill,
+                compatibility="portable-reference",
+                canonical_instruction=(
+                    skill_instruction(root, cfg, canonical_skill_definitions(cfg), skill)
+                    if is_modular(cfg) else None
+                ),
+                include_canonical_behavior=is_modular(cfg),
+            ),
             encoding="utf-8",
         )
         result.append(ident)
