@@ -75,3 +75,34 @@ def test_plugin_and_claude_skill_handoff_is_explicit_without_cross_skill_paths(t
         assert "## Scripts" not in workflow
         for skill_name in ("gpt-project-workflow", "legacy-project-analysis"):
             assert not (out / "skills" / skill_name / "scripts").exists()
+
+
+def test_explicit_resource_policy_prevents_accidental_inheritance(tmp_path):
+    import pytest
+    from build_distributions import resolve_plugin_skill_resources
+    root = tmp_path / "project"
+    (root / "knowledge").mkdir(parents=True)
+    (root / "knowledge" / "reference.md").write_text("Reference material.")
+    cfg = {
+        "skills": {"resource_policy": "explicit"},
+        "knowledge_architecture": {"canonical_root": "knowledge"},
+    }
+    skill = {"id": "plan", "references": [], "assets": [], "scripts": []}
+    assert resolve_plugin_skill_resources(root, cfg, skill) == {
+        "references": [], "assets": [], "scripts": []
+    }
+    with pytest.raises(ValueError, match="must declare references"):
+        resolve_plugin_skill_resources(root, cfg, {"id": "plan", "assets": [], "scripts": []})
+    with pytest.raises(ValueError, match="must declare scripts"):
+        resolve_plugin_skill_resources(root, cfg, {"id": "plan", "references": [], "assets": []})
+
+
+def test_legacy_resource_inheritance_remains_supported(tmp_path):
+    from build_distributions import resolve_plugin_skill_resources
+    root = tmp_path / "project"
+    (root / "knowledge").mkdir(parents=True)
+    (root / "knowledge" / "reference.md").write_text("Reference material.")
+    cfg = {"knowledge_architecture": {"canonical_root": "knowledge"}}
+    result = resolve_plugin_skill_resources(root, cfg, {"id": "legacy"})
+    assert result["references"] == ["knowledge/reference.md"]
+    assert result["assets"] == []
