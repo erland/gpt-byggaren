@@ -615,26 +615,8 @@ def build_claude_skills(root: Path, cfg: dict, build_root: Path, version: str) -
             )
         if cfg.get("project", {}).get("id") == "gpt-byggaren":
             if skill_id == "distribution-and-parity":
-                # Work can execute original source files from installed Skills.
-                bundle_distribution_engine(root, skill_dir / "scripts")
                 copy_file(root / "scripts" / "selftest_distribution_engine.py",
                           skill_dir / "scripts" / "selftest_distribution_engine.py")
-                skill_markdown += (
-                    "\n## Direct installed engine execution (preferred)\n\n"
-                    "Before requesting an Engine ZIP, check whether the original "
-                    "`scripts/distribution-engine/scripts/selftest_distribution_engine.py` "
-                    "is available as an actual file relative to this installed Skill. "
-                    "Use `scripts/distribution-engine/` as the engine root. "
-                    "If Python and the file are accessible, execute that original "
-                    "self-test with `--source` pointing to the engine root and "
-                    "record real stdout, stderr and exit code. On success use the "
-                    "original installer and build scripts, with all project writes "
-                    "in a separate writable workspace outside the plugin cache. "
-                    "Do not copy or reconstruct scripts and do not simulate results. "
-                    "Only use the Engine ZIP fallback when direct file access or "
-                    "execution is unavailable. If execution actually fails, "
-                    "report the real failing stage instead of masking it.\n"
-                )
         compiled = dict(skill)
         compiled.update(resources)
         skill_dir.mkdir(parents=True, exist_ok=True)
@@ -1074,8 +1056,24 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
                   "GitHub Python downloader, alternative packager or MCP.\n"
             )
             if skill_id == "distribution-and-parity":
+                # Reuse canonical packaging to expose original scripts as Work files.
+                bundle_distribution_engine(root, skill_dir / "scripts")
                 copy_file(root / "scripts" / "selftest_distribution_engine.py",
                           skill_dir / "scripts" / "selftest_distribution_engine.py")
+                skill_markdown += (
+                    "\n## Direct installed engine execution (preferred)\n\n"
+                    "Before requesting an Engine ZIP, check whether "
+                    "`scripts/distribution-engine/scripts/selftest_distribution_engine.py` "
+                    "is a real file relative to the installed Skill. The engine root "
+                    "is `scripts/distribution-engine/`. Execute the original "
+                    "self-test with `--source` set to that engine root, and record "
+                    "actual stdout, stderr and exit code. Run the original canonical "
+                    "installer and builders only after a PASS, with a separate "
+                    "writable project workspace outside the plugin cache. "
+                    "Never simulate execution or reconstruct scripts. Only fall "
+                    "back to the separately released Engine ZIP if direct file "
+                    "access or execution is unavailable; report actual test errors.\n"
+                )
         # Generic Engine handoff for generated GPT projects; no embedded scripts.
         if cfg.get("project", {}).get("id") != "gpt-byggaren":
             from lib.engine_package import engine_config, engine_filename
