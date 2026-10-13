@@ -627,7 +627,7 @@ def build_claude_skills(root: Path, cfg: dict, build_root: Path, version: str) -
                 compiled,
                 canonical_instruction=skill_instruction(root, cfg, canonical_skill_definitions(cfg), skill),
                 include_canonical_behavior=True,
-                runtime_requirements=plugin_script_runtime_requirements(cfg),
+                runtime_requirements=plugin_script_runtime_requirements(cfg, resources["scripts"]),
             ),
             encoding="utf-8",
         )
@@ -804,11 +804,18 @@ def resolve_plugin_skill_resources(root: Path, cfg: dict, skill: dict) -> dict[s
     return resolved
 
 
-def plugin_script_runtime_requirements(cfg: dict) -> dict:
-    """Derive host requirements for packaged Plugin script resources."""
+def plugin_script_runtime_requirements(cfg: dict, scripts: list[str] | None = None) -> dict:
+    """Derive requirements from scripts actually packaged in a Skill.
+
+    A None selection retains the legacy project-wide behavior. An explicit
+    empty selection requires no code execution. This does not alter the
+    project-wide runtime contract or the Work engine's special handoff.
+    """
+    selected = None if scripts is None else set(scripts)
     tools = [
         tool for tool in normalize_tool_contract(cfg).get("tools", [])
         if tool.get("type") == "script" and tool.get("script")
+        and (selected is None or tool["script"] in selected)
     ]
     if not tools:
         return {
@@ -1055,7 +1062,7 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
             compiled_skill,
             canonical_instruction=skill_instruction(root, cfg, canonical_skill_definitions(cfg), skill),
             include_canonical_behavior=True,
-            runtime_requirements=plugin_script_runtime_requirements(cfg),
+            runtime_requirements=plugin_script_runtime_requirements(cfg, resources["scripts"]),
         )
         if cfg.get("project", {}).get("id") == "gpt-byggaren" and skill_id == "distribution-and-parity":
             skill_markdown += (
