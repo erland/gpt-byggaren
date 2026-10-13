@@ -174,6 +174,7 @@ def copy_portable_skill_modules(root: Path, cfg: dict, target: Path) -> list[str
     Projects or Chat ZIP will automatically install/activate host Skills.
     """
     result = []
+    validate_skill_dependencies(canonical_skill_definitions(cfg))
     for skill in canonical_skill_definitions(cfg):
         ident = skill["id"]
         destination = target / ident
@@ -595,6 +596,7 @@ def build_claude_skills(root: Path, cfg: dict, build_root: Path, version: str) -
     out = build_root / "claude-skills"
     ensure_clean_dir(out)
     canonical_instruction = projected_instruction(root, cfg, canonical_skill_definitions(cfg))
+    validate_skill_dependencies(canonical_skill_definitions(cfg))
     built_skills = []
     for skill in canonical_skill_definitions(cfg):
         skill_id = skill["id"]
@@ -672,6 +674,36 @@ def canonical_skill_definitions(cfg: dict) -> list[dict]:
         "scripts": [],
         "_inferred_default": True,
     }]
+
+
+def validate_skill_dependencies(definitions: list[dict]) -> None:
+    """Fail closed on unknown, self-referential or cyclic Skill handoffs."""
+    ids = [item["id"] for item in definitions]
+    if len(ids) != len(set(ids)):
+        raise ValueError("Duplicate canonical Skill IDs")
+    graph = {}
+    for skill in definitions:
+        dependencies = skill.get("requires_skills", [])
+        if not isinstance(dependencies, list) or len(dependencies) != len(set(dependencies)):
+            raise ValueError(f"Invalid Skill dependencies: {skill['id']}")
+        for dep in dependencies:
+            if dep not in ids or dep == skill["id"]:
+                raise ValueError(f"Unknown or self Skill dependency: {skill['id']} -> {dep}")
+        graph[skill["id"]] = dependencies
+
+    visiting, visited = set(), set()
+    def visit(skill_id: str) -> None:
+        if skill_id in visiting:
+            raise ValueError(f"Cyclic Skill dependencies involving {skill_id}")
+        if skill_id in visited:
+            return
+        visiting.add(skill_id)
+        for dep in graph[skill_id]:
+            visit(dep)
+        visiting.remove(skill_id)
+        visited.add(skill_id)
+    for skill_id in ids:
+        visit(skill_id)
 
 
 def plugin_manifest(cfg: dict, version: str) -> dict:
@@ -763,7 +795,7 @@ def resolve_plugin_skill_resources(root: Path, cfg: dict, skill: dict) -> dict[s
     resolved: dict[str, list[str]] = {}
     for key in ("references", "assets", "scripts"):
         declared = skill.get(key)
-        values = list(declared) if isinstance(declared, list) and declared else list(fallback[key])
+        values = list(declared) if isinstance(declared, list) else list(fallback[key])
         unique = sorted(dict.fromkeys(str(value) for value in values))
         for ref in unique:
             if not (root / ref).is_file():
@@ -838,6 +870,23 @@ def compile_skill_markdown(
             "",
         ])
 
+    dependencies = list(skill.get("requires_skills", []) or [])
+    if dependencies:
+        body.extend([
+            "## Skill dependencies",
+            "",
+            "When this workflow needs a capability owned by another Skill, "
+            "activate or consult that Skill using its own installed resources. "
+            "Do not assume its files exist relative to this Skill. "
+            "If the host cannot activate another Skill, use the complete "
+            "canonical instruction where available, or report the blocked "
+            "operation without simulating it.",
+            "",
+        ])
+        for dependency in dependencies:
+            body.append(f"- `{dependency}`")
+        body.append("")
+
     references = list(skill.get("references", []) or [])
     if references:
         body.extend(["## References", ""])
@@ -890,6 +939,7 @@ def build_opencode_skills(root: Path, cfg: dict, out: Path) -> list[str]:
 
     skill_root = out / skills_cfg.get("directory", ".opencode/skills")
     canonical_instruction = projected_instruction(root, cfg, canonical_skill_definitions(cfg))
+    validate_skill_dependencies(canonical_skill_definitions(cfg))
     built: list[str] = []
 
     for skill in canonical_skill_definitions(cfg):
@@ -990,6 +1040,7 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     write_plugin_manifest(out, cfg, version)
 
     canonical_instruction = projected_instruction(root, cfg, canonical_skill_definitions(cfg))
+    validate_skill_dependencies(canonical_skill_definitions(cfg))
     built_skills: list[str] = []
     for skill in canonical_skill_definitions(cfg):
         skill_id = skill["id"]
