@@ -22,3 +22,12 @@ Run `python -m pytest tests/test_skill_distribution_parity.py
 tests/test_plugin_distribution.py tests/test_split_claude_distributions.py`
 and the full test suite before merging. Structural checks are not equivalent
 to live execution in ChatGPT Work, Claude or OpenCode.
+
+## Per-Skill execution requirements
+
+Plugin and Claude Skills now derive the script runtime requirement text from the
+scripts actually packaged in each Skill, not from every script in the project.
+The project-wide runtime contract remains unchanged and describes total project
+capabilities. This prevents non-executable workflow Skills from advertising
+Python execution as their own requirement. Skills without scripts still retain
+their canonical behavior and explicit handoff instructions.
