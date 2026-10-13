@@ -149,3 +149,35 @@ def test_project_without_reference_profiles_has_no_profile_errors(tmp_path):
     (tmp_path / "gpt-project.yaml").write_text(yaml.safe_dump(cfg), encoding="utf-8")
     errors = delivery.validate(tmp_path)
     assert not any("reference profile" in error or "reference_profiles" in error for error in errors)
+
+
+def test_generated_modular_project_requires_explicit_skill_resources(tmp_path):
+    import yaml
+    cfg = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
+    cfg["instructions"]["mode"] = "modular_skills"
+    cfg["skills"]["resource_policy"] = "explicit"
+    cfg["skills"]["definitions"] = [{
+        "id": "write", "name": "write",
+        "source": "src/skills/write.md",
+        "references": [], "assets": [], "scripts": []
+    }]
+    (tmp_path / "gpt-project.yaml").write_text(yaml.safe_dump(cfg), encoding="utf-8")
+    errors = delivery.validate(tmp_path)
+    assert not any("Generated modular project" in error or "Generated Skill" in error for error in errors)
+    del cfg["skills"]["definitions"][0]["scripts"]
+    del cfg["skills"]["resource_policy"]
+    (tmp_path / "gpt-project.yaml").write_text(yaml.safe_dump(cfg), encoding="utf-8")
+    errors = delivery.validate(tmp_path)
+    assert "Generated modular project requires skills.resource_policy: explicit" in errors
+    assert any("requires scripts list" in e for e in errors)
+
+
+def test_generated_monolithic_project_preserves_legacy_resource_defaults(tmp_path):
+    import yaml
+    cfg = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
+    cfg["instructions"]["mode"] = "monolithic"
+    cfg["skills"].pop("resource_policy", None)
+    cfg["skills"]["definitions"] = [{"id": "legacy", "name": "legacy"}]
+    (tmp_path / "gpt-project.yaml").write_text(yaml.safe_dump(cfg), encoding="utf-8")
+    errors = delivery.validate(tmp_path)
+    assert not any("Generated modular project" in e or "Generated Skill" in e for e in errors)
