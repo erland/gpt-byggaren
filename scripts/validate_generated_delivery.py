@@ -42,6 +42,23 @@ def validate(root: Path, project_zip: Path | None = None, dist_dir: Path | None 
         try:
             import yaml
             cfg = yaml.safe_load(cfg_file.read_text(encoding="utf-8"))
+            # Newly generated modular projects must explicitly own Skill resources.
+            # Legacy migration validation stays in the canonical builder's opt-in mode.
+            if isinstance(cfg, dict) and (cfg.get("instructions") or {}).get("mode") == "modular_skills":
+                skills_cfg = cfg.get("skills") or {}
+                if skills_cfg.get("resource_policy") != "explicit":
+                    errors.append("Generated modular project requires skills.resource_policy: explicit")
+                definitions = skills_cfg.get("definitions") or []
+                if not isinstance(definitions, list) or not definitions:
+                    errors.append("Generated modular project requires Skill definitions")
+                else:
+                    for skill in definitions:
+                        if not isinstance(skill, dict):
+                            errors.append("Invalid generated Skill definition")
+                            continue
+                        for kind in ("references", "assets", "scripts"):
+                            if not isinstance(skill.get(kind), list):
+                                errors.append(f"Generated Skill {skill.get('id', '<unknown>')} requires {kind} list (use [] if unused)")
             targets = cfg.get("build_system", {}).get("runtime_targets", {}) if isinstance(cfg, dict) else {}
             if not isinstance(targets, dict) or any(key not in targets for key in TARGETS):
                 errors.append("Missing canonical five runtime_targets mapping")
