@@ -51,3 +51,27 @@ def test_explicit_resource_empty_is_preserved_in_portable_skill(tmp_path):
             assert resolved["scripts"] == []
         if skill["id"] == "distribution-and-parity":
             assert resolved["scripts"]
+
+
+def test_skill_script_requirements_are_scoped_to_packaged_scripts():
+    from build_distributions import plugin_script_runtime_requirements
+    cfg = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
+    assert plugin_script_runtime_requirements(cfg, [])["code_execution"]["level"] == "not_required"
+    assert plugin_script_runtime_requirements(cfg)["code_execution"]["level"] == "required"
+    script = next(tool["script"] for tool in cfg["tools"]["tools"] if tool.get("type") == "script")
+    selected = plugin_script_runtime_requirements(cfg, [script])
+    assert selected["code_execution"]["languages"] == ["python"]
+
+
+def test_plugin_and_claude_skill_handoff_is_explicit_without_cross_skill_paths(tmp_path):
+    cfg = yaml.safe_load((ROOT / "gpt-project.yaml").read_text(encoding="utf-8"))
+    plugin = build_plugin(ROOT, cfg, tmp_path / "plugin", "1.6.20-test")
+    claude = build_claude_skills(ROOT, cfg, tmp_path / "claude", "1.6.20-test")
+    for out in (plugin, claude):
+        workflow = (out / "skills/gpt-project-workflow/SKILL.md").read_text()
+        assert "## Skill dependencies" in workflow
+        assert "`distribution-and-parity`" in workflow
+        assert "Do not assume its files exist relative to this Skill" in workflow
+        assert "## Scripts" not in workflow
+        for skill_name in ("gpt-project-workflow", "legacy-project-analysis"):
+            assert not (out / "skills" / skill_name / "scripts").exists()
