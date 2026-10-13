@@ -175,6 +175,6 @@ def test_builder_plugin_bundles_original_engine_for_work(tmp_path):
         assert (engine / relative).is_file(), relative
     instruction = (skill / "SKILL.md").read_text(encoding="utf-8")
     assert "Direct installed engine execution (preferred)" in instruction
-    assert "separate writable workspace" in instruction
+    assert "writable project workspace" in instruction
     assert "Only use the Engine ZIP fallback" in instruction
     assert (out / "distribution-engine").exists() is False
