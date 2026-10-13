@@ -157,3 +157,24 @@ def test_plugin_zip_accepts_manifest_and_skills_without_mcp_json(tmp_path):
         zf.writestr("skills/example/SKILL.md", "test")
 
     assert validator.validate_plugin_zip_entries(archive) == []
+
+
+def test_builder_plugin_bundles_original_engine_for_work(tmp_path):
+    cfg = load_cfg()
+    out = build_distributions.build_plugin(ROOT, cfg, tmp_path, "1.2.3")
+    skill = out / "skills/distribution-and-parity"
+    engine = skill / "scripts/distribution-engine"
+    for relative in (
+        "gpt-project.yaml",
+        "scripts/build_distributions.py",
+        "scripts/selftest_distribution_engine.py",
+        "scripts/install_distribution_engine.py",
+        "scripts/validate_distributions.py",
+        "scripts/lib/project_model.py",
+    ):
+        assert (engine / relative).is_file(), relative
+    instruction = (skill / "SKILL.md").read_text(encoding="utf-8")
+    assert "Direct installed engine execution (preferred)" in instruction
+    assert "separate writable workspace" in instruction
+    assert "Only use the Engine ZIP fallback" in instruction
+    assert (out / "distribution-engine").exists() is False
