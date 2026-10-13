@@ -33,7 +33,13 @@ def test_split_claude_artifacts_and_skill_resources(tmp_path):
     for name in ("gpt-project-workflow", "legacy-project-analysis", "distribution-and-parity"):
         assert f"skills/{name}/SKILL.md" in skills
         assert f"skills/{name}/SKILL.md" in plugin
+    work_engine_prefix = "skills/distribution-and-parity/scripts/distribution-engine/"
+    assert any(name.startswith(work_engine_prefix) for name in plugin)
     for name in plugin:
+        if name.startswith(work_engine_prefix):
+            # The complete Work-executable engine is a Plugin runtime adapter,
+            # not a shared canonical Skill resource required by Claude Skills.
+            continue
         if name.startswith("skills/") and ("/scripts/" in name or "/assets/" in name or "/references/" in name):
             assert name in skills, f"Claude Skills missing canonical resource: {name}"
     assert not any(p.endswith("mcp.json") for p in skills)
