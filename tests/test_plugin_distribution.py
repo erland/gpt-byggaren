@@ -168,6 +168,7 @@ def test_builder_plugin_bundles_original_engine_for_work(tmp_path):
         "gpt-project.yaml",
         "scripts/build_distributions.py",
         "scripts/selftest_distribution_engine.py",
+        "scripts/detect_plugin_engine_runtime.py",
         "scripts/install_distribution_engine.py",
         "scripts/validate_distributions.py",
         "scripts/lib/project_model.py",
@@ -175,6 +176,7 @@ def test_builder_plugin_bundles_original_engine_for_work(tmp_path):
         assert (engine / relative).is_file(), relative
     instruction = (skill / "SKILL.md").read_text(encoding="utf-8")
     assert "Direct installed engine execution (preferred)" in instruction
+    assert "detect_plugin_engine_runtime.py" in instruction
     assert "writable project workspace" in instruction
     assert "Only fall back to the separately released Engine ZIP" in instruction
     assert (out / "distribution-engine").exists() is False
