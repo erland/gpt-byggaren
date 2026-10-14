@@ -33,8 +33,12 @@ def test_plugin_does_not_copy_unrelated_builder_helpers(tmp_path):
     (lib / "__init__.py").write_text("", encoding="utf-8")
     (lib / "needed.py").write_text("def helper(): return True\n", encoding="utf-8")
     (lib / "unrelated_builder.py").write_text("def heavy(): return False\n", encoding="utf-8")
+    template = root / "templates" / "project"
+    template.mkdir(parents=True)
+    (template / "book.yaml").write_text("title: Example\n", encoding="utf-8")
     out = tmp_path / "compiled" / "skills" / "book"
-    MOD._copy_skill_resources(root, out, {"scripts": ["scripts/task.py"], "references": [], "assets": []})
+    MOD._copy_skill_resources(root, out, {"scripts": ["scripts/task.py"], "references": [], "assets": ["templates/project"]})
+    assert (out / "assets" / "project" / "book.yaml").read_text(encoding="utf-8") == "title: Example\n"
     assert (out / "scripts" / "task.py").exists()
     assert (out / "scripts" / "lib" / "needed.py").exists()
     assert not (out / "scripts" / "lib" / "unrelated_builder.py").exists()
