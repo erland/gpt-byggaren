@@ -181,12 +181,15 @@ def copy_portable_skill_modules(root: Path, cfg: dict, target: Path) -> list[str
             seen = set()
             for source_ref in skill.get(category, []) or []:
                 source = root / source_ref
-                if not source.is_file() or source.is_symlink() or not source.resolve().is_relative_to(root.resolve()):
+                if not (source.is_file() or (category == "assets" and source.is_dir())) or source.is_symlink() or not source.resolve().is_relative_to(root.resolve()):
                     raise SystemExit(f"Missing/unsafe canonical skill resource: {source_ref}")
                 if source.name in seen:
                     raise SystemExit(f"Colliding skill resource filename: {source.name}")
                 seen.add(source.name)
-                copy_file(source, destination / category / source.name)
+                if category == "assets" and source.is_dir():
+                    copy_tree_filtered(source, destination / category / source.name)
+                else:
+                    copy_file(source, destination / category / source.name)
         destination.mkdir(parents=True, exist_ok=True)
         (destination / "SKILL.md").write_text(
             compile_skill_markdown(
@@ -813,8 +816,9 @@ def resolve_plugin_skill_resources(root: Path, cfg: dict, skill: dict) -> dict[s
         values = list(declared) if isinstance(declared, list) else list(fallback[key])
         unique = sorted(dict.fromkeys(str(value) for value in values))
         for ref in unique:
-            if not (root / ref).is_file():
-                raise SystemExit(f"Plugin skill {skill.get('id', '<unknown>')} {key[:-1]} missing: {ref}")
+            src = (root / ref).resolve()
+            if not src.is_relative_to(root.resolve()) or not src.exists() or (root / ref).is_symlink() or not (src.is_file() or (key == "assets" and src.is_dir())):
+                raise SystemExit(f"Plugin skill {skill.get('id', '<unknown>')} {key[:-1]} missing/unsafe: {ref}")
         resolved[key] = unique
     return resolved
 
@@ -977,7 +981,10 @@ def build_opencode_skills(root: Path, cfg: dict, out: Path) -> list[str]:
                 src = root / ref
                 if not src.exists():
                     raise SystemExit(f"Canonical skill {ref_key[:-1]} missing: {ref}")
-                copy_file(src, skill_dir / target_name / src.name)
+                if ref_key == "assets" and src.is_dir():
+                    copy_tree_filtered(src, skill_dir / target_name / src.name)
+                else:
+                    copy_file(src, skill_dir / target_name / src.name)
 
         body = compile_skill_markdown(
             skill,
@@ -1044,7 +1051,10 @@ def _copy_skill_resources(root: Path, skill_dir: Path, resources: dict[str, list
             if name in seen_names:
                 raise SystemExit(f"Plugin skill resource collision in {key}: {name}")
             seen_names.add(name)
-            copy_file(src, skill_dir / key / name)
+            if key == "assets" and src.is_dir():
+                copy_tree_filtered(src, skill_dir / key / name)
+            else:
+                copy_file(src, skill_dir / key / name)
 
     # Only copy shared helpers explicitly imported by packaged scripts.
     # Avoid shipping the whole GPT Builder implementation with unrelated Skills.
