@@ -1270,23 +1270,23 @@ def _opencode_tool_wrapper(tool: dict, script_ref: str) -> str:
     description = tool.get("purpose", tool_id).replace('"', '\\"')
     arg_schema = 'projectRoot: tool.schema.string().optional().describe("Target project directory")'
     if tool_id == "project-hygiene":
-        arg_schema += ',\\n    mode: tool.schema.enum(["checkpoint", "final"]).optional(),\\n    fix: tool.schema.boolean().optional()'
+        arg_schema += ',\n    mode: tool.schema.enum(["checkpoint", "final"]).optional(),\n    fix: tool.schema.boolean().optional()'
         command_lines = """
     const mode = args.mode ?? "checkpoint"
     const fix = args.fix ? ["--fix"] : []
     const cmd = ["python3", script, "--project-root", projectRoot, "--mode", mode, ...fix, "--json"]"""
     elif tool_id == "build-distributions":
-        arg_schema += ',\\n    version: tool.schema.string().optional(),\\n    targets: tool.schema.string().optional()'
+        arg_schema += ',\n    version: tool.schema.string().optional(),\n    targets: tool.schema.string().optional()'
         command_lines = """
     const version = args.version ?? "0.0.0-dev"
     const targets = args.targets ?? "project,chat,custom-gpt,claude_project,claude_skills,opencode,plugin"
     const cmd = ["python3", script, "--project-root", projectRoot, "--version", version, "--targets", targets]"""
     elif tool_id == "distribution-build":
-        arg_schema += ',\\n    version: tool.schema.string().optional()'
+        arg_schema += ',\n    version: tool.schema.string().optional()'
         command_lines = """
     const cmd = ["python3", script, "--version", args.version ?? "0.0.0-dev"]"""
     elif tool_id in ("book-export", "book-build"):
-        arg_schema += ',\\n    outputDir: tool.schema.string().optional(),\\n    format: tool.schema.enum(["epub", "pdf", "all"]).optional()'
+        arg_schema += ',\n    outputDir: tool.schema.string().optional(),\n    format: tool.schema.enum(["epub", "pdf", "all"]).optional()'
         if tool_id == "book-export":
             command_lines = """
     const cmd = ["python3", script, "--format", args.format ?? "all", "--output-dir", path.resolve(projectRoot, args.outputDir ?? "exports")]"""
@@ -1294,7 +1294,7 @@ def _opencode_tool_wrapper(tool: dict, script_ref: str) -> str:
             command_lines = """
     const cmd = ["python3", script, "--output-dir", path.resolve(projectRoot, args.outputDir ?? "exports")]"""
     elif tool_id in ("project-integrity",):
-        arg_schema += ',\\n    operation: tool.schema.enum(["verify", "status"]).optional()'
+        arg_schema += ',\n    operation: tool.schema.enum(["verify", "status"]).optional()'
         command_lines = """
     const cmd = ["python3", script, args.operation ?? "verify", projectRoot]"""
     elif tool_id in ("project-validation",):
