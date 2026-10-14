@@ -156,8 +156,7 @@ def copy_declared_tool_scripts(root: Path, cfg: dict, target: Path) -> list[str]
         if not src.exists():
             raise SystemExit(f"Declared runtime tool script missing: {script_ref}")
         rel = Path(script_ref)
-        if rel.parts and rel.parts[0] == "scripts":
-            rel = Path(*rel.parts[1:])
+        rel = Path(script_ref).name
         copy_file(src, target / rel)
         copied.append(script_ref)
 
@@ -182,12 +181,15 @@ def copy_portable_skill_modules(root: Path, cfg: dict, target: Path) -> list[str
             seen = set()
             for source_ref in skill.get(category, []) or []:
                 source = root / source_ref
-                if not source.is_file() or source.is_symlink() or not source.resolve().is_relative_to(root.resolve()):
+                if not (source.is_file() or (category == "assets" and source.is_dir())) or source.is_symlink() or not source.resolve().is_relative_to(root.resolve()):
                     raise SystemExit(f"Missing/unsafe canonical skill resource: {source_ref}")
                 if source.name in seen:
                     raise SystemExit(f"Colliding skill resource filename: {source.name}")
                 seen.add(source.name)
-                copy_file(source, destination / category / source.name)
+                if category == "assets" and source.is_dir():
+                    copy_tree_filtered(source, destination / category / source.name)
+                else:
+                    copy_file(source, destination / category / source.name)
         destination.mkdir(parents=True, exist_ok=True)
         (destination / "SKILL.md").write_text(
             compile_skill_markdown(
@@ -814,8 +816,9 @@ def resolve_plugin_skill_resources(root: Path, cfg: dict, skill: dict) -> dict[s
         values = list(declared) if isinstance(declared, list) else list(fallback[key])
         unique = sorted(dict.fromkeys(str(value) for value in values))
         for ref in unique:
-            if not (root / ref).is_file():
-                raise SystemExit(f"Plugin skill {skill.get('id', '<unknown>')} {key[:-1]} missing: {ref}")
+            src = (root / ref).resolve()
+            if not src.is_relative_to(root.resolve()) or not src.exists() or (root / ref).is_symlink() or not (src.is_file() or (key == "assets" and src.is_dir())):
+                raise SystemExit(f"Plugin skill {skill.get('id', '<unknown>')} {key[:-1]} missing/unsafe: {ref}")
         resolved[key] = unique
     return resolved
 
@@ -978,7 +981,10 @@ def build_opencode_skills(root: Path, cfg: dict, out: Path) -> list[str]:
                 src = root / ref
                 if not src.exists():
                     raise SystemExit(f"Canonical skill {ref_key[:-1]} missing: {ref}")
-                copy_file(src, skill_dir / target_name / src.name)
+                if ref_key == "assets" and src.is_dir():
+                    copy_tree_filtered(src, skill_dir / target_name / src.name)
+                else:
+                    copy_file(src, skill_dir / target_name / src.name)
 
         body = compile_skill_markdown(
             skill,
@@ -1045,15 +1051,44 @@ def _copy_skill_resources(root: Path, skill_dir: Path, resources: dict[str, list
             if name in seen_names:
                 raise SystemExit(f"Plugin skill resource collision in {key}: {name}")
             seen_names.add(name)
-            copy_file(src, skill_dir / key / name)
+            if key == "assets" and src.is_dir():
+                copy_tree_filtered(src, skill_dir / key / name)
+            else:
+                copy_file(src, skill_dir / key / name)
 
-    # Canonical runtime scripts may depend on shared helpers under scripts/lib.
-    # Keep those helpers next to the packaged script resources so imports such as
-    # "from lib.project_model import ..." resolve inside the plugin runtime.
+    # Only copy shared helpers explicitly imported by packaged scripts.
+    # Avoid shipping the whole GPT Builder implementation with unrelated Skills.
     if resources.get("scripts"):
+        import ast
         shared_lib = root / "scripts" / "lib"
-        if shared_lib.exists():
+        required = set()
+        pending = [root / ref for ref in resources["scripts"]]
+        while pending:
+            source = pending.pop()
+            if not source.is_file() or source.suffix != ".py":
+                continue
+            try:
+                tree = ast.parse(source.read_text(encoding="utf-8"))
+            except SyntaxError:
+                continue
+            for node in ast.walk(tree):
+                module = node.module if isinstance(node, ast.ImportFrom) else None
+                if module and (module == "lib" or module.startswith("lib.")):
+                    names = [a.name for a in node.names] if module == "lib" else [module.split(".")[1]]
+                    for name in names:
+                        helper = shared_lib / (name + ".py")
+                        if helper.is_file() and helper not in required:
+                            required.add(helper)
+                            pending.append(helper)
+        if root.name == "gpt-byggaren":
             copy_tree_filtered(shared_lib, skill_dir / "scripts" / "lib")
+            return
+        if required:
+            init = shared_lib / "__init__.py"
+            if init.is_file():
+                copy_file(init, skill_dir / "scripts" / "lib" / "__init__.py")
+            for helper in sorted(required):
+                copy_file(helper, skill_dir / "scripts" / "lib" / helper.name)
 
 
 def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
@@ -1230,27 +1265,51 @@ def _opencode_tool_name(tool_id: str) -> str:
 
 
 def _opencode_tool_wrapper(tool: dict, script_ref: str) -> str:
+    """Generate a workspace-aware OpenCode adapter using each script's real CLI."""
     tool_id = tool["id"]
     description = tool.get("purpose", tool_id).replace('"', '\\"')
-    arg_schema = 'projectRoot: tool.schema.string().optional().describe("Project root relative to the worktree")'
+    arg_schema = 'projectRoot: tool.schema.string().optional().describe("Target project directory")'
     if tool_id == "project-hygiene":
-        arg_schema += ',\n    mode: tool.schema.enum(["checkpoint", "final"]).optional(),\n    fix: tool.schema.boolean().optional()'
-        command_lines = '''
+        arg_schema += ',\\n    mode: tool.schema.enum(["checkpoint", "final"]).optional(),\\n    fix: tool.schema.boolean().optional()'
+        command_lines = """
     const mode = args.mode ?? "checkpoint"
     const fix = args.fix ? ["--fix"] : []
-    const cmd = ["python3", script, "--project-root", projectRoot, "--mode", mode, ...fix, "--json"]'''
+    const cmd = ["python3", script, "--project-root", projectRoot, "--mode", mode, ...fix, "--json"]"""
     elif tool_id == "build-distributions":
-        arg_schema += ',\n    version: tool.schema.string().optional(),\n    targets: tool.schema.string().optional()'
-        command_lines = '''
+        arg_schema += ',\\n    version: tool.schema.string().optional(),\\n    targets: tool.schema.string().optional()'
+        command_lines = """
     const version = args.version ?? "0.0.0-dev"
     const targets = args.targets ?? "project,chat,custom-gpt,claude_project,claude_skills,opencode,plugin"
-    const cmd = ["python3", script, "--project-root", projectRoot, "--version", version, "--targets", targets]'''
+    const cmd = ["python3", script, "--project-root", projectRoot, "--version", version, "--targets", targets]"""
+    elif tool_id == "distribution-build":
+        arg_schema += ',\\n    version: tool.schema.string().optional()'
+        command_lines = """
+    const cmd = ["python3", script, "--version", args.version ?? "0.0.0-dev"]"""
+    elif tool_id in ("book-export", "book-build"):
+        arg_schema += ',\\n    outputDir: tool.schema.string().optional(),\\n    format: tool.schema.enum(["epub", "pdf", "all"]).optional()'
+        if tool_id == "book-export":
+            command_lines = """
+    const cmd = ["python3", script, "--format", args.format ?? "all", "--output-dir", path.resolve(projectRoot, args.outputDir ?? "exports")]"""
+        else:
+            command_lines = """
+    const cmd = ["python3", script, "--output-dir", path.resolve(projectRoot, args.outputDir ?? "exports")]"""
+    elif tool_id in ("project-integrity",):
+        arg_schema += ',\\n    operation: tool.schema.enum(["verify", "status"]).optional()'
+        command_lines = """
+    const cmd = ["python3", script, args.operation ?? "verify", projectRoot]"""
+    elif tool_id in ("project-validation",):
+        command_lines = """
+    const cmd = ["python3", script, projectRoot]"""
+    elif tool_id in ("distribution-validation",):
+        command_lines = """
+    const cmd = ["python3", script]"""
     elif tool_id == "recommend-next-step":
-        command_lines = '''
-    const cmd = ["python3", script, "--project-root", projectRoot, "--json"]'''
+        command_lines = """
+    const cmd = ["python3", script, "--project-root", projectRoot, "--json"]"""
     else:
-        command_lines = '''
-    const cmd = ["python3", script, "--project-root", projectRoot]'''
+        # Unrecognized tools must not receive invented CLI flags.
+        command_lines = """
+    const cmd = ["python3", script]"""
 
     return f'''import {{ tool }} from "@opencode-ai/plugin"
 import path from "path"
@@ -1263,7 +1322,7 @@ export default tool({{
   async execute(args, context) {{
     const projectRoot = path.resolve(context.worktree, args.projectRoot ?? ".")
     const script = path.join(context.worktree, "{script_ref}"){command_lines}
-    const proc = Bun.spawn(cmd, {{ cwd: context.worktree, stdout: "pipe", stderr: "pipe" }})
+    const proc = Bun.spawn(cmd, {{ cwd: projectRoot, stdout: "pipe", stderr: "pipe" }})
     const stdout = await new Response(proc.stdout).text()
     const stderr = await new Response(proc.stderr).text()
     const code = await proc.exited
@@ -1355,7 +1414,7 @@ def build_opencode(root: Path, cfg: dict, build_root: Path, version: str) -> Pat
         + "- Reusable workflows may be available as project-local skills under .opencode/skills/.\n"
         + "- Load a skill when its description matches the current task instead of duplicating that workflow here.\n"
         + "- Use only the explicitly generated OpenCode custom tools for canonical runtime scripts; do not infer extra scripts as tools.\n"
-        + "- The OpenCode workspace is the GPT Byggaren runtime; the GPT project being worked on may be a subdirectory. Pass projectRoot to generated tools when the target project is not the workspace root.\n",
+        + "- The OpenCode workspace runs the installed assistant, and its project files may live in a subdirectory. Pass projectRoot when operating on a separate project directory.\n",
         encoding="utf-8",
     )
 
