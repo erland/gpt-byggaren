@@ -868,9 +868,15 @@ def compile_skill_markdown(
     runtime_requirements: dict | None = None,
 ) -> str:
     """Compile one canonical skill definition into deterministic SKILL.md text."""
+    # Agent Skills frontmatter name is the directory/technical identifier,
+    # not the human-readable display name.
+    import re
+    skill_id = skill["id"]
+    if not isinstance(skill_id, str) or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", skill_id) or len(skill_id) > 64:
+        raise ValueError(f"Invalid Agent Skill ID: {skill_id!r}")
     frontmatter = [
         "---",
-        f"name: {skill['name']}",
+        f"name: {skill_id}",
         f"description: {skill['description']}",
     ]
     if compatibility:

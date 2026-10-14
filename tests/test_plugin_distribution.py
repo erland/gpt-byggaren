@@ -46,7 +46,7 @@ def test_build_plugin_has_required_structure_and_skill_resources():
         for skill in build_distributions.canonical_skill_definitions(cfg):
             skill_dir = out / "skills" / skill["id"]
             skill_text = (skill_dir / "SKILL.md").read_text(encoding="utf-8")
-            assert f"name: {skill['name']}" in skill_text
+            assert f"name: {skill['id']}" in skill_text
             assert f"description: {skill['description']}" in skill_text
 
             if "## Scripts" in skill_text:
