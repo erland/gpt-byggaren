@@ -171,7 +171,7 @@ def validate_opencode(root: Path, cfg: dict) -> list[str]:
                 errors.append(f"Missing OpenCode skill: {skill_file.relative_to(build)}")
             else:
                 text = skill_file.read_text(encoding="utf-8")
-                if f"name: {skill['name']}" not in text:
+                if f"name: {skill['id']}" not in text:
                     errors.append(f"OpenCode skill name mismatch: {skill['id']}")
                 if f"description: {skill['description']}" not in text:
                     errors.append(f"OpenCode skill description mismatch: {skill['id']}")
