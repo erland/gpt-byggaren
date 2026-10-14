@@ -83,6 +83,12 @@ jobs:
         run: |
           python scripts/build_distributions.py --project-root . --version 0.0.0-ci
 
+      - name: Install TypeScript parser for generated OpenCode tools
+        run: npm install --prefix /tmp/opencode-ts-parser --no-save typescript@5.9.3
+      - name: Parse generated OpenCode TypeScript tools
+        env:
+          NODE_PATH: /tmp/opencode-ts-parser/node_modules
+        run: node scripts/check_opencode_typescript.cjs build/opencode/.opencode/tools
       - name: Validate distributions
         run: python scripts/validate_distributions.py --project-root .
 
