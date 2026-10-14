@@ -156,8 +156,7 @@ def copy_declared_tool_scripts(root: Path, cfg: dict, target: Path) -> list[str]
         if not src.exists():
             raise SystemExit(f"Declared runtime tool script missing: {script_ref}")
         rel = Path(script_ref)
-        if rel.parts and rel.parts[0] == "scripts":
-            rel = Path(*rel.parts[1:])
+        rel = Path(script_ref).name
         copy_file(src, target / rel)
         copied.append(script_ref)
 
@@ -1071,6 +1070,9 @@ def _copy_skill_resources(root: Path, skill_dir: Path, resources: dict[str, list
                         if helper.is_file() and helper not in required:
                             required.add(helper)
                             pending.append(helper)
+        if root.name == "gpt-byggaren":
+            copy_tree_filtered(shared_lib, skill_dir / "scripts" / "lib")
+            return
         if required:
             init = shared_lib / "__init__.py"
             if init.is_file():
@@ -1263,7 +1265,13 @@ def _opencode_tool_wrapper(tool: dict, script_ref: str) -> str:
     const mode = args.mode ?? "checkpoint"
     const fix = args.fix ? ["--fix"] : []
     const cmd = ["python3", script, "--project-root", projectRoot, "--mode", mode, ...fix, "--json"]"""
-    elif tool_id in ("build-distributions", "distribution-build"):
+    elif tool_id == "build-distributions":
+        arg_schema += ',\\n    version: tool.schema.string().optional(),\\n    targets: tool.schema.string().optional()'
+        command_lines = """
+    const version = args.version ?? "0.0.0-dev"
+    const targets = args.targets ?? "project,chat,custom-gpt,claude_project,claude_skills,opencode,plugin"
+    const cmd = ["python3", script, "--project-root", projectRoot, "--version", version, "--targets", targets]"""
+    elif tool_id == "distribution-build":
         arg_schema += ',\\n    version: tool.schema.string().optional()'
         command_lines = """
     const cmd = ["python3", script, "--version", args.version ?? "0.0.0-dev"]"""
