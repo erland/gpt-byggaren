@@ -270,7 +270,7 @@ def validate_plugin(root: Path, cfg: dict) -> list[str]:
         text = skill_file.read_text(encoding="utf-8")
         frontmatter = _parse_skill_frontmatter(text)
         if runtime_cfg.get("validation", {}).get("require_skill_frontmatter", True):
-            if frontmatter.get("name") != skill["name"]:
+            if frontmatter.get("name") != skill["id"]:
                 errors.append(f"Plugin skill name mismatch: {skill['id']}")
             if frontmatter.get("description") != skill["description"]:
                 errors.append(f"Plugin skill description mismatch: {skill['id']}")
