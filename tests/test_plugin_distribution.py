@@ -60,7 +60,7 @@ def test_build_plugin_has_required_structure_and_skill_resources():
                 for ref in resources[key]:
                     assert (skill_dir / key / Path(ref).name).is_file()
 
-            if resources["scripts"] and (ROOT / "scripts" / "lib").exists():
+            if cfg["project"]["id"] == "gpt-byggaren" and resources["scripts"] and (ROOT / "scripts" / "lib").exists():
                 shared_lib_files = [
                     p.relative_to(ROOT / "scripts" / "lib")
                     for p in (ROOT / "scripts" / "lib").rglob("*")
@@ -233,3 +233,47 @@ def test_canonical_skill_script_isolation_and_engine_preservation(tmp_path):
     engine = plugin / "skills" / "distribution-and-parity" / "scripts" / "distribution-engine"
     assert (engine / "scripts" / "build_distributions.py").is_file()
     assert (engine / "scripts" / "detect_plugin_engine_runtime.py").is_file()
+
+
+def test_plugin_validator_checks_imported_shared_helpers_only(tmp_path):
+    """Unrelated shared library modules must not block a third-party Plugin."""
+    import copy
+    cfg = copy.deepcopy(load_cfg())
+    cfg["project"]["id"] = "sample-plugin"
+    cfg["skills"]["definitions"] = [{
+        "id": "example", "name": "Example", "description": "Example",
+        "references": [], "assets": [], "scripts": ["scripts/example.py"],
+    }]
+    root = tmp_path
+    (root / "scripts" / "lib").mkdir(parents=True)
+    (root / "scripts" / "example.py").write_text(
+        "from lib.required import function\n", encoding="utf-8"
+    )
+    (root / "scripts" / "lib" / "__init__.py").write_text("")
+    (root / "scripts" / "lib" / "required.py").write_text(
+        "def function(): return True\n", encoding="utf-8"
+    )
+    (root / "scripts" / "lib" / "unrelated.py").write_text("pass\n")
+    skill_dir = root / "build" / "plugin" / "skills" / "example"
+    (skill_dir / "scripts" / "lib").mkdir(parents=True)
+    (skill_dir / "SKILL.md").write_text(
+        "---\nname: example\ndescription: Example\n---\n", encoding="utf-8"
+    )
+    (skill_dir / "scripts" / "example.py").write_text(
+        "from lib.required import function\n", encoding="utf-8"
+    )
+    (skill_dir / "scripts" / "lib" / "__init__.py").write_text("")
+    (skill_dir / "scripts" / "lib" / "required.py").write_text(
+        "def function(): return True\n", encoding="utf-8"
+    )
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "validator", ROOT / "scripts" / "validate_distributions.py"
+    )
+    validator = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(validator)
+    errors = validator.validate_plugin(root, cfg)
+    assert not [e for e in errors if "shared script dependency" in e]
+    (skill_dir / "scripts" / "lib" / "required.py").unlink()
+    errors = validator.validate_plugin(root, cfg)
+    assert any("required.py" in e and "shared script dependency" in e for e in errors)

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import sys
 import zipfile
@@ -290,11 +291,42 @@ def validate_plugin(root: Path, cfg: dict) -> list[str]:
         ] if scripts_dir.exists() else []
         shared_lib = root / "scripts" / "lib"
         if packaged_scripts and shared_lib.exists():
-            for source in shared_lib.rglob("*"):
-                if not source.is_file() or source.suffix in {".pyc", ".pyo"}:
+            # Match the builder's import-based dependency selection, including
+            # transitive imports. Do not demand unrelated files from scripts/lib.
+            required = set()
+            pending = [p for p in packaged_scripts if p.suffix == ".py"]
+            while pending:
+                source = pending.pop()
+                try:
+                    tree = ast.parse(source.read_text(encoding="utf-8"))
+                except (SyntaxError, OSError, UnicodeError):
                     continue
+                for node in ast.walk(tree):
+                    module = node.module if isinstance(node, ast.ImportFrom) else None
+                    if module and (module == "lib" or module.startswith("lib.")):
+                        names = (
+                            [alias.name for alias in node.names]
+                            if module == "lib" else [module.split(".")[1]]
+                        )
+                        for name in names:
+                            helper = shared_lib / (name + ".py")
+                            if helper.is_file() and helper not in required:
+                                required.add(helper)
+                                pending.append(helper)
+            if required:
+                init = shared_lib / "__init__.py"
+                if init.is_file():
+                    required.add(init)
+            # The GPT Builder's own distribution intentionally includes the
+            # complete Engine library; preserve that stronger check.
+            if cfg.get("project", {}).get("id") == "gpt-byggaren":
+                required.update(
+                    p for p in shared_lib.rglob("*")
+                    if p.is_file() and p.suffix not in {".pyc", ".pyo"}
+                )
+            for source in sorted(required):
                 expected = scripts_dir / "lib" / source.relative_to(shared_lib)
-                if not expected.exists():
+                if not expected.is_file():
                     errors.append(
                         f"Missing plugin shared script dependency: {expected.relative_to(build)}"
                     )
