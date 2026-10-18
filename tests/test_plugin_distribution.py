@@ -247,21 +247,21 @@ def test_plugin_validator_checks_imported_shared_helpers_only(tmp_path):
     root = tmp_path
     (root / "scripts" / "lib").mkdir(parents=True)
     (root / "scripts" / "example.py").write_text(
-        "from lib.required import function\\n", encoding="utf-8"
+        "from lib.required import function\n", encoding="utf-8"
     )
     (root / "scripts" / "lib" / "__init__.py").write_text("")
     (root / "scripts" / "lib" / "required.py").write_text(
-        "def function(): return True\\n", encoding="utf-8"
+        "def function(): return True\n", encoding="utf-8"
     )
-    (root / "scripts" / "lib" / "unrelated.py").write_text("pass\\n")
+    (root / "scripts" / "lib" / "unrelated.py").write_text("pass\n")
     skill_dir = root / "build" / "plugin" / "skills" / "example"
     (skill_dir / "scripts" / "lib").mkdir(parents=True)
     (skill_dir / "scripts" / "example.py").write_text(
-        "from lib.required import function\\n", encoding="utf-8"
+        "from lib.required import function\n", encoding="utf-8"
     )
     (skill_dir / "scripts" / "lib" / "__init__.py").write_text("")
     (skill_dir / "scripts" / "lib" / "required.py").write_text(
-        "def function(): return True\\n", encoding="utf-8"
+        "def function(): return True\n", encoding="utf-8"
     )
     import importlib.util
     spec = importlib.util.spec_from_file_location(
