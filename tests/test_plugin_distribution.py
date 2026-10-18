@@ -256,6 +256,9 @@ def test_plugin_validator_checks_imported_shared_helpers_only(tmp_path):
     (root / "scripts" / "lib" / "unrelated.py").write_text("pass\n")
     skill_dir = root / "build" / "plugin" / "skills" / "example"
     (skill_dir / "scripts" / "lib").mkdir(parents=True)
+    (skill_dir / "SKILL.md").write_text(
+        "---\\nname: example\\ndescription: Example\\n---\\n", encoding="utf-8"
+    )
     (skill_dir / "scripts" / "example.py").write_text(
         "from lib.required import function\n", encoding="utf-8"
     )
