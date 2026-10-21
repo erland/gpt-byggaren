@@ -615,15 +615,6 @@ def build_claude_skills(root: Path, cfg: dict, build_root: Path, version: str) -
         skill_dir = out / "skills" / skill_id
         resources = resolve_plugin_skill_resources(root, cfg, skill)
         _copy_skill_resources(root, skill_dir, resources)
-        # Keep release identity readable through the installed Skill itself.
-        # Top-level plugin.json and VERSION may not be exposed by the host.
-        skill_markdown = skill_markdown.replace(
-            "  source: generated-from-canonical-project\\n",
-            "  source: generated-from-canonical-project\\n"
-            + f"  plugin_id: {cfg['project']['id']}\\n"
-            + f"  plugin_version: {version}\\n",
-            1,
-        )
         if cfg.get("project", {}).get("id") == "gpt-byggaren" and skill_id == "distribution-and-parity":
             from package_distribution_engine import package as package_engine
             staging = build_root / "claude-skills-engine"
@@ -1131,6 +1122,15 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
             canonical_instruction=skill_instruction(root, cfg, canonical_skill_definitions(cfg), skill),
             include_canonical_behavior=True,
             runtime_requirements=plugin_script_runtime_requirements(cfg, resources["scripts"]),
+        )
+        # Keep release identity readable through the installed Skill itself.
+        # Top-level plugin.json and VERSION may not be exposed by the host.
+        skill_markdown = skill_markdown.replace(
+            "  source: generated-from-canonical-project\\n",
+            "  source: generated-from-canonical-project\\n"
+            + f"  plugin_id: {cfg['project']['id']}\\n"
+            + f"  plugin_version: {version}\\n",
+            1,
         )
         if cfg.get("project", {}).get("id") == "gpt-byggaren" and skill_id == "distribution-and-parity":
             skill_markdown += (
