@@ -1123,6 +1123,15 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
             include_canonical_behavior=True,
             runtime_requirements=plugin_script_runtime_requirements(cfg, resources["scripts"]),
         )
+        # Keep release identity readable through the installed Skill itself.
+        # Top-level plugin.json and VERSION may not be exposed by the host.
+        skill_markdown = skill_markdown.replace(
+            "  source: generated-from-canonical-project\n",
+            "  source: generated-from-canonical-project\n"
+            + f"  plugin_id: {cfg['project']['id']}\n"
+            + f"  plugin_version: {version}\n",
+            1,
+        )
         if cfg.get("project", {}).get("id") == "gpt-byggaren" and skill_id == "distribution-and-parity":
             skill_markdown += (
                 "\\n## Mandatory engine access self-test\\n\\n"

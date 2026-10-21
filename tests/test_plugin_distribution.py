@@ -48,6 +48,8 @@ def test_build_plugin_has_required_structure_and_skill_resources():
             skill_text = (skill_dir / "SKILL.md").read_text(encoding="utf-8")
             assert f"name: {skill['id']}" in skill_text
             assert f"description: {skill['description']}" in skill_text
+            assert f"  plugin_id: {cfg['project']['id']}" in skill_text
+            assert "  plugin_version: 1.2.3" in skill_text
 
             if "## Scripts" in skill_text:
                 assert "## Runtime requirements" in skill_text
