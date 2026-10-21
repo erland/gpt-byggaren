@@ -296,3 +296,15 @@ ZIP-runtime är definierad när:
 - hygiene är definierad,
 - lokal och GitHub-baserad build använder samma principer,
 - relationen till Custom GPT och canonical capability-kontrakt är tydlig.
+
+## Offline-byggmotor endast vid uttryckligt behov
+
+Vanliga GPT:ers Chat ZIP ska **inte** innehålla `distribution-engine/`. Katalogen är en utvecklingsmotor, inte en generell runtime-resurs. Den kan aktiveras för assistenter som faktiskt ska bygga GPT-projekt:
+
+```yaml
+runtime:
+  chat_zip:
+    bundle_distribution_engine: true
+```
+
+Standardvärdet vid utelämnad inställning är `false`. GPT Byggaren självt anger `true` för att bevara möjligheten till fristående offline-projektbygge och ZIP-spåret. Ändringen påverkar inte deklarerade runtime-tools, de andra distributionerna eller projekt-ZIP. Vid uppgradering av redan publicerade projekts incheckade byggskript behövs nytt distributionsbygge för att ändringen ska få effekt.
