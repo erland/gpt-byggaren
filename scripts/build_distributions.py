@@ -227,7 +227,9 @@ def build_chat(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
     out = build_root / "chat"
     ensure_clean_dir(out)
 
-    bundle_distribution_engine(root, out)
+    # Only assistants that explicitly need the offline project generator include it.
+    if cfg.get("runtime", {}).get("chat_zip", {}).get("bundle_distribution_engine", False):
+        bundle_distribution_engine(root, out)
     assistant = out / "assistant"
     policies = assistant / "policies"
     policies.mkdir(parents=True)
