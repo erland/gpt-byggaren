@@ -114,6 +114,10 @@
     },
     "deterministic_build": {
       "type": "boolean"
+    },
+    "bundle_distribution_engine": {
+      "type": "boolean",
+      "description": "Include the offline GPT project generator in Chat ZIP only for assistants that explicitly require it; defaults to false."
     }
   }
 }

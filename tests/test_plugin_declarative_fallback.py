@@ -17,4 +17,4 @@ def test_plugin_fallback_contract():
 def test_chat_zip_builder_is_unchanged_in_fallback():
     builder = (ROOT / "scripts/build_distributions.py").read_text(encoding="utf-8")
     assert "def build_chat(" in builder
-    assert "bundle_distribution_engine(root, out)" in builder
+    assert 'get("bundle_distribution_engine", False)' in builder

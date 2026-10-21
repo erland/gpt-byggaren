@@ -42,4 +42,4 @@ def test_runtime_builder_does_not_package_project_root_gitignore():
     builder = (ROOT / "scripts/build_distributions.py").read_text(encoding="utf-8")
     assert 'excluded_top = {"build", "dist", ".git"}' in builder
     assert 'stable_write_zip(zip_path, runtime_root,' in builder
-    assert 'bundle_distribution_engine(root, out)' in builder
+    assert 'get("bundle_distribution_engine", False)' in builder
