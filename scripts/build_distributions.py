@@ -1310,6 +1310,15 @@ def _opencode_tool_wrapper(tool: dict, script_ref: str) -> str:
         else:
             command_lines = """
     const cmd = ["python3", script, "--output-dir", path.resolve(projectRoot, args.outputDir ?? "exports")]"""
+    elif tool_id in ("presentation_plan_validate", "pptx_validate"):
+        arg_schema += ',\\n    file: tool.schema.string().min(1).describe("Path to presentation-plan.md or PPTX file, relative to the target project")'
+        command_lines = """
+    const file = path.resolve(projectRoot, args.file)
+    const relative = path.relative(projectRoot, file)
+    if (relative === ".." || relative.startsWith(".." + path.sep) || path.isAbsolute(relative)) {
+      throw new Error("File must be within projectRoot")
+    }
+    const cmd = ["python3", script, file]"""
     elif tool_id in ("project-integrity",):
         arg_schema += ',\n    operation: tool.schema.enum(["verify", "status"]).optional()'
         command_lines = """
