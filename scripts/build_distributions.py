@@ -988,7 +988,7 @@ def build_opencode_skills(root: Path, cfg: dict, out: Path) -> list[str]:
         body = compile_skill_markdown(
             dict(skill, **resources),
             compatibility="opencode",
-            canonical_instruction=skill_instruction(root, cfg, canonical_skill_definitions(cfg), skill),
+            canonical_instruction=skill_instruction(root, cfg, canonical_skill_definitions(cfg), skill, runtime="opencode"),
             include_canonical_behavior=is_modular(cfg),
             runtime_requirements=plugin_script_runtime_requirements(cfg, resources["scripts"]),
         )
