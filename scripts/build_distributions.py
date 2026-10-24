@@ -648,7 +648,7 @@ def build_claude_skills(root: Path, cfg: dict, build_root: Path, version: str) -
         "# Claude Skills – " + cfg["project"]["name"] + "\n\n"
         "Install the individual folders under skills/ as Claude Skills. "
         "Scripts require a compatible execution environment; packaging alone "
-        "does not verify host execution.\\n",
+        "does not verify host execution.\n",
         encoding="utf-8",
     )
     (out / "VERSION").write_text(version + "\n", encoding="utf-8")
