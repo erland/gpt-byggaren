@@ -965,40 +965,32 @@ def compile_skill_markdown(
 
 
 def build_opencode_skills(root: Path, cfg: dict, out: Path) -> list[str]:
-    """Generate OpenCode skills from the canonical skill contract."""
+    """Project canonical modular skills into OpenCode, unless explicitly disabled.
+
+    The modern canonical skills contract is the source of truth. Legacy
+    nonmodular projects retain the opt-in OpenCode skill behavior.
+    """
     runtime_cfg = cfg["runtime"]["opencode"]
-    skills_cfg = runtime_cfg.get("skills", {})
-    if not skills_cfg.get("enabled"):
+    skills_cfg = runtime_cfg.get("skills") or {}
+    if not skills_cfg.get("enabled", is_modular(cfg)):
         return []
 
     skill_root = out / skills_cfg.get("directory", ".opencode/skills")
-    canonical_instruction = projected_instruction(root, cfg, canonical_skill_definitions(cfg))
     validate_skill_dependencies(canonical_skill_definitions(cfg))
     built: list[str] = []
 
     for skill in canonical_skill_definitions(cfg):
         skill_id = skill["id"]
         skill_dir = skill_root / skill_id
-
-        for ref_key, target_name in (
-            ("references", "references"),
-            ("assets", "assets"),
-            ("scripts", "scripts"),
-        ):
-            for ref in skill.get(ref_key, []) or []:
-                src = root / ref
-                if not src.exists():
-                    raise SystemExit(f"Canonical skill {ref_key[:-1]} missing: {ref}")
-                if ref_key == "assets" and src.is_dir():
-                    copy_tree_filtered(src, skill_dir / target_name / src.name)
-                else:
-                    copy_file(src, skill_dir / target_name / src.name)
+        resources = resolve_plugin_skill_resources(root, cfg, skill)
+        _copy_skill_resources(root, skill_dir, resources)
 
         body = compile_skill_markdown(
-            skill,
+            dict(skill, **resources),
             compatibility="opencode",
             canonical_instruction=skill_instruction(root, cfg, canonical_skill_definitions(cfg), skill),
             include_canonical_behavior=is_modular(cfg),
+            runtime_requirements=plugin_script_runtime_requirements(cfg, resources["scripts"]),
         )
         skill_dir.mkdir(parents=True, exist_ok=True)
         (skill_dir / "SKILL.md").write_text(body, encoding="utf-8")
