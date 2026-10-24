@@ -1232,12 +1232,18 @@ def build_plugin(root: Path, cfg: dict, build_root: Path, version: str) -> Path:
                 )
                 skill_markdown += (
                     "\n## Executable Engine ZIP preflight\n\n"
-                    "At the first task requiring executable scripts, check once "
-                    f"for a real user-attached `{engine_name}` file in the Python workspace. "
+                    "For tasks requiring execution, first determine whether the "
+                    "bundled Skill script resources and their declared dependencies "
+                    "are directly executable in the current host. If they are, "
+                    "run those resources directly without asking for an Engine ZIP. "
+                    "Only if direct execution is unavailable or the bundled "
+                    "resources are insufficient, check once for a real user-attached "
+                    f"`{engine_name}` in the Python workspace. "
                     "The Plugin does not embed the executable engine. "
                     + handoff +
-                    "If missing, ask once for the Engine ZIP and permit non-executable "
-                    "work without falsely claiming a completed build. "
+                    "If fallback is needed and the Engine ZIP is missing, ask once "
+                    "for that exact file; permit non-executable work without falsely "
+                    "claiming a completed build. "
                     "Before execution, verify engine-package.json, expected engine_id "
                     f"({cfg['project']['id']}), version ({version}), file hashes, "
                     "and safe relative paths; execute only the declared selftest "
