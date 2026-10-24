@@ -1003,6 +1003,13 @@ def claude_skills_runtime_contract(cfg: dict, built_skills: list[str] | None = N
     """Claude Skills contract: portable resources, host-dependent execution."""
     snapshot = plugin_runtime_contract(cfg, built_skills)
     snapshot["runtime_id"] = "claude_skills"
+    adapter = snapshot["adapter"]
+    adapter["mode"] = "claude_skills"
+    adapter["parity_notes"] = dict(adapter["parity_notes"])
+    adapter["parity_notes"]["artifact"] = "Claude Skills package is generated as a portable runtime distribution."
+    adapter["parity_notes"]["workspace_state"] = "Persistent workspace/state depends on the Claude host runtime and is not created by portable Skills."
+    adapter["parity_notes"]["tool"] = "Canonical scripts are packaged as Claude Skill resources and require compatible host code execution."
+    adapter["parity_notes"]["capability"] = "External execution capabilities depend on the Claude host runtime."
     return snapshot
 
 
