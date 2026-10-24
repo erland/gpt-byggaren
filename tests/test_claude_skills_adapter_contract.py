@@ -11,12 +11,7 @@ SPEC.loader.exec_module(MODULE)
 
 
 def test_claude_skills_runtime_contract_has_claude_adapter():
-    cfg = {
-        "capabilities": {"requirements": {}},
-        "artifacts": {"outputs": {}},
-        "workspace_state": {},
-        "tools": {"tools": []},
-    }
+    cfg = MODULE.load_config(ROOT)
     contract = MODULE.claude_skills_runtime_contract(cfg, ["metamodellering"])
     adapter = contract["adapter"]
     assert contract["runtime_id"] == "claude_skills"
