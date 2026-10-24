@@ -648,7 +648,7 @@ def build_claude_skills(root: Path, cfg: dict, build_root: Path, version: str) -
         "# Claude Skills – " + cfg["project"]["name"] + "\n\n"
         "Install the individual folders under skills/ as Claude Skills. "
         "Scripts require a compatible execution environment; packaging alone "
-        "does not verify host execution.\\n",
+        "does not verify host execution.\n",
         encoding="utf-8",
     )
     (out / "VERSION").write_text(version + "\n", encoding="utf-8")
@@ -1311,7 +1311,7 @@ def _opencode_tool_wrapper(tool: dict, script_ref: str) -> str:
             command_lines = """
     const cmd = ["python3", script, "--output-dir", path.resolve(projectRoot, args.outputDir ?? "exports")]"""
     elif tool_id in ("presentation_plan_validate", "pptx_validate"):
-        arg_schema += ',\\n    file: tool.schema.string().min(1).describe("Path to presentation-plan.md or PPTX file, relative to the target project")'
+        arg_schema += ',\n    file: tool.schema.string().min(1).describe("Path to presentation-plan.md or PPTX file, relative to the target project")'
         command_lines = """
     const file = path.resolve(projectRoot, args.file)
     const relative = path.relative(projectRoot, file)
