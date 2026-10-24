@@ -29,7 +29,7 @@ def test_generated_presentation_wrappers_contain_real_lines_not_escaped_newlines
         output = module._opencode_tool_wrapper({"id":name,"purpose":"Validator"},"scripts/validator.py")
         assert '\\n    file:' not in output
         assert '\n    file:' in output
-        assert 'projectRoot: tool.schema.string().optional(),\n    file:' in output
+        assert 'projectRoot: tool.schema.string().optional().describe("Target project directory"),\n    file:' in output
 
 def test_claude_skills_readme_source_uses_real_trailing_newline():
     source = (ROOT / "scripts" / "build_distributions.py").read_text(encoding="utf-8")
