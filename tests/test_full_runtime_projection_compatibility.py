@@ -20,9 +20,9 @@ def test_portable_skill_core_never_shortens_projected_instruction(tmp_path):
     assert "REQUIRED CORE POLICY" in after
     assert "SPECIALIZED WORKFLOW POLICY" in after
     assert "SHORT CORE POLICY" not in after
-    standalone=module.skill_instruction(tmp_path,cfg,[skill])
+    standalone=module.skill_instruction(tmp_path,cfg,[skill],skill)
     assert "SHORT CORE POLICY" in standalone and "SPECIALIZED WORKFLOW POLICY" in standalone
-    workspace_skill=module.skill_instruction(tmp_path,cfg,[skill],runtime="opencode")
+    workspace_skill=module.skill_instruction(tmp_path,cfg,[skill],skill,runtime="opencode")
     assert workspace_skill == "## Domain workflow\n\nSPECIALIZED WORKFLOW POLICY"
 
 def test_runtime_builders_keep_full_projected_instruction():
