@@ -27,7 +27,7 @@ def test_modular_opencode_skills_are_on_by_default(monkeypatch, tmp_path):
                    "assets": [], "scripts": ["sample.py"]}]
     monkeypatch.setattr(module, "canonical_skill_definitions", lambda _cfg: definition)
     monkeypatch.setattr(module, "is_modular", lambda _cfg: True)
-    monkeypatch.setattr(module, "skill_instruction", lambda *_args: "## Instructions\nDo useful work.")
+    monkeypatch.setattr(module, "skill_instruction", lambda *_args, **_kwargs: "## Instructions\nDo useful work.")
     monkeypatch.setattr(module, "plugin_script_runtime_requirements", lambda *_args: {})
     assert module.build_opencode_skills(root, cfg, out) == ["sample-skill"]
     path = out / ".opencode" / "skills" / "sample-skill"
