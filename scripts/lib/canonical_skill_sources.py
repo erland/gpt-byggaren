@@ -105,11 +105,20 @@ def projected_instruction(root: Path, cfg: dict, definitions: list[dict]) -> str
     ) + "\n"
 
 
-def skill_instruction(root: Path, cfg: dict, definitions: list[dict], skill: dict) -> str:
+def skill_instruction(root: Path, cfg: dict, definitions: list[dict], skill: dict, *, runtime: str = "standalone") -> str:
     core, parts = modules(root, cfg, definitions)
     if not is_modular(cfg):
         return core
     for item, body in parts:
         if item["id"] == skill["id"]:
+            if runtime == "opencode":
+                # AGENTS.md contains the canonical core in the same workspace.
+                # Avoid repeating it in every discoverable OpenCode Skill.
+                return body
+            compact = (cfg.get("instructions") or {}).get("portable_skill_core")
+            if compact is not None:
+                if not isinstance(compact, str):
+                    raise ValueError("instructions.portable_skill_core must name a source file")
+                return _read(root, compact) + "\n\n" + body
             return core + "\n\n" + body
     raise ValueError(f"Unknown Skill: {skill['id']}")
