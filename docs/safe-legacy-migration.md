@@ -65,6 +65,30 @@ kanonisk lint, fem distributionsbyggen, Engine-integritetskontroll (om aktiv),
 och värdmiljöspecifik Plugin-acceptans. Alla dessa statusar förblir
 `unverified`/icke releaseklara tills kontrollen verkligen utförts.
 
+
+### Befintlig projektspecifik Engine
+
+Migrationsrapportens `engine_migration.existing_engine_package` inventerar nu
+eventuella egna Engine-paketerare (t.ex. `scripts/package_runtime_engine.py`),
+fristående `*-engine*.zip` utanför `build/` och `dist/` samt manifest
+`MANIFEST.json` (projektspecifikt) och `engine-package.json` (generellt).
+ZIP-inspektion är endast metadataavläsning med storleksbegränsning;
+skripten importeras eller körs inte och paketet packas inte upp.
+
+Rapporten anger `comparison`:
+`compare_with_generic_engine_contract`, `review_existing_canonical_engine`
+eller `no_existing_package_evidence`. Den första betyder **inte** att ett
+generellt format måste ersätta fungerande kod. Granska först resurser,
+riktigt självtest, beroenden, manifestets integritet och hur Plugin-användaren
+hämtar en matchande Engine-release. En projektspecifik Engine kan behållas när
+den är verifierad. Inga skript skrivs om och `engine.enabled` aktiveras inte
+automatiskt. Status `integrity_verified` och `executable_verified` förblir
+`false` tills oberoende kontroller görs.
+
+Referensfall: Tullverkets Omvärldsanalytiker 1.2.1 har en separat Engine ZIP
+med `MANIFEST.json` och fungerande Chat-fallback. Den ska inte konverteras
+utan regressionstest av DOCX/PDF-export och valideringskedjan.
+
 ### Valfri bygguppgradering i migrationskopian
 
 Om projektprofilen redan har kompletta fem canonical runtime-mål kan den
