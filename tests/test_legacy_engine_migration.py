@@ -155,3 +155,62 @@ def test_engine_recovery_only_from_required_declared_python_and_real_selftest(tm
         assert _recover_declared_engine(project)["status"] == "already_declared"
     finally:
         sys.path.pop(0)
+
+
+def test_project_specific_engine_is_reported_without_automatic_conversion(tmp_path):
+    import json, zipfile
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    (scripts / "package_runtime_engine.py").write_text("print('packaging')\n")
+    with zipfile.ZipFile(tmp_path / "sample-engine-1.2.1.zip", "w") as z:
+        z.writestr("MANIFEST.json", json.dumps({
+            "project": "sample", "version": "1.2.1",
+            "files": {"scripts/export.py": "a" * 64}}))
+        z.writestr("scripts/export.py", "print('export')\n")
+    result = module.inspect_engine_migration(
+        tmp_path, {"runtime": {"plugin": {"enabled": True}}})
+    package = result["existing_engine_package"]
+    assert result["engine_required"] == "needs_review"
+    assert result["engine_status"] == "review_required"
+    assert package["detected"] is True
+    assert package["project_specific_format_detected"] is True
+    assert package["comparison"] == "compare_with_generic_engine_contract"
+    assert package["archives"][0]["version"] == "1.2.1"
+    assert package["archives"][0]["manifest_readable"] is True
+    assert package["executable_verified"] is False
+    assert package["integrity_verified"] is False
+    assert result["automatic_engine_activation"] is False
+    assert result["release_ready"] is False
+
+
+def test_canonical_engine_archive_is_recognized(tmp_path):
+    import json, zipfile
+    with zipfile.ZipFile(tmp_path / "demo-engine-2.0.0.zip", "w") as z:
+        z.writestr("engine-package.json", json.dumps({
+            "schema_version": 1, "engine_id": "demo",
+            "version": "2.0.0", "entrypoint": "scripts/selftest.py", "files": {}}))
+    result = module.inspect_engine_migration(tmp_path, {"runtime": {}})
+    package = result["existing_engine_package"]
+    assert result["engine_required"] == "needs_review"
+    assert package["canonical_format_detected"] is True
+    assert package["comparison"] == "review_existing_canonical_engine"
+    assert package["archives"][0]["entrypoint_declared"] is True
+
+
+def test_invalid_engine_archive_is_only_an_inventory_warning(tmp_path):
+    (tmp_path / "broken-engine.zip").write_bytes(b"not a zip")
+    result = module.inspect_engine_migration(tmp_path, {"runtime": {}})
+    assert result["release_ready"] is False
+    archive = result["existing_engine_package"]["archives"][0]
+    assert archive["error"] == "invalid_or_unreadable_archive"
+    assert archive["manifest_readable"] is False
+
+
+def test_build_and_dist_archives_are_excluded_from_engine_inventory(tmp_path):
+    for folder in ("build", "dist"):
+        directory = tmp_path / folder
+        directory.mkdir()
+        (directory / "sample-engine-1.2.1.zip").write_bytes(b"ignored")
+    result = module.inspect_engine_migration(tmp_path, {"runtime": {}})
+    assert result["existing_engine_package"]["detected"] is False
+    assert result["engine_required"] is False
