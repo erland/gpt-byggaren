@@ -155,3 +155,110 @@ def test_engine_recovery_only_from_required_declared_python_and_real_selftest(tm
         assert _recover_declared_engine(project)["status"] == "already_declared"
     finally:
         sys.path.pop(0)
+
+
+def test_project_specific_engine_is_reported_without_automatic_conversion(tmp_path):
+    import json, zipfile
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    (scripts / "package_runtime_engine.py").write_text("print('packaging')\n")
+    with zipfile.ZipFile(tmp_path / "sample-engine-1.2.1.zip", "w") as z:
+        z.writestr("MANIFEST.json", json.dumps({
+            "project": "sample", "version": "1.2.1",
+            "files": {"scripts/export.py": "a" * 64}}))
+        z.writestr("scripts/export.py", "print('export')\n")
+    result = module.inspect_engine_migration(
+        tmp_path, {"runtime": {"plugin": {"enabled": True}}})
+    package = result["existing_engine_package"]
+    assert result["engine_required"] == "needs_review"
+    assert result["engine_status"] == "review_required"
+    assert package["detected"] is True
+    assert package["project_specific_format_detected"] is True
+    assert package["comparison"] == "compare_with_generic_engine_contract"
+    assert package["archives"][0]["version"] == "1.2.1"
+    assert package["archives"][0]["manifest_readable"] is True
+    assert package["executable_verified"] is False
+    assert package["integrity_verified"] is False
+    assert result["automatic_engine_activation"] is False
+    assert result["release_ready"] is False
+
+
+def test_canonical_engine_archive_is_recognized(tmp_path):
+    import json, zipfile
+    with zipfile.ZipFile(tmp_path / "demo-engine-2.0.0.zip", "w") as z:
+        z.writestr("engine-package.json", json.dumps({
+            "schema_version": 1, "engine_id": "demo",
+            "version": "2.0.0", "entrypoint": "scripts/selftest.py", "files": {}}))
+    result = module.inspect_engine_migration(tmp_path, {"runtime": {}})
+    package = result["existing_engine_package"]
+    assert result["engine_required"] == "needs_review"
+    assert package["canonical_format_detected"] is True
+    assert package["comparison"] == "review_existing_canonical_engine"
+    assert package["archives"][0]["entrypoint_declared"] is True
+
+
+def test_invalid_engine_archive_is_only_an_inventory_warning(tmp_path):
+    (tmp_path / "broken-engine.zip").write_bytes(b"not a zip")
+    result = module.inspect_engine_migration(tmp_path, {"runtime": {}})
+    assert result["release_ready"] is False
+    archive = result["existing_engine_package"]["archives"][0]
+    assert archive["error"] == "invalid_or_unreadable_archive"
+    assert archive["manifest_readable"] is False
+
+
+def test_build_and_dist_archives_are_excluded_from_engine_inventory(tmp_path):
+    for folder in ("build", "dist"):
+        directory = tmp_path / folder
+        directory.mkdir()
+        (directory / "sample-engine-1.2.1.zip").write_bytes(b"ignored")
+    result = module.inspect_engine_migration(tmp_path, {"runtime": {}})
+    assert result["existing_engine_package"]["detected"] is False
+    assert result["engine_required"] is False
+
+
+def test_copy_migration_recognizes_tullverket_style_engine_without_changing_source(tmp_path):
+    """End-to-end reference case: Tullverket's MANIFEST.json Engine layout."""
+    import json
+    import subprocess
+    import sys
+    import zipfile
+    import yaml
+
+    source = tmp_path / "legacy_tullverket_style"
+    (source / "scripts").mkdir(parents=True)
+    (source / "scripts/package_runtime_engine.py").write_text(
+        "# Project-specific Engine packager, preserved as source\n", encoding="utf-8")
+    (source / "scripts/render_word.py").write_text("print('docx')\n", encoding="utf-8")
+    (source / "scripts/render_pdf.py").write_text("print('pdf')\n", encoding="utf-8")
+    cfg = {"project": {"id": "tullverket-omvarldsanalytiker"},
+           "runtime": {"plugin": {"enabled": True}}}
+    (source / "gpt-project.yaml").write_text(
+        yaml.safe_dump(cfg), encoding="utf-8")
+    archive = source / "tullverket-omvarldsanalytiker-engine-1.2.1.zip"
+    with zipfile.ZipFile(archive, "w") as z:
+        z.writestr("MANIFEST.json", json.dumps({
+            "project": "tullverket-omvarldsanalytiker",
+            "version": "1.2.1",
+            "files": {"scripts/render_word.py": "0" * 64,
+                      "scripts/render_pdf.py": "0" * 64}}))
+        z.writestr("scripts/render_word.py", "print('docx')\n")
+        z.writestr("scripts/render_pdf.py", "print('pdf')\n")
+    before_cfg = (source / "gpt-project.yaml").read_bytes()
+    before_zip = archive.read_bytes()
+    destination = tmp_path / "migrated"
+    command = [sys.executable, str(ROOT / "scripts/migrate_legacy_copy.py"),
+               "--source", str(source), "--destination", str(destination)]
+    completed = subprocess.run(command, capture_output=True, text=True)
+    assert completed.returncode == 0, completed.stderr
+    report = json.loads((destination / "MIGRATION-REPORT.json").read_text())
+    engine = report["engine_migration"]
+    finding = engine["existing_engine_package"]
+    assert finding["detected"] is True
+    assert finding["project_specific_format_detected"] is True
+    assert finding["comparison"] == "compare_with_generic_engine_contract"
+    assert finding["archives"][0]["version"] == "1.2.1"
+    assert engine["automatic_engine_activation"] is False
+    assert engine["release_ready"] is False
+    assert (source / "gpt-project.yaml").read_bytes() == before_cfg
+    assert archive.read_bytes() == before_zip
+    assert (destination / "scripts/package_runtime_engine.py").is_file()
